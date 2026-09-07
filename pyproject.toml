@@ -1,0 +1,38 @@
+[project]
+name = "llm-lab"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Md. Rafi", email = "refathosain41@gmail.com" }
+]
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "numpy>=2.0.0",
+    "psutil>=6.0.0",
+    "rich>=13.0.0",
+    "safetensors>=0.4.0",
+    "tabulate>=0.9.0",
+    "tqdm>=4.66.0",
+    "torch",
+    "numba>=0.67.0",
+    "transformers>=5.16.1",
+    "gguf>=0.19.0",
+    "llama-cpp-python>=0.3.35",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[project.scripts]
+llm-lab = "llm_lab:main"
+
+[build-system]
+requires = ["uv_build>=0.12.1,<0.13.0"]
+build-backend = "uv_build"
+

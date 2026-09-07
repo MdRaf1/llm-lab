@@ -1,0 +1,15 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Models and partitioned binary weights (>100MB)
+models/**/*.bin
+*.bin
+*.gguf
