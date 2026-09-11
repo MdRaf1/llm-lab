@@ -53,10 +53,20 @@ HARDWARE
 
 APPROVED NEXT STEP: Milestone 1 only
 Build ONLY: src/llm_lab/moe/{meta,baseline,trace,oracle}.py + tests/test_moe_trace.py
-M1 is two phases and the order is normative (spec section 8.2):
-  M1a - validate the whole pipeline on a small MoE that fits 16 GB (OLMoE-1B-7B or
-        Qwen1.5-MoE-A2.7B). Exit: determinism proven, >=500 positions traced, test green.
-  M1b - only then download Qwen3-30B-A3B Q4_K_M (~18 GB) and run the same code paths.
+M1 is THREE phases and the order is normative (spec section 8.2). The tiering is forced by
+measured hardware: 11.9 GB total RAM (~4 GB free under load), 28.3 GB free disk.
+  M1a - tiny RANDOM-weight MoE, no download (e.g. OlmoeConfig(num_hidden_layers=2,
+        hidden_size=64, num_experts=8)). Output is gibberish; this validates the trace
+        schema, RunRecord, oracle, determinism, and the test. Runs in seconds.
+  M1b - OLMoE-1B-7B for a real trace. NOTE: it is 13.8 GB at BF16 and DOES NOT FIT this
+        machine - load it 8-bit (~7 GB) and record the precision in the trace header, or
+        run BF16 on the rented box. Do NOT substitute Qwen1.5-MoE-A2.7B; at 14.3B params
+        it is LARGER (28.6 GB BF16), not smaller.
+  M1c - Qwen3-30B-A3B Q4_K_M (~18 GB) for the GGUF baseline. Its BF16 routing trace is
+        ~61 GB and requires the rented machine.
+ALREADY VERIFIED (2026-09-11, do not re-investigate): transformers 5.16.1 exposes
+output_router_logits on OlmoeConfig and Qwen3MoeConfig, and MoeCausalLMOutputWithPast has
+a router_logits field. Qwen3MoeConfig defaults confirm 128 experts / top-8.
 Goal: a real generation, proven determinism, an exactness oracle that compares TOKEN IDS
 (never .strip() text), and expert-routing traces. No custom streaming engine, no speedup
 claim, no PageCC code, no GPU work. Spec section 8 has the JSONL trace schema, the

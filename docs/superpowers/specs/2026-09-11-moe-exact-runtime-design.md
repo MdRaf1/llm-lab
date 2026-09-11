@@ -250,23 +250,37 @@ Each milestone has a gate. We stop or escalate on the measured result, not on en
 In scope: measure the truth about one real MoE checkpoint.
 Out of scope: any custom streaming engine, any speedup claim, any PageCC code, any GPU work.
 
-### 8.2 Required phase order — M1a before M1b
+### 8.2 Required phase order — three tiers, in this order
 
-M1 is **two phases, in this order**. This is normative, not a suggestion.
+M1 is **three phases**. This is normative, not a suggestion. The tiering exists because
+this machine has **11.9 GB total RAM (~4 GB free under normal load)** and **28.3 GB free
+disk** — measured 2026-09-11 — which rules out BF16 small MoEs that a casual reading would
+pick.
 
-**M1a — pipeline shakedown on a small MoE.** Build and validate all four modules, the
-oracle, and the trace schema against an MoE that fits the 16 GB box — OLMoE-1B-7B or
-Qwen1.5-MoE-A2.7B. Exit criteria: determinism proven, ≥500 positions traced, and
-`tests/test_moe_trace.py` green.
+**M1a — plumbing, on a tiny random MoE.** Use an MoE-architecture test fixture with random
+weights (the `hf-internal-testing` / `trl-internal-testing` tiny OLMoE or Qwen-MoE configs,
+or instantiate `OlmoeConfig(num_hidden_layers=2, hidden_size=64, num_experts=8)` locally —
+no download). Output is gibberish and that is fine: this phase validates the trace schema,
+the RunRecord, the oracle, determinism, and `tests/test_moe_trace.py`. Runs in seconds on
+any machine, needs no disk. Exit: test green, schema round-trips, two runs give identical
+token IDs.
 
-**M1b — the approved target.** Only after M1a's exit criteria are met, download
-Qwen3-30B-A3B Q4_K_M (~18 GB) and run the *same code paths* against it.
+**M1b — a real trace on a real small MoE.** OLMoE-1B-7B is 6.9B params ≈ **13.8 GB at
+BF16, which does not fit 11.9 GB**. Two options, pick one and record which:
+  - load it 8-bit (~7 GB) locally, and note in the trace header that routing was captured
+    under 8-bit weights, not BF16; or
+  - run it BF16 on the rented machine.
+  Do **not** substitute Qwen1.5-MoE-A2.7B as the "small" option — it is 14.3B params
+  ≈ 28.6 GB at BF16, larger than OLMoE, and does not fit either.
+  Exit: ≥500 positions traced, cache-independence verified.
 
-Rationale: debugging a trace-schema or determinism bug against an 18 GB checkpoint on a
-16 GB machine costs hours per iteration. Nothing in M1a is throwaway — it is the same code
-M1b runs. If a small-MoE constraint turns out to make M1a impossible (e.g. no suitable
-small MoE exposes router logits), say so and go straight to M1b rather than inventing a
-workaround.
+**M1c — the approved target, Qwen3-30B-A3B.** The Q4_K_M GGUF baseline (~18 GB) fits the
+28.3 GB of free disk but leaves ~10 GB headroom, so check disk before downloading. The
+BF16 routing trace (~61 GB) requires the rented machine and cannot run here at all.
+
+Rationale: debugging a schema or determinism bug against an 18 GB checkpoint on a 16 GB
+machine costs hours per iteration. Nothing in M1a/M1b is throwaway — it is the same code
+M1c runs.
 
 ### 8.3 Components (4 modules, 1 test — keep it small)
 
@@ -369,20 +383,27 @@ checkpoint ──► meta.py ──► architecture facts + expert byte sizes
 
 ### 8.11 M1 definition of done
 
-**M1a (small MoE, must pass first):**
+**M1a (tiny random MoE — must pass first):**
 
 1. All four modules plus `tests/test_moe_trace.py` exist and the test is green.
 2. Two identical-config runs produce **identical token IDs** (or nondeterminism is
    documented as a finding, with its cause).
-3. ≥500 generated positions traced, schema round-trips.
+3. Trace schema round-trips; union/unique-expert math asserted against a hand-built trace.
 
-**M1b (Qwen3-30B-A3B Q4_K_M):**
+**M1b (real small MoE — OLMoE-1B-7B, 8-bit locally or BF16 rented):**
 
-4. A real generation runs and emits a RunRecord with measured tok/s and RSS.
-5. Determinism re-verified on this checkpoint.
-6. ≥2000 generated positions traced across ≥3 prompt domains (prose, code, factual recall).
-7. `meta.py` output confirms or corrects the architecture numbers assumed in §3.
-8. Every number in the M1 report traces to a command and its saved output in the repo.
+4. ≥500 generated positions traced; the trace header records the weight precision used.
+5. Identical logits verified across at least two simulated cache sizes.
+
+**M1c (Qwen3-30B-A3B Q4_K_M):**
+
+6. A real generation runs and emits a RunRecord with measured tok/s and RSS.
+7. Determinism re-verified on this checkpoint.
+8. ≥2000 generated positions traced across ≥3 prompt domains (prose, code, factual recall).
+9. `meta.py` output confirms or corrects the architecture numbers assumed in §3.
+   (Verified 2026-09-11: `Qwen3MoeConfig` defaults are 128 experts, top-8 — consistent
+   with §3. Layer count and `moe_intermediate_size` still need the real checkpoint.)
+10. Every number in the M1 report traces to a command and its saved output in the repo.
 
 ---
 
@@ -421,7 +442,13 @@ Adopted because the current repo violated all five.
    Does it fit 4 GB? 8 GB?
 3. Is llama-cpp-python decode bit-deterministic on this box across runs and thread counts?
 4. What is the real reuse distance / co-activation structure of Qwen3-30B-A3B routing?
-5. Can expert IDs be extracted from llama.cpp without a C++ patch?
+5. ~~Can expert IDs be extracted from llama.cpp without a C++ patch?~~ Still open for
+   llama.cpp, but **resolved for the HF path (2026-09-11):** `OlmoeConfig` and
+   `Qwen3MoeConfig` both accept `output_router_logits`, and
+   `MoeCausalLMOutputWithPast` exposes a `router_logits` field. transformers 5.16.1,
+   verified locally.
+6. Does 8-bit loading change OLMoE routing versus BF16? (Matters only if M1b runs 8-bit
+   locally; it is the same question as #1 one tier down.)
 
 ## 12. Artifacts index
 
