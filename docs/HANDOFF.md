@@ -99,8 +99,21 @@ approved.
 
 ## Also worth knowing in the new session
 
+- **Remote:** `https://github.com/MdRaf1/llm-lab` — **private**, branch `master`. Pushed
+  with full history on purpose: `README.md`, this file, and the spec all cite `a248a03` as
+  where `DEMO_SCRIPT.md` is recoverable, and the M0 commit is only meaningful as a diff
+  against the version that made the false claims. Squashing later is still possible;
+  un-squashing is not.
 - `docs/research/raw/` holds the prior session's evidence: `novelty-research.md` (prior-art
   survey), `unweight.txt` and `backslash.txt` (full paper extractions), and the raw Tavily
   JSON results. Check there before re-running any search.
-- Commits so far: `a248a03` (original, contains the fabricated claims and the deleted demo
-  script), `58d1171` (the design spec + handoff), and the M0 truth-in-labeling commit.
+- Commit history:
+  - `a248a03` — original. Contains the fabricated claims and the deleted `DEMO_SCRIPT.md`.
+  - `58d1171` — design spec + first handoff.
+  - `690cdf7` — M0 truth-in-labeling.
+  - `b47c59b` — fixed M1 phasing after measuring that both original M1a candidates
+    exceeded this machine's RAM.
+- `models/*/manifest.json` is tracked (56 KB + 4 KB); the `.bin` weights are gitignored.
+  The `llama-8b-real-partition` manifest holds real GGUF tensor offsets and is the input
+  M3 will want. The `test-partition` one is output from the simulated converter — its
+  numbers are synthetic.
