@@ -1,0 +1,90 @@
+{
+  "query": "language model cache aware routing expert locality regularization training SSD hierarchical memory MoE",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://arxiv.org/html/2507.11181v1",
+      "title": "Mixture of Experts in Large Language Models",
+      "content": "To mitigate these issues, newer designs adopt more deployment-aware strategies. LoRA-MoE  and Nexus , for example, freeze routing weights or apply low-rank adapters to stabilize expert usage during inference. These methods reduce routing variance, simplify caching, and enable efficient fine-tuning. This marks a shift from MoE systems optimized purely for scale toward architectures designed with practical usability and system compatibility in mind. [...] This paper presents a comprehensive review of the Mixture-of-Experts (MoE) architecture in large language models, highlighting its ability to significantly enhance model performance while maintaining minimal computational overhead. Through a systematic analysis spanning theoretical foundations, core architectural designs, and large language model (LLM) applications, we examine expert gating and routing mechanisms, hierarchical and sparse MoE configurations, meta-learning approaches, multimodal [...] This auxiliary loss promotes better resource utilization and prevents training instability due to expert starvation. However, it introduces a tension with the primary routing objective: enforcing balance may degrade expert specialization or routing accuracy. As a result, selecting the appropriate α\\alpha and balancing regularization strength remains an open trade-off in large-scale MoE design.",
+      "score": 0.40028095,
+      "raw_content": null,
+      "id": "9b86c0-00"
+    },
+    {
+      "url": "https://developers.redhat.com/articles/2025/10/07/master-kv-cache-aware-routing-llm-d-efficient-ai-inference",
+      "title": "Master KV cache aware routing with llm-d for efficient AI ...",
+      "content": "KV cache aware routing with llm-d represents a significant leap forward in optimizing large language model inference. By intelligently directing requests to pods with existing KV cache content, llm-d reduces latency, improves throughput, and lowers operational costs. The demonstrated 87% cache hit rate and 88% faster TTFT for warm cache hits underscore the real-world impact of this technology. [...] Join us if you’re a developer, software engineer, web designer, front-end designer, UX designer, computer scientist, architect, tester, product manager, project manager or team lead.\n\nSign me up\n\n### Red Hat legal and privacy links\n\n   About Red Hat\n   Jobs\n   Events\n   Locations\n   Contact Red Hat\n   Red Hat Blog\n   Inclusion at Red Hat\n   Cool Stuff Store\n   Red Hat Summit\n\n© 2026 Red Hat\n### Red Hat legal and privacy links [...] ```plaintext\n# plugins.yaml configuration\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: llm-d-gaie-epp-config\n  namespace: llm-d\ndata:\n  plugins-v2.yaml: |\n    plugins:\n      - name: \"cache-aware-router\"\n        type: \"external_processor\"\n        config:\n          discovery:\n            label_selector: \"llm-d.ai/inferenceServing=true\"\n          cache:\n            type: \"in-memory-lru\"\n            max_size: 10000\n          routing:\n            algorithm: \"prefix-aware\"",
+      "score": 0.37456247,
+      "raw_content": null,
+      "id": "29a334-01"
+    },
+    {
+      "url": "https://github.com/jjiantong/Awesome-KV-Cache-Optimization",
+      "title": "Awesome-KV-Cache-Optimization - GitHub",
+      "content": "[](\n\n## About\n\n[ACL 2026] Towards Efficient Large Language Model Serving: A Survey on System-Aware KV Cache Optimization\n\n### Topics\n\naicomputer-architecturekv-cachellmllm-inferencellm-servingmachine-learningmlsysneural-language-processingserving-mlsystem\n\n### Resources\n\n### Stars\n\n401 stars\n\n### Watchers\n\n16 watching\n\n### Forks\n\n22 forks\n\nReport repository\n\n## Contributors\n\nYou can’t perform that action at this time. [...] | New   AdaptCache: KV Cache Native Storage Hierarchy for Low-Delay and High-Quality Language Model Serving [Link]   Shaoting Feng, Hanchen Li, Kuntai Du, Zhuohan Gu, Yuhan Liu, Jiayi Yao, Siddhant Ray, Samuel Shen, Yihua Cheng, Ganesh Ananthanarayanan, Junchen Jiang | KV-native DRAM/SSD placement; Also belongs to KV cache compression (structural) | [...] | LayerKV: Optimizing Large Language Model Serving with Layer-wise KV Cache Management [Link]   Yi Xiong, Hao Wu, Changxu Shao, Ziqing Wang, Rui Zhang, Yuhong Guo, Junping Zhao, Ke Zhang, Zhenxuan Pan | KV usage-aware request-level scheduling; Also belongs to memory hierarchy KV orchestration (spatial) |",
+      "score": 0.3218121,
+      "raw_content": null,
+      "id": "8d0ebf-02"
+    },
+    {
+      "url": "https://aclanthology.org/2026.findings-acl.1916",
+      "title": "Towards Efficient Large Language Model Serving: A Survey on System-Aware KV Cache Optimization - ACL Anthology",
+      "content": "##### ACL\n\n Jiantong Jiang, Peiyu Yang, Rui Zhang, and Feng Liu. 2026. Towards Efficient Large Language Model Serving: A Survey on System-Aware KV Cache Optimization. In Findings of the Association for Computational Linguistics: ACL 2026, pages 38450–38476, San Diego, California, United States. Association for Computational Linguistics. [...] Bibkey:\n\nCite (ACL):\n:   Jiantong Jiang, Peiyu Yang, Rui Zhang, and Feng Liu. 2026. Towards Efficient Large Language Model Serving: A Survey on System-Aware KV Cache Optimization. In Findings of the Association for Computational Linguistics: ACL 2026, pages 38450–38476, San Diego, California, United States. Association for Computational Linguistics.\n\nCite (Informal):\n:   Towards Efficient Large Language Model Serving: A Survey on System-Aware KV Cache Optimization (Jiang et al., Findings 2026) [...] publisher = \"Association for Computational Linguistics\", url = \" doi = \"10.18653/v1/2026.findings-acl.1916\", pages = \"38450--38476\", ISBN = \"979-8-89176-395-1\", abstract = \"Despite the rapid advancements of large language models (LLMs), LLM serving systems remain memory-intensive and costly. The key-value (KV) cache, which stores KV tensors during autoregressive decoding, is crucial for enabling low-latency, high-throughput LLM inference serving. In this survey, we focus on system-aware KV",
+      "score": 0.31855983,
+      "raw_content": null,
+      "id": "ef2da3-03"
+    },
+    {
+      "url": "https://infohub.delltechnologies.com/en-sg/l/open-source-llm-inferencing-at-scale-vllm-production-stack-on-dell-ai-factory/intelligent-routing-for-cache-optimization/3",
+      "title": "KV-Aware Routing - Dell Technologies Info Hub",
+      "content": "KV‐aware routing is the most precise cache‐aware strategy in the Production Stack. Unlike Prefix‐aware routing, which infers locality from string prefixes",
+      "score": 0.30594662,
+      "raw_content": null,
+      "id": "f3e4d2-04"
+    },
+    {
+      "url": "https://openreview.net/forum?id=wn6WHREK9k",
+      "title": "Oracle-MoE: Locality-preserving Routing in the Oracle Space for...",
+      "content": "Oracle-MoE optimizes expert activation consistency and reduces inference latency by leveraging semantic locality, enabling efficient deployment",
+      "score": 0.264182,
+      "raw_content": null,
+      "id": "41d900-05"
+    },
+    {
+      "url": "https://acethecloud.com/blog/kv-aware-routing-cache-locality-load-balancing-llms",
+      "title": "KV-Aware Routing: How Cache Locality Changes Load Balancing for LLMs – Ace The Cloud",
+      "content": "## What KV-aware routing means\n\nKV-aware routing sends a request to a backend based partly on whether that backend already has useful KV cache for the prompt prefix.\n\nThe router considers:\n\n model identity\n tokenizer compatibility\n prompt prefix hash\n tenant or session affinity\n backend queue depth\n GPU memory pressure\n cache occupancy\n expected input/output tokens\n SLO class\n\nCache locality turns routing from queue balancing into cost avoidance. [...] The SGLang Model Gateway documentation recommends cache-aware routing by default and also discusses session affinity when cache efficiency matters. Kubernetes Gateway API Inference Extension talks about request scheduling that is KV-cache and request-cost aware. TensorRT-LLM’s KV event API exists precisely so upstream applications can understand cache state.\n\nThe direction is clear: load balancers are becoming cache managers.\n\n## Implementation guardrails [...] Skip to content\n\nRecent Articles\n\nKV-Aware Routing: How Cache Locality Changes Load Balancing for LLMs\n\n·6 min · read·RECENT ARTICLES\n\n# KV-Aware Routing: How Cache Locality Changes Load Balancing for LLMs\n\n#inference #kv-cache #routing #load-balancing #gateway #tensorrt-llm #dynamo #sglang\n\nAbhishek Kumar\n\nAbhishek Kumar\n\nRound-robin is a beautiful algorithm. Simple, predictable, easy to debug. It is also the wrong default for serious LLM inference.\n\nThe reason is cache locality.",
+      "score": 0.23604086,
+      "raw_content": null,
+      "id": "227d5f-06"
+    },
+    {
+      "url": "https://docs.vllm.ai/projects/production-stack/en/vllm-stack-0.1.5/tutorials/kvaware.html",
+      "title": "KV Cache Aware Routing — production-stack",
+      "content": "Test the KV cache aware routing functionality\n\nThe KV cache aware routing feature helps improve performance by ensuring that requests with shared prefixes are routed to the same instance, maximizing KV cache utilization.\n\nprevious\n\nLORA Loading\n\nnext\n\nPrefix Aware Routing\n\nBy vLLM Production Stack Team\n\n© Copyright 2025, vLLM Production Stack Team. [...] production-stack - Home\nproduction-stack - Home\n\nGetting Started\n\nTutorials\n\nDeployment\n\nUser Manual\n\nDeveloper Guide\n\nBenchmarks\n\n# KV Cache Aware Routing\n\n## Contents\n\n# KV Cache Aware Routing#\n\n## Introduction#\n\nThis tutorial demonstrates how to use KV cache aware routing in the vLLM Production Stack. KV cache aware routing ensures that subsequent requests with the same prompt prefix are routed to the same instance, maximizing KV cache utilization and improving performance.\n\n## Prerequisites# [...] ## Prerequisites#\n\nInstallation of minimal example shown in Minimal Example\n\nKubernetes environment with GPU support\n\n## Deploy with KV Cache Aware Routing#\n\nWe’ll use the predefined configuration file `values-17-kv-aware.yaml` which sets up two vLLM instances with KV cache aware routing enabled.\n\n`values-17-kv-aware.yaml`\n\nDeploy the Helm chart with the configuration:\n\nNote that to add more instances, you need to specify different `instanceId` in `lmcacheConfig`.\n\n`instanceId`\n`lmcacheConfig`",
+      "score": 0.16353923,
+      "raw_content": null,
+      "id": "64852b-07"
+    },
+    {
+      "url": "https://llm-d.ai/docs/well-lit-paths/foundations/precise-prefix-cache-routing",
+      "title": "Precise Prefix Cache Routing | llm-d",
+      "content": "llm-d\nllm-d\n\n# Precise Prefix Cache Routing\n\nThe model server is the most accurate source of truth for what's cached on its own GPUs and memory tiers. vLLM, SGLang and NVIDIA TensorRT-LLM publish every cache change as an event; llm-d subscribes to that stream, builds a near-real-time view of resident blocks across the fleet, and scores requests against it. The prefix-affinity score is combined with the standard load-aware scorers, similarly to the Optimized Baseline path. [...] ## Architecture​\n\nThe split is straightforward: model servers produce KV-events on every cache change; the llm-d Router consumes them to score pods for better routing decisions. The two sides are decoupled — model server and llm-d Router replicas scale independently.\n\nInside the llm-d Router:\n\n`block key → pods` [...] KV-events have become the ecosystem-standard substrate for exposing accurate cache state — where reusable inference state lives and how it changes over time.\nAs KV-cache orchestration grows more sophisticated and agentic workloads stretch prefixes longer, cache state becomes something the control plane needs to observe and act on. The same view scales naturally to:\n\n## Deploy​\n\nSee the precise prefix cache routing guide for manifests and step-by-step deployment.\n\n## Architecture​",
+      "score": 0.12893064,
+      "raw_content": null,
+      "id": "a75fa0-08"
+    },
+    {
+      "url": "https://mlsys.org/virtual/2024/session/2779",
+      "title": "Track: Large Language Models 1",
+      "content": "This paper focuses on addressing the substantial memory footprints and bandwidth costs associated with the deployment of Large Language Models (LLMs). LLMs, characterized by their extensive context length (e.g., $\\geq$4096), inherently demands vast memory resource and traffic to store and load the attention key and value embeddings within self-attention modules, referred to as the KV cache. In an effort to alleviate these resource-intensive aspects of LLM inference, techniques such as [...] The code will be public upon acceptance. [...] Skip to yearly menu bar\n\n## Main Navigation\n\nconference_logo\n\n MLSys \n  + Code of Conduct  \n\n  + Create Profile  \n\n  + Privacy Policy  \n\n  + Contact MLSys  \n\n  + Help/FAQ\n My Stuff\n\n Login\n\n### Session\n\n## Large Language Models 1\n\nAbstract:\n\nChat is not available.\n\nTue 14 May 13:30 - 13:50 PDT\n  \n\n26\n\n##### Q-Hitter: A Better Token Oracle for Efficient LLM Inference via Sparse-Quantized KV Cache\n\nZhenyu Zhang ⋅ Shiwei Liu ⋅ Runjin Chen ⋅ Bhavya Kailkhura ⋅ Beidi Chen ⋅ Atlas Wang",
+      "score": 0.12350323,
+      "raw_content": null,
+      "id": "f1ba35-09"
+    }
+  ],
+  "response_time": 1.6,
+  "request_id": "2c39b338-cbdc-47d6-b72e-6fc34d4102be"
+}

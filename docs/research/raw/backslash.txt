@@ -1,0 +1,788 @@
+BackSlash: Rate Constrained Optimized Training of Large Language Models
+
+Jun Wu 1 Jiangtao Wen 2 Yuxing Han 1
+
+                        Abstract                                  Table 1. Parameter scale and growth rate of GPTs as an example
+                                                                  over recent years.
+      The rapid advancement of large-language models
+      (LLMs) has driven extensive research into parame-           Model name   Time    Parameter size  Growth rate
+      ter compression after training has been completed,
+      yet compression during the training phase remains               GPT-1   2018.06       117M              -
+      largely unexplored. In this work, we introduce                  GPT-2   2019.02        1.5B          12.8x
+      Rate-Constrained Training (BackSlash), a novel                  GPT-3   2020.06        175B         116.7x
+      training-time compression approach based on rate-               GPT-4   2024.11        1.8T         1200.0x
+      distortion optimization (RDO). BackSlash en-
+      ables a flexible trade-off between model accuracy           The ever-increasing size of LLM parameters leads to in-
+      and complexity, significantly reducing parameter            creased computational costs, inference latency, and network
+      redundancy while preserving performance. Exper-             distribution overhead during model deployment. To enable
+      iments in various architectures and tasks demon-            efficient inference of LLMs on edge devices, extensive re-
+      strate that BackSlash can reduce memory usage               search has focused on model compression using techniques
+      by 60% - 90% without accuracy loss and pro-                 such as parameter quantization, model pruning, and low-
+      vides significant compression gain compared to              rank matrix decomposition. However, while there have been
+      compression after training. Moreover, BackSlash             extensive studies on LLM redundancy at the microscopic
+      proves to be highly versatile: it enhances general-         level, such as precision and structural inefficiencies, the
+      ization with small Lagrange multipliers, improves           overall parameter distribution has received little attention.
+      model robustness to pruning (maintaining accu-              In addition, most existing compression techniques are ap-
+      racy even at 80% pruning rates), and enables net-           plied after training, as opposed to being integrated into the
+      work simplification for accelerated inference on            LLM parameter training process to proactively achieve opti-
+      edge devices.                                               mized trade-offs between parameter precision, model size,
+                                                                  and model performance. Finally, existing studies assume
+1. Introduction                                                   that model parameters follow the Gaussian distribution and,
+                                                                  therefore employ Huffman coding designed using empirical
+As the foundation of modern artificial intelligence, genera-      statistics for compression. Both the probabilistic model and
+tive large language models (LLMs) such as Llama (Touvron          the entropy coding technique have room for improvement.
+et al., 2023), GPT (Brown et al., 2020), and Qwen (Bai
+et al., 2023) exhibit remarkable self-learning and non-linear     In this paper, we introduce a rate-constrained optimized ap-
+modeling capabilities. With continuous advancements in            proach to LLM training. By incorporating model parameter
+deep learning, the parameter scales of LLMs have grown at         size into the training process through a rate (R) and distor-
+an unprecedented rate, as shown in Table 1. Looking ahead,        tion (D) joint optimization, the proposed rate-constrained
+it is expected that the parameter scale of neural networks        training (BackSlash) approach is capable of producing the
+will continue to expand rapidly, driving further progress in      optimal performing model for a given parameter set size,
+AI development.                                                   that is, producing the best-fit model given by its end appli-
+                                                                  cation (hardware constrained parameter set size).
+    1Shenzhen International Graduate School, Tsinghua Univer-
+sity 2Computer Science, New York University. Correspondence       The main contributions of this paper are as follows:
+to: Yuxing Han <yuxinghan@sz.tsinghua.edu.cn>, Jiangtao Wen
+(project lead) <jw9263@nyu.edu>.                                    1. Instead of the widely used Gaussian model for LLM
+                                                                        parameter distribution, we found through extensive
+Proceedings of the 42 nd International Conference on Machine            experiments that the generalized Gaussian (GG) distri-
+Learning, Vancouver, Canada. PMLR 267, 2025. Copyright 2025             bution with the shape parameter less than 2 is a better
+by the author(s).
+
+                                                               1
+BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+      model.                                                        tivations. Liu et al. (2021) simultaneously maintained the
+                                                                    representational power of non-uniform quantization and the
+  2. We propose to use exp-Golomb (EG) codes for entropy            efficiency of uniform quantization.
+      coding of LLM parameters, whose distribution can be
+      well-modeled by GG distributions. It has been shown           Low-rank decomposition (Jaderberg et al., 2014; Masana
+      (Wen & Villasenor, 1999) that for GG sources, EG              et al., 2017), parameter sharing (Wang et al., 2017; Kos-
+      codes can achieve coding efficiency very close to the         saifi et al., 2019), and knowledge distillation (Xu et al.,
+      entropy limit, well over 90% in many cases. We also           2018; Chen et al., 2017) have demonstrated significant ef-
+      find the optimal EG code with k=0 implementation can          fectiveness in applications. Additionally, with large-scale
+      accommodate many applications.                                distributed deep learning training systems, communication-
+                                                                    efficient gradient compression techniques were proposed
+  3. Based on the GG distribution observation and using             (Lin et al., 2017). These approaches collectively enhance the
+      EG codes as entropy codes, we proposed a discretized          efficiency of deep learning model training and deployment.
+      generalized Gaussian information rate (DGGR) to mea-
+      sure the model information rate and an BackSlash              2.2. Rate Distortion Optimization
+      algorithm that jointly optimizes the information rate
+      and performance during the training phase of LLMs.            Information theory (Shannon, 1948; Cover, 1999) mathemat-
+      Experiments with different LLMs and different deep-           ically quantified the efficiency with which information can
+      learning tasks show significant savings in model size         be transmitted, stored, and processed, where rate-distortion
+      as compared with both unconstrained training and un-          function defines the minimal distortion that can be achieved
+      constrained training followed by entropy coding.              while entropy coding a system to a given bitrate (Davisson,
+                                                                    1972; Berger, 2003).
+2. Related Work
+                                                                    In practical applications, rate-distortion optimization (RDO)
+2.1. LLMs Compression                                               has found extensive adoption in video coding (Luttrell et al.,
+                                                                    2000; Itu-T & Jtc, 2010; Wien, 2015; Brand et al., 2022;
+To achieve low-cost distribution, deployment, and inference,        Chen et al., 2023; Guo et al., 2023; Chiang et al., 2023; Xia
+many compression strategies for LLMs have been proposed.            et al., 2023b; Zhang et al., 2024), etc. are also continuing to
+                                                                    deepen the application of RDO in video and images.
+Pruning reduces computational and storage overheads by
+removing unimportant weights or neurons from the model.             In recent years, RDO has also been introduced for the com-
+Unstructured pruning achieves compression by removing               pression of neural networks. For example, Gao et al. (2018)
+redundant connections, e.g., Han et al. (2015b) and Han             investigated the fundamental limits of model compression
+et al. (2015a) proposed a pruning method based on weight            and proposed a compression framework for pruning, quanti-
+paradigms. Because unstructured pruning may lead to irreg-          zation, and other techniques. Isik et al. (2021) proposes a
+ular network structures, structured pruning of filters or chan-     new pruning strategy based on RDO to approach the com-
+nels was proposed. Li et al. (2016) proposed pruning based          pression limits of neural networks. In both cases, RDO is
+on filter, while Luo et al. (2017) proposed Thinet that min-        applied after models have been trained to further pruning
+imized the reconstruction error. Hardware constraints (He           and quantization, as opposed to being integral to the training
+et al., 2018; Wang et al., 2018a) such as energy consumption        process itself.
+and delay were also introduced into the pruning process to
+optimize the model performance in resource-constrained              3. Generalized Gaussian Model of LLM
+environments. Prune continues to be an important direction             Parameters
+for model optimization, as evidenced by recent publica-
+tions such as Dynamic Structure Pruning (Park et al., 2023),        Most research assumes that LLM parameters follow the
+LAPP (Zhai et al., 2023), and Turbo-VBI (Xia et al., 2023a).        Gaussian distribution in the initialization and rarely dis-
+                                                                    cussed the distribution after training. For example, Gaussian
+Quantization can speed up training and inference by reduc-          distribution was used by both Xavier and He for random
+ing the precision of weights and activation values. Binary          parameter initialization (Glorot & Bengio, 2010; He et al.,
+weights (Courbariaux et al., 2015; Rastegari et al., 2016),         2015). However, through extensive experiments, we found
+triple weights (Li & Liu, 2016; Zhu et al., 2016), cluster          that the more broad generalized Gaussian (GG) distribu-
+quantization (Gong et al., 2014; Choi et al., 2016), and            tion family with shape parameter less than 2 might be a
+mixed bit-width quantization (Zhou et al., 2016; Wang et al.,       better model for LLM models, especially considering that
+2018b) were examples of quantization techniques. Long               different regulations during training may impact parameter
+et al. (2020) used shift operation to replace the costly full-      distribution. The distribution usually also changes during
+precision operation by quantizing low-bit weights and ac-           training as the model converges. In practice, the parameter
+
+                                                                 2
+                 BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+distribution tends to develop heavier tails during the training     4. Rate-Constrained Training (BackSlash) of
+process(Fortuin et al., 2021).                                         LLMs
+
+Mathematically, the probability density function (pdf) of           4.1. Overview and loss function definition
+generalized Gaussian distribution is defined as
+                                                                    In contrast to traditional non-constrained training, the target
+                       f (x) = C1e-C2|x| (1)                        loss function for optimization in BackSlash considers both
+                                                                    model performance and model size is
+where
+                C1 =  , C2 =  , (2)                                       J = D +  · R,                           (6)
+                        2(1/)
+
+           =        1 (3/)  ,                                       where D denotes the distortion of the fitting data, i.e. the de-
+                                                                    viation between the model predictions and the ground truth.
+                     (1/)                                           R denotes the rate of the model parameters, indicating the
+                                                                    complexity of the model itself.  is the Lagrange multiplier.
+                                                                    The selection of distortion D varies depending on the deep-
+                                                                    learning task. For example, we often use the categorical
+           () =       t-1e-tdt,                                     cross-entropy loss function in classification problems and
+                                                                    the mean squared error loss in regression tasks. Methods
+                 0                                                  like KL divergence or logarithmic loss are also utilized in
+                                                                    some specific tasks. We can choose the most suitable empir-
+and  > 0.                                                           ical loss function for specific tasks, which does not affect
+                                                                    the BackSlash results.
+It is easy to see that when  = 1, the GG distribution is the
+Laplacian distribution, while when  = 2, it is the Gaussian         The rate R is expressed by the average information content
+distribution. Varying the shape parameter of GG distribution        of the parameters, defined using DGGR. Combining (5) and
+allows for better match between the probabilistic model             (6) we get
+to better match LLM while using the same mathematical
+formulation.
+
+The GG distribution in (1) is a continuous distribution, while                             1  Np
+in reality, LLM parameters all have fixed-length and limited
+precision. Therefore, we treat LLM parameters as a quan-            J = L(X, Y, f, ) +  ·          |i| ,          (7)
+tized GG distribution. Assuming the quantization step size
+of the parameters is , the probability of a parameter i is                                 Np i=1
+
+                      i +
+
+           p(i) =          f (x)dx.     (3)                         where X and Y denote the training ground truth, f and 
+                                                                    denote the forward propagation function and parameter set
+                    i                                               of the neural network.
+
+As  is typically small, we approximate                              The shape parameter  of DGGR is not a constant during
+                                                                    training and needs to be dynamically estimated before each
+           p(i)  f (i) = C1e-C2|i| .    (4)                         batch of gradient descent. A well-known method (Sharifi &
+                                                                    Leon-Garcia, 1995) for estimating the shape parameter is
+The validity of this assumption could be verified with exist-       by introducing a comparison function:
+ing LLMs. For instance, BERT-base (110M) can be well-
+modeled by a GG with a shape parameter of 1.36, the shape           () =  (1/) · (3/) E[2]
+parameter for GPT2 (774M) is 1.54, or 1.26 for Llama3                                      =2 .                   (8)
+(1B), or 0.85 for DeepSeek (7B), and their distributions are               (2/)2              E [||]
+shown in Fig. 1. These shape parameter values are, although
+different, all smaller than 2. The corresponding pdfs show          Specifically, the estimation process of  can be organized
+higher peaks and longer tails than the Gaussian distribution.       as follows:
+
+Denote the size of LLM as Np, the mean of the infor-                1. obtain the model parameters  and compute E[2] and
+                                                                       E2[||],
+mation content of the parameters can be calculated as
+R() = - N1p i=1 Np log2 p(i). Neglecting constant fac-              2. estimate () by (8) based on E[2] and E2[||],
+tors and terms, we define discretized generalized Gaussian          3. Find  using ().
+
+rate (DGGR) as follows
+
+                    1  Np
+
+           R() =            |i| ,       (5)
+
+                    Np i=1                                          Additionally, notice that when 0 <  < 1 and   0,
+                                                                    R()  . This causes severe oscillations in the pa-
+and use R() as a measure of the information complexity
+of the model.                                                       rameters during gradient descent, which prevents the model
+
+                                                                 3
+                    BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+    1.4                                 1.4                                 1.4                                                                               1.4
+
+                       GGD                             GGD                                  GGD                                                                    GGD
+
+    1.2                GD               1.2            GD                   1.2             GD                                                                1.2  GD
+
+    1.0                                 1.0                                 1.0                                                                               1.0
+
+Relative Frequency(%)0.8                0.8                                 0.8                                                                               0.8
+                                             Relative Frequency(%)
+                                                                                          Relative Frequency(%)0.60.60.6                                      0.6
+                                                                                                                                       Relative Frequency(%)
+    0.4                                 0.4                                 0.4                                                                               0.4
+
+    0.2                                 0.2                                 0.2                                                                               0.2
+
+    0.0 0.2 0.1 0.0 0.1 0.2             0.0 0.2 0.1 0.0 0.1 0.2             0.0 0.2 0.1 0.0 0.1 0.2                                                           0.0 0.2 0.1 0.0 0.1 0.2
+              Model Parameter Value               Model Parameter Value               Model Parameter Value                                                             Model Parameter Value
+
+              (a) BERT                            (b) GPT2                           (c) Llama3                                                                       (d) DeepSeek
+
+Figure 1. Parameter distributions fitting by generalized Gaussian distribution (GGD) and Gaussian distribution (GD) under different
+LLMs. GGD fits the boundaries of the parameter distributions better than GD does.
+
+from converging. To address this, we introduce a trick to                   degenerates into L1 (Fitriani et al., 2022) regularization
+
+optimize the gradient descent of R() by adding a constant                   ( Np 1 i=1 Np |i|) and L2 (Hoerl & Kennard, 1970) regular-
+
+ ( > 0) to control the gradient size and modify the infor-                  ization  (   1  i=1 Np |i|2) respectively. This means, that L1
+                                                                                        Np
+mation rate formula as R()           =   1   i=1 Np (|i| + ) . We
+                                        Np                                  and L2 regularization are special cases of DGGR when the
+
+refer to this method of gradient suppression as soft gradient               model parameter distribution is the Laplace and the Gaus-
+
+clipping.                                                                   sian distributions respectively.
+
+4.2. BackSlash algorithm description                                        4.3. Entropy coding of LLM using EG codes
+
+The overall BackSlash algorithmic can be summarized as                      The complexity constraint in BackSlash is defined using
+follows:                                                                    DGGR. In practice, the parameters will have to be entropy
+                                                                            coded using practical entropy codes, whose rate can not
+Algorithm 1 Rate-Constrained Training (BackSlash)                           exactly match the DGGR.
+
+1: Require: Model f , learning rate , loss function L,                      Due to its simplicity, Huffman codes have been used for en-
+                                                                            tropy coding of LLM parameters. For example, in Han et al.
+    Lagrange multiplier , and clipping coefficient .                        (2015a) achieved 20%-30% size reduction using Huffman
+                                                                            coding. However, using Huffman coding in BackSlash or
+2: for each epoch  do                                                       compression of LLM in general has several drawbacks.
+
+3: for each batch (xi, yi) do                                               First of all, Huffman code tables are designed using ex-
+                                                                            plicit distributions calculated from LLM parameters. The
+4:         Retrieve all model parameters .                                  mismatch between the distribution of the parameters and
+                                                                            the distribution for which the Huffman code is designed
+5:         Estimate comparison function (): ()                              may lead to severe coding efficiency loss. On the other
+                                                                            hand, the large parameter size and non-parallelizable table
+           E[2 ]                                                            building process of Huffman code may bring prohibitively
+                                                                            high complexity to BackSlash. This is also why we used
+           E2 [||]                                                          the theoretical DGGR as opposed to coded bits in the loss
+                                                                            function.
+6:         Find shape parameter  using ().
+                                                                            Secondly, Huffman tables designed for different LLMs are
+7:         Forward propagation and calculate RD Cost J :                    different, while a practical implementation may often need
+                                                                            to accommodate multiple models in the same system (e.g.
+           J  L(xi, yi, f, ) +  · N1 N p i=p1(|i| + )
+
+8:         Backward propagation and optimize parameters:
+
+            -  · ( L  +  ·  Np|| (|| + )-1).
+9: end for
+
+10: end for
+
+11: Until convergence or max iterations.
+
+It should be noted that if we set the shape parameter 
+in DGGR to be  = 1 and  = 2, we find that DGGR
+
+                                                                         4
+                    BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+Table 2. The Structure of exp-Golomb code with different parameter k which is from 0 to 5 as an example. In general, EG codes with a
+smaller parameter k encode better for GG sources with low shape parameters.
+
+Parameter (k)  0    1    2    3  4                                 5        6      7         8          9  ···
+
+k=0            1    010  011 00100 00101 00110 00111 0001000 0001001 0001010 · · ·
+k=1
+k=2            10   11   0100 0101 0110 0111 001000 001001 001010 001011 · · ·
+k=3
+k=4            100  101  110  111 01000 01001 01010 01011 01100 01101 · · ·
+k=5
+               1000 1001 1010 1011 1100 1101 1110                                  1111 010000 010001 · · ·
+
+               10000 10001 10010 10011 10100 10101 10110 10111 11000 11001 · · ·
+
+               100000 100001 100010 100011 100100 100101 100110 100111 101000 101001 · · ·
+
+on the same chip).                                                 Table 3. Average code lengths for several models with different
+                                                                   EG parameters. With the EG parameter increasing, the average
+Thirdly, the Huffman table designed based on empirical             code length of the model parameters also increases and the EG
+distributions usually is not well-structured, leading to more      code gradually converges to the fixed-length code.
+complicated encoder/decoder implementation.
+                                                                     Model  k=0    k=1    k=2    k=3       k=4
+Fourthly, we observe the Huffman code can only pro-
+vide minimal efficiency gains over EG code on BackSlash-             BERT    2.64   3.16   3.74   4.42      5.17
+trained models in all subsequent experiments.                        GPT-2   2.46   3.05   3.70   4.40      5.19
+                                                                   Llama-3   1.72   2.47   3.26   4.12      5.03
+As noted in Section 3, LLM parameters can be modeled well          Gemma-2   1.16   2.10   3.06   4.02      5.01
+by quantized GG distributions with shape parameters less
+than 2. In Wen & Villasenor (1999), Wen and Villasenor             In addition, we note that after BackSlash, most model pa-
+studied and proposed using exp-Golomb (EG) codes to en-            rameters are zero, while the non-zero values are extremely
+tropy coding quantized GG sources. The structure of EG             sparse, usually accounting for few percent of all possible
+code is shown in Table 2. The advantages of EG codes can           values. For example, the number of code words occupied by
+be summarized as the following:                                    BERT with BackSlash after quantization with a step of 2-8
+                                                                   is 2695 but only 641 are actually used. And except for a
+  1. the efficiency of EG codes is consistently within a           small number of quantized parameters near 0, the others are
+      few percentage points of the entropy limit and almost        highly disordered. For example, the quantized parameter
+      identical to the Huffman code specifically designed for      -177 of BERT is only ranked 609 by frequency but actually
+      each quantized GG source,                                    it takes up 142nd. Therefore, prior to entropy coding of
+                                                                   model parameters, we first rank the number of occurrences
+  2. the performance of EG codes is robust with regard to          of all parameter values and map each value that model pa-
+      parameter mismatch, and as a result, adaptive coding         rameters might actually take to an index. The index, instead
+      is not needed when parameters of the quantized GG            of the parameter value, is then entropy coded. This process
+      source change,                                               can be formally summarized as follows:
+
+  3. EG codes contain an infinite number of codewords, and         Algorithm 2 Parameter Entropy Encoding
+      can therefore be used for LLM of any size,
+                                                                    1: Require: Model parameter set , quantization step size
+  4. EG codes are nicely structured, and allow for highly               2-n, encoding strategy Enc.
+      optimized encoder/decoder.
+                                                                    2: Quantize the parameters: Q  round(2n · )
+Therefore, in our experiments, we used EG codes for the             3: Sort by frequency, build the code table by quantized pa-
+actual entropy coding rate (as opposed to the theoretical rate
+of DGGR in BackSlash) for both entropy coding of param-                 rameter and sorted index: C  {(qi, ci) | qi  Qs, ci 
+eters after traditional, unconstrained LLM training, and in             Cs}
+comparison, BackSlash. In our experiment, we tested EG              4: Map quantized parameters to codewords and encode it
+with different parameters on several models with BackSlash              to bitstream: Bstream  Enc(C[Q])
+which is shown in Table 3, and the EG code that we found            5: Output: Bitstream Bstream and code table C
+was optimal was EG with parameter k = 0.
+
+                                                                5
+                                                 BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+                          4.0                                                                                                 2.0
+
+                          3.5 =1 =10 1.8 =1 =10
+                          3.0 =100 1.6 =100
+RD Cost Rate(RRD)                                                                                          Shape Parameter()  1.4
+                                                                               =1000                                                                                                                                =1000
+
+                          2.5                                                                                                 1.2
+
+                          2.0                                                                                                 1.0
+
+                          1.5                                                                                                 0.8
+
+                                                                                                                                                                  0.6
+                          1.0
+
+                                                                                                                                                                  0.4
+
+                          0.5                                                                                                 0.2
+
+                          0.0                                                                                                 0.0
+
+                               0     250  500    750  1000   1250       1500   1750               2000                                                                 0  250  500    750  1000   1250       1500   1750  2000
+
+                                                 Training Step(n)                                                                                                                     Training Step(n)
+
+Figure 2. RD cost rate changes in training with different La- Figure 3. Shape parameter changes in training with different
+
+grange multiplier ().                                                                                      Lagrange multiplier ().
+
+                          10              10.00       10.00             10.00        10.00                              100                                                    99.69       99.56                                99.52
+                              10.00       6.66                                                                               99.54                                             93.85       93.93                    Train Dataset
+Average Code Length(bit)                  5.25        5.78                                                                                                                                                   99.47  Test Dataset
+                           8 7.31                     4.81                                                               98
+                                                                               Fixed-Length Code           Accuracy(%)
+                           6                                                   Exp-Golomb Code                           96
+                               5.47                                            Huffman Code
+                                                                                                                         94 93.63
+                           4                                            4.03                                                                                                                                 93.68
+                                                                                                                         92
+                           2                                            3.59         2.64                                                                                                                                 92.59
+                                                                                                                         90
+                           0                                                         2.42                                   0
+                            0
+                                          1           10                100          1000                                                                                      1           10                100          1000
+
+                                                 Lagrange Multiplier()                                                                                                                Lagrange Multiplier()
+
+Figure 4. Impact of Lagrange multipliers on average code Figure 5. Impact of Lagrange multipliers on accuracy of test
+
+length of various encoding algorithms.                                                                     and train Dataset.
+
+The distribution of indices still follows a generalized Gaus-                                              performances of BackSlash by classification accuracy, and
+sian, though the value mapping induces slight deviations                                                   generation tasks on DeepSeek evaluated by next token accu-
+compared to the original parameters. For example, the shape                                                racy. We mainly use classification tasks on BERT to analyze
+of parameters and index of BERT under normal training is                                                   the effects of BackSlash when it is trained and deployed, as
+1.36 and 1.47, while under BackSlash they become 0.26                                                      classification accuracy is one of the most intuitive quanti-
+and 0.30, respectively. Nevertheless, these minor shape                                                    tative metrics of model performance and BERT model has
+variations negligibly impact entropy coding efficiency, as                                                 a better performance on classification tasks. In addition,
+EG codes maintain robustness across the entire family of                                                   we examined the entropy coding efficiency of EG codes as
+generalized Gaussian sources.                                                                              compared with Huffman (HM) coding and fixed-length (FL)
+                                                                                                           coding with value mapping for all EG, HM and FL codes.
+The sparsity of the values model parameters is the reason
+that in BackSlash, we use DGGR, as opposed to EG code                                                      5.1. Performance
+length directly in BackSlash - even though the same EG
+code may be used throughout BackSlash, the parameter                                                       Taking the sentiment analysis task of the BERT model as
+value that the codeword is mapped to changes.                                                              an example, we tested BackSlash using different Lagrange
+                                                                                                           multiplier  settings. Fig. 2 shows how the loss changes in
+The mapping (termed "Value Mapping") between the quan-                                                     training under different Lagrange multipliers. As RD Costs
+tized parameter set Qs and the codeword set Cs is defined                                                  may vary significantly with different Lagrange multipliers,
+as C = {(qi, ci) | qi  Qs, ci  Cs}.                                                                        for visual clarity, we used (RRD = log10(J - Jmin),
+                                                                                                            = 0.995) as the y-axis. As can be seen from the figure,
+5. Experiments                                                                                             the larger the Lagrange multiplier, the steeper the curve,
+                                                                                                           reflecting the fact that the Lagrange multiplier controls the
+We perform various classification tasks on popular LLMs                                                    training speed of the BackSlash.
+including BERT, GPT, Llama, and Gemma to evaluate the
+
+                                                                                                        6
+       BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+Square of Frequency (103)
+                                                     Square of Frequency (103)
+                                                                                                          Square of Frequency (103)
+10                              10                                                                                                   10
+ 9                               9                                                                                                    9
+ 8                               8                                                                                                    8
+ 7                               7                                                                                                    7
+ 6                               6                                                                                                    6
+ 5                               5                                                                                                    5
+ 4                               4                                                                                                    4
+ 3                               3                                                                                                    3
+ 2                               2                                                                                                    2
+ 1                               1                                                                                                    1
+ 0 -0.2 -0.1 0.0 0.1 0.2         0 -0.2 -0.1 0.0 0.1 0.2                                                                              0 -0.2 -0.1 0.0 0.1 0.2
+
+      Model Parameter Value ()        Model Parameter Value ()                                                                             Model Parameter Value ()
+
+    (a) Lagrange Multiplier 0      (b) Lagrange Multiplier 10                                                                          (c) Lagrange Multiplier 1000
+
+Figure 6. Parameters distribution under different Lagrange multiplier training. With the Lagrange multipliers increasing, the parameter
+distributions become more concentrated and have higher peaks and lower tails.
+
+       Table 4. Compression performance of BackSlash with different model architectures and parameter scales.
+
+Model  Param Size   Method      FL (bits)  EG (bits)            HM (bits)  EG Compress                                               HM Compress  Accuracy
+ BERT     110M
+ GPT      774M          -         10.00       7.31                 5.47          27%                                                       45%     93.63%
+Llama       1B     BackSlash      10.00       2.64                 2.42         74%                                                        76%     92.59%
+Gemma       2B
+                        -         11.00       7.78                 5.73          29%                                                       48%     85.92%
+                   BackSlash      11.00       2.46                 2.25         78%                                                        80%     88.73%
+
+                        -         10.00       5.49                 4.43          45%                                                       56%     86.09%
+                   BackSlash      10.00       1.72                 1.66         83%                                                        83%     86.93%
+
+                        -         11.00       4.45                 3.95          60%                                                       64%     86.95%
+                   BackSlash      11.00       1.16                 1.15         89%                                                        90%     85.86%
+
+Fig. 3 illustrates how the shape parameter of the parameter     the training set and 1.90% on the test set as compared with
+distribution varies during training. For different  values,     normal training (i.e.  = 0). It was observed that model
+the shape parameter was set to an identical initial value       accuracy was not monotonic with regard to , i.e. there is
+but converged to different values, reflecting how  in the       an optimal  value, the setting of which is a topic under
+BackSlash led to different model distributions.                 investigation.
+
+In Fig. 4, after quantizing the model parameters with the       Fig. 6 shows the impact of  on model parameter distribu-
+quantization step 2-8, we use EG code, HM code and FL           tion. As can be seen clearly, as  increases, i.e. if we give
+code to encode the model parameters and compute the av-         more weights to the rate in the accuracy-rate trade-off, the
+erage code length respectively. When applying EG coding         model trained by BackSlash would become more sparse.
+and HM coding after unconstrained training, the model size
+was compressed to 73% and 55% of the size of FL coding,         In the current study, the setting of  was still through trials-
+corresponding to 27% and 45% saving. Whereas BackSlash          and-errors. For example, when we set up a set of values for
+with EG coding and  of 1000, reduced the model size to           and train BERT model using BackSlash until convergence,
+26% and 24%. Even though Huffman coding leads to a              we found that the model trained with  = 2000 achieved the
+very small gain in coding efficiency, a different Huffman       best overall trade-off with 2.52% loss in accuracy and only
+table and the corresponding encoder/decoder will have to be     13% of the size. Moreover, in our extensive experiments, it
+designed and implemented for each LLM. In contrast, the         consistently achieves similar and remarkable effectiveness
+same EG table could be used across models and sizes (e.g.       across various models and tasks.
+DeepSeek 7B and 170B).
+                                                                5.2. Generalization Analysis
+Fig. 5 demonstrates the effect of BackSlash on model accu-
+racy. We can find that BackSlash with reasonable  did not       Model architectures and training tasks are of great signifi-
+have a significant effect on accuracy. For the model with       cance to both the process and the performance of the model
+ = 1000, model performance decreased by only 0.02% on           and tend to affect the final model obtained from training
+
+                                                             7
+                        BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+                        Table 5. Compression performance of BackSlash under different deep learning tasks.
+
+   Task          Dataset       Method      FL (bits)   EG (bits)                                                   HM (bits)  EG Compress               HM Compress    Accuracy
+Sentiment         IMDB
+              Enron-Spam           -         10.00        7.31                                                        5.47          27%                       45%       93.63%
+   Spam      20 Newsgroups    BackSlash      10.00        2.64                                                        2.42         74%                        76%       92.59%
+   Topic         SQuAD
+    Q-A         WMT-19             -         10.00        7.31                                                        5.47          27%                       45%       99.65%
+Translation                   BackSlash      10.00        2.42                                                        2.19         76%                        78%       98.96%
+
+                                   -         10.00        7.31                                                        5.47          27%                       45%       70.78%
+                              BackSlash      10.00        3.61                                                        3.18         64%                        68%       69.36%
+
+                                   -         11.00        5.95                                                        4.70          46%                       57%       99.97%
+                              BackSlash      11.00        2.90                                                        2.81         74%                        74%       99.97%
+
+                                   -         11.00        6.10                                                        4.70          45%                       57%       99.96%
+                              BackSlash      11.00        3.10                                                        3.00         72%                        73%       99.95%
+
+100                                                                                                           100
+
+90                                                                                                            90
+
+Accuracy(%)80                                                                                                 80
+                                                                                                 Accuracy(%)
+70                                                                                                            70
+
+60                                                                                                            60
+
+                                           Normal Training Model                                                   Normal Training Model
+
+50 BackSlash Model 50 BackSlash Model
+
+2-4          2-8  2-12  2-16  2-20  2-24   2-28  2-32             2-36                                        0.0  0.1  0.2   0.3         0.4  0.5      0.6  0.7  0.8  0.9
+
+                        Quantization Step                                                                                                 Pruning Rate
+
+Figure 7. Quantization using different quantization steps for Figure 8. Pruning using different pruning rates for BackSlash
+
+BackSlash model and normal training model.                                 model and normal training model.
+
+heavily. It is worth discussing whether BackSlash has the                  der normal training and BackSlash. The "Sentiment" and
+same effects in other models and tasks besides the sentiment               "Spam" are both binary-classification tasks and the "Topic"
+analysis of BERT.                                                          is a 20-class-classification tasks, which are evaluated by
+                                                                           classification accuracy. The "Q-A" and "Translation" are
+In Table 4, we perform the sentiment analysis task on BERT,                both text generation tasks, which are evaluated by next
+GPT, Llama, and Gemma under normal training and Back-                      token accuracy. These tasks can achieve satisfactory com-
+Slash, respectively. These models are chosen because the                   pression performance without compromising model accu-
+differences in structure and parameter size among them are                 racy. BackSlash achieves approximately 70% compression
+large enough to reflect the wide utility of BackSlash. Al-                 rate compared to the original size in both classification and
+though different model structures introduce some variability               generation tasks, demonstrating its strong generalization
+in the results, BackSlash performs similarly for parameter                 capability across different task types.
+compression. For all the models, BackSlash compresses
+them by more than 75%, with the highest being 90% for                      5.3. Deployment
+Gemma. Such similar performance comes from the insen-
+sitivity of BackSlash to network structure and parameter                   Deployment and inference for edge devices are always the
+size. In addition, it can be seen that in GPT and Llama, the               central problem and primary purpose of model compres-
+accuracy of using BackSlash is instead slightly higher than                sion, and quantization and pruning are the main means to
+that of normal training, which we analyze as originating                   deploy the fine-tuned LLMs in edge devices. Therefore, it
+from the regularization effect attached to BackSlash.                      is necessary to discuss whether the generalization ability of
+                                                                           BackSlash models can be maintained in quantization and
+In Table 5, we perform more classification tasks on the                    pruning.
+BERT model and generation tasks on DeepSeek model un-
+
+                                                                        8
+       BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+       Table 6. Compression performance of BackSlash under different regularization terms.
+
+DGGG   Convergence Shape  Accuracy  FL (bits)  EG (bits)          HM (bits)  EG Compression  HM Compression
+DGGR             0.13      91.18%     10.00       1.37               1.32            86%             87%
+                 0.22      91.88%     10.00       2.90               2.01            71%             80%
+ L0.5            0.15      90.65%     10.00       1.52               1.46            85%             85%
+  L1             0.10      88.29%     10.00       1.16               1.14            88%             89%
+  L2
+
+Fig. 7 illustrates how the accuracy of the BERT model varies      their impacts on model performance and code rate. As
+with the quantization steps under normal training and Back-       shown in Table 6. Shape-specific Lp regularization terms
+Slash. When the quantization step is taken 2-4, the gen-          present notable theoretical and practical limitations.
+eralization ability of both normal training and BackSlash
+models is completely destroyed. When the quantization step        From a theoretical perspective, the L0.5, L1, and L2 terms
+is not less than 2-8, the accuracy of both models changes         implicitly assume that model parameters follow generalized
+very smoothly. Both models show the same trend in quan-           Gaussian distributions with fixed shape parameters of 0.5, 1,
+tization. This is because quantization uniformly destroys         and 2, respectively. However, the actual shape parameters of
+the accuracy of the parameters, so whether or not to use          the model converge to 0.22, 0.15, and 0.10, contradicting the
+BackSlash does not have an additional negative impact on          fixed-shape hypothesis. In contrast, DGGR's dynamic shape
+the quantization results. Furthermore, We performed the           parameter adaptation naturally accommodates the evolving
+same experiments in GPT, Llama, and Gemma, and they all           weight distribution throughout the optimization process.
+showed identical results to BERT.
+                                                                  From an effectiveness perspective, L2 achieves marginally
+Fig. 8 illustrates how the accuracy of the BERT model varies      better compression than DGGR but incurs significant ac-
+with the pruning rates under normal training and BackSlash.       curacy degradation, which indicates its detrimental impact
+We can see that the predictive ability of the conventionally      on model performance. L1 is inferior to DGGR in both
+trained model has begun to degrade when the pruning ratio         code length and accuracy. L0.5 demonstrates slightly bet-
+reaches 50% and has completely lost its predictive ability        ter accuracy but its code length is more than twice that of
+when it reaches 60%. Instead, the BackSlash model continu-        DGGR, which shows its weakness in parameters compres-
+ally maintains its generalization accuracy when the pruning       sion. These findings suggest that DGGR's adaptive shape
+ratio reaches 80%. This is because BackSlash makes the            parameter adjustment puts performance and code rate in a
+model's parameter distribution more sparse, which increases       better balance.
+the space for pruning. So BackSlash's model is also easier to
+deploy on edge-end devices through pruning and performs           6. Conclusion and Future Work
+more efficient inference. Furthermore, we also performed
+pruning on GPT, Llama, and Gemma under BackSlash, and             We propose BackSlash, a training framework for LLMs that
+the maximum pruning rates for them to maintain accuracy           jointly optimizes model size and performance. We found
+are all 90% while the normal training models start to lose        that LLM parameters can be well modeled with quantized
+their effectiveness at pruning rates less than 60%, which is      GG sources of shape parameters less than 2, and can be
+similar to the BERT model.                                        entropy coded with extremely high efficiency and robustness
+                                                                  using EG codes. Experiments with popular LLMs show that
+5.4. Ablation                                                     BackSlash was capable of reducing model size by up to 80%
+                                                                  with virtually no loss in performance.
+As discussed in Section 4.2, L1 and L2 regularizations are
+special cases of DGGR assuming model parameters follow a          Currently, we are conducting more experiments with more
+Laplace and Gaussian Distribution, respectively. So whether       LLMs and tasks. The optimal setting of  is also under
+such shape-specific Lp regularization terms can effectively       investigation, as well as efficient hardware architecture that
+substitute DGGR in the BackSlash framework warrants               can take advantage of the increased sparseness of the model
+further investigation.                                            in more efficient training and inference.
+
+We perform the sentiment analysis task on BERT with Back-
+Slash using DGGR, L0.5, L1, L2 respectively, to evaluate
+
+                                                               9
+BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+Impact Statement                                                 Choi, Y., El-Khamy, M., and Lee, J. Towards the
+                                                                    limit of network quantization. ArXiv, abs/1612.01543,
+This paper introduces a fundamentally new approach to               2016. URL https://api.semanticscholar.
+training large models. Instead of using standard backpropa-         org/CorpusID:17299045.
+gation to train a large model and compressing it afterward,
+our BackSlash framework integrates efficiency directly into      Courbariaux, M., Bengio, Y., and David, J.-P. Bina-
+the training process to produce small and easy-to-deploy            ryconnect: Training deep neural networks with bi-
+models. This framework can significantly influence how the          nary weights during propagations. In Neural Informa-
+next-generation foundation models are trained and deployed,         tion Processing Systems, 2015. URL https://api.
+both in software and hardware.                                      semanticscholar.org/CorpusID:1518846.
+
+References                                                       Cover, T. M. Elements of information theory. John Wiley &
+                                                                    Sons, 1999.
+Bai, J., Bai, S., Yang, S., Wang, S., Tan, S., Wang,
+   P., Lin, J., Zhou, C., and Zhou, J. Qwen-                     Davisson, L. Rate distortion theory: A mathematical basis
+   vl: A versatile vision-language model for under-                 for data compression. IEEE Transactions on Communi-
+   standing, localization, text reading, and beyond.                cations, 20(6):1202-1202, 1972.
+   2023. URL https://api.semanticscholar.
+   org/CorpusID:261101015.                                       Fitriani, S. A., Astuti, Y., and Wulandari, I. R. Least abso-
+                                                                    lute shrinkage and selection operator (lasso) and k-nearest
+Berger, T. Rate-distortion theory. Wiley Encyclopedia of            neighbors (k-nn) algorithm analysis based on feature
+  Telecommunications, 2003.                                         selection for diamond price prediction. In 2021 Inter-
+                                                                    national Seminar on Machine Learning, Optimization,
+Brand, F., Fischer, K., Kopte, A., Windsheimer, M., and             and Data Science (ISMODE), pp. 135-139, 2022. doi:
+   Kaup, A. Rdonet: Rate-distortion optimized learned              10.1109/ISMODE53584.2022.9742936.
+   image compression with variable depth. In Proceedings
+   of the IEEE/CVF Conference on Computer Vision and             Fortuin, V., Garriga-Alonso, A., Wenzel, F., Ra¨tsch,
+   Pattern Recognition, pp. 1759-1763, 2022.                        G., Turner, R. E., van der Wilk, M., and Aitchi-
+                                                                    son, L. Bayesian neural network priors revisited.
+Brown, T. B., Mann, B., Ryder, N., Subbiah, M., Ka-                ArXiv, abs/2102.06571, 2021. URL https:
+   plan, J., Dhariwal, P., Neelakantan, A., Shyam, P.,             //api.semanticscholar.org/CorpusID:
+   Sastry, G., Askell, A., Agarwal, S., Herbert-Voss, A.,           231918454.
+   Krueger, G., Henighan, T., Child, R., Ramesh, A.,
+   Ziegler, D. M., Wu, J., Winter, C., Hesse, C., Chen,          Gao, W., Wang, C., and Oh, S. Rate distortion
+   M., Sigler, E., teusz Litwin, M., Gray, S., Chess,               for model compression: From theory to practice.
+   B., Clark, J., Berner, C., McCandlish, S., Radford,              In International Conference on Machine Learning,
+   A., Sutskever, I., and Amodei, D. Language mod-                  2018. URL https://api.semanticscholar.
+   els are few-shot learners. ArXiv, abs/2005.14165,                org/CorpusID:53111003.
+   2020. URL https://api.semanticscholar.
+   org/CorpusID:218971783.                                       Glorot, X. and Bengio, Y. Understanding the difficulty
+                                                                    of training deep feedforward neural networks. In Pro-
+Chen, Y., Wang, N., and Zhang, Z. Darkrank: Accelerating            ceedings of the thirteenth international conference on
+   deep metric learning via cross sample similarities transfer.     artificial intelligence and statistics, pp. 249-256. JMLR
+  ArXiv, abs/1707.01220, 2017. URL https://api.                    Workshop and Conference Proceedings, 2010.
+   semanticscholar.org/CorpusID:19207026.
+                                                                 Gong, Y., Liu, L., Yang, M., and Bourdev, L. D. Compress-
+Chen, Y., Wang, S., Ip, H., and Kwong, S. Rate distortion           ing deep convolutional networks using vector quantiza-
+   optimization with adaptive content modeling for random-          tion. ArXiv, abs/1412.6115, 2014. URL https://api.
+   access versatile video coding. Information Sciences, 645:        semanticscholar.org/CorpusID:6251653.
+  119325, 2023.
+                                                                 Guo, H., Zhu, C., Ye, M., Luo, L., and Yang, X. Pre-
+Chiang, J.-C., Shang, H.-Y., and Qiu, J.-J. Multi-exposure          encoding based temporal dependent rate-distortion opti-
+   image compression considering rate-distortion optimiza-          mization for hevc. Signal Processing: Image Communi-
+   tion in rendered high dynamic range image. IEEE Open             cation, 115:116957, 2023.
+  Journal of Signal Processing, 4:132-147, 2023.
+                                                                 Han, S., Mao, H., and Dally, W. J. Deep compression: Com-
+                                                                    pressing deep neural network with pruning, trained quan-
+                                                                    tization and huffman coding. arXiv: Computer Vision
+
+10
+BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+   and Pattern Recognition, 2015a. URL https://api.         Lin, Y., Han, S., Mao, H., Wang, Y., and Dally,
+   semanticscholar.org/CorpusID:2134321.                      W. J. Deep gradient compression: Reducing the
+                                                               communication bandwidth for distributed training.
+Han, S., Pool, J., Tran, J., and Dally, W. J. Learn-          ArXiv, abs/1712.01887, 2017. URL https://api.
+   ing both weights and connections for efficient neural       semanticscholar.org/CorpusID:38796293.
+   network. In Neural Information Processing Systems,
+   2015b. URL https://api.semanticscholar.                  Liu, Z., Cheng, K.-T., Huang, D., Xing, E. P., and Shen,
+   org/CorpusID:2238772.                                       Z. Nonuniform-to-uniform quantization: Towards ac-
+                                                               curate quantization via generalized straight-through es-
+He, K., Zhang, X., Ren, S., and Sun, J. Delving deep           timation. 2022 IEEE/CVF Conference on Computer Vi-
+   into rectifiers: Surpassing human-level performance on      sion and Pattern Recognition (CVPR), pp. 4932-4942,
+   imagenet classification. 2015 IEEE International Con-       2021. URL https://api.semanticscholar.
+   ference on Computer Vision (ICCV), pp. 1026-1034,           org/CorpusID:244715141.
+   2015. URL https://api.semanticscholar.
+   org/CorpusID:13740328.                                   Long, X., Zeng, X., Ben, Z., Zhou, D., and Zhang, M.
+                                                              A novel low-bit quantization strategy for compressing
+He, Y., Lin, J., Liu, Z., Wang, H., Li, L.-J., and Han,        deep neural networks. Computational Intelligence and
+   S. Amc: Automl for model compression and accel-            Neuroscience, 2020(1):7839064, 2020.
+   eration on mobile devices. In European Conference
+   on Computer Vision, 2018. URL https://api.               Luo, J.-H., Wu, J., and Lin, W. Thinet: A filter level
+   semanticscholar.org/CorpusID:52048008.                      pruning method for deep neural network compression.
+                                                              2017 IEEE International Conference on Computer Vision
+Hoerl, A. E. and Kennard, R. W. Ridge regression: Biased      (ICCV), pp. 5068-5076, 2017. URL https://api.
+   estimation for nonorthogonal problems. Technometrics,       semanticscholar.org/CorpusID:11169209.
+  12(1):55-67, 1970.
+                                                            Luttrell, M., Wen, J., and Villasenor, J. D. Trellis-based rd
+Isik, B., No, A., and Weissman, T. Successive prun-            optimal quantization in h. 263+. In Proceedings 2000
+   ing for model compression via rate distortion the-         International Conference on Image Processing (Cat. No.
+   ory. ArXiv, abs/2102.08329, 2021. URL https:                00CH37101), volume 2, pp. 852-854. IEEE, 2000.
+  //api.semanticscholar.org/CorpusID:
+   231933836.                                               Masana, M., van de Weijer, J., Herranz, L., Bagdanov,
+                                                              A. D., and A´ lvarez, J. M. Domain-adaptive deep
+Itu-T and Jtc, I. I. Advanced video coding for generic         network compression. 2017 IEEE International Con-
+   audiovisual services. 2010. URL https://api.                ference on Computer Vision (ICCV), pp. 4299-4307,
+   semanticscholar.org/CorpusID:60356047.                      2017. URL https://api.semanticscholar.
+                                                               org/CorpusID:11067299.
+Jaderberg, M., Vedaldi, A., and Zisserman, A. Speeding up
+   convolutional neural networks with low rank expansions.  Park, J.-H., Kim, Y., Kim, J., Choi, J.-Y., and Lee,
+   arXiv preprint arXiv:1405.3866, 2014.                       S. Dynamic structure pruning for compressing
+                                                               cnns. ArXiv, abs/2303.09736, 2023. URL https:
+Kossaifi, J., Bulat, A., Tzimiropoulos, G., and               //api.semanticscholar.org/CorpusID:
+   Pantic, M. T-net: Parametrizing fully con-                  257622926.
+  volutional nets with a single high-order tensor.
+  2019 IEEE/CVF Conference on Computer Vision               Rastegari, M., Ordonez, V., Redmon, J., and Farhadi,
+   and Pattern Recognition (CVPR), pp. 7814-7823,             A. Xnor-net: Imagenet classification using binary con-
+   2019. URL https://api.semanticscholar.                     volutional neural networks. ArXiv, abs/1603.05279,
+   org/CorpusID:102353394.                                     2016. URL https://api.semanticscholar.
+                                                               org/CorpusID:14925907.
+Li, F. and Liu, B. Ternary weight networks. ICASSP
+  2023 - 2023 IEEE International Conference on Acous-       Shannon, C. E. A mathematical theory of communication.
+   tics, Speech and Signal Processing (ICASSP), pp. 1-        The Bell system technical journal, 27(3):379-423, 1948.
+   5, 2016. URL https://api.semanticscholar.
+   org/CorpusID:13556195.                                   Sharifi, K. and Leon-Garcia, A. Estimation of shape param-
+                                                               eter for generalized gaussian distributions in subband
+Li, H., Kadav, A., Durdanovic, I., Samet, H., and              decompositions of video. IEEE Trans. Circuits Syst.
+   Graf, H. P. Pruning filters for efficient convnets.        Video Technol., 5:52-56, 1995. URL https://api.
+  ArXiv, abs/1608.08710, 2016. URL https://api.                semanticscholar.org/CorpusID:41130607.
+   semanticscholar.org/CorpusID:14089312.
+
+11
+BackSlash: Rate-Constrained Optimized Training of Large Language Models
+
+Touvron, H., Lavril, T., Izacard, G., Martinet, X., Lachaux,      2023. URL https://api.semanticscholar.
+   M.-A., Lacroix, T., Rozie`re, B., Goyal, N., Ham-              org/CorpusID:262459258.
+   bro, E., Azhar, F., Rodriguez, A., Joulin, A., Grave,
+   E., and Lample, G. Llama: Open and efficient                Zhang, Z., Lu, G., Liang, H., Tang, A., Hu, Q., and Song,
+   foundation language models. ArXiv, abs/2302.13971,             L. Efficient dynamic-nerf based volumetric video cod-
+   2023. URL https://api.semanticscholar.                         ing with rate distortion optimization. arXiv preprint
+   org/CorpusID:257219404.                                        arXiv:2402.01380, 2024.
+
+Wang, K., Liu, Z., Lin, Y., Lin, J., and Han, S. Haq:          Zhou, S., Ni, Z., Zhou, X., Wen, H., Wu, Y., and
+   Hardware-aware automated quantization with mixed pre-          Zou, Y. Dorefa-net: Training low bitwidth convo-
+   cision. 2019 IEEE/CVF Conference on Computer Vi-               lutional neural networks with low bitwidth gradients.
+   sion and Pattern Recognition (CVPR), pp. 8604-8612,           ArXiv, abs/1606.06160, 2016. URL https://api.
+   2018a. URL https://api.semanticscholar.                        semanticscholar.org/CorpusID:14395129.
+   org/CorpusID:102350477.
+                                                               Zhu, C., Han, S., Mao, H., and Dally, W. J.
+Wang, P., Hu, Q., Zhang, Y., Zhang, C., Liu, Y., and Cheng,      Trained ternary quantization. ArXiv, abs/1612.01064,
+  J. Two-step quantization for low-bit neural networks.           2016. URL https://api.semanticscholar.
+   In 2018 IEEE/CVF Conference on Computer Vision and             org/CorpusID:224893.
+  Pattern Recognition, pp. 4376-4384, 2018b. doi: 10.
+  1109/CVPR.2018.00460.
+
+Wang, Y., Xu, C., Xu, C., and Tao, D. Beyond fil-
+   ters: Compact feature map for portable deep model.
+   In International Conference on Machine Learning,
+   2017. URL https://api.semanticscholar.
+   org/CorpusID:29145201.
+
+Wen, J. and Villasenor, J. Structured prefix codes for quan-
+   tized low-shape-parameter generalized gaussian sources.
+  IEEE Transactions on Information Theory, 45(4):1307-
+  1314, 1999. doi: 10.1109/18.761289.
+
+Wien, M. High efficiency video coding. Coding Tools and
+   specification, 24:1, 2015.
+
+Xia, C.-G., Tsang, D. H.-K., and Lau, V. K. N. Struc-
+   tured bayesian compression for deep neural networks
+   based on the turbo-vbi approach. IEEE Transac-
+   tions on Signal Processing, 71:670-685, 2023a.
+   URL https://api.semanticscholar.org/
+   CorpusID:257050720.
+
+Xia, F., Jin, J., Meng, L., Ding, F., and Zhang, H. Gan-
+   based image compression with improved rdo process. In
+  International Conference on Image and Graphics, pp.
+   361-372. Springer, 2023b.
+
+Xu, D., Ouyang, W., Wang, X., and Sebe, N. Pad-net:
+   Multi-tasks guided prediction-and-distillation network for
+   simultaneous depth estimation and scene parsing. 2018
+  IEEE/CVF Conference on Computer Vision and Pattern
+  Recognition, pp. 675-684, 2018. URL https://api.
+   semanticscholar.org/CorpusID:21670200.
+
+Zhai, P., Guo, K., Liu, F., Xing, X., and Xu, X.
+   Lapp: Layer adaptive progressive pruning for com-
+   pressing cnns from scratch. ArXiv, abs/2309.14157,
+
+12
+

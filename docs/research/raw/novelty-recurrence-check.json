@@ -1,0 +1,82 @@
+{
+  "query": "recurrent shared transformer block sparse low-rank deltas retrieved dictionary recurrence conditioned adapters language model",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://arxiv.org/html/2203.07852v3",
+      "title": "Block-Recurrent Transformers",
+      "content": "We introduce the Block-Recurrent Transformer, which applies a transformer layer in a recurrent fashion along a sequence, and has linear",
+      "score": 0.24573648,
+      "raw_content": null,
+      "id": "1e7997-00"
+    },
+    {
+      "url": "https://proceedings.iclr.cc/paper_files/paper/2025/file/54d6a55225cebbdc16fbb0e45c5bdf2b-Paper-Conference.pdf",
+      "title": "[PDF] EFFECTIVE PARAMETER SHARING WITH LAYER-WISE LORA",
+      "content": "4 CONCLUSION In this work, we introduced Recursive Transformers, in which we compress LLMs via parameter shar-ing across recursively looped blocks of layers. Additionally, we presented a novel relaxation strategy that allows for low-rank deltas between shared layers by integrating layer-specific LoRA modules into the fully-tied structure. Through novel initialization techniques for looped layers and LoRA modules, we achieved significant performance improvements that closely approximate the [...] In this relaxed model, each looped layer is augmented with multiple LoRA modules. For example, a recursive model with two loop iterations has a single block of shared layers, and two different LoRA modules are attached to each layer within this block. The first and second LoRA modules per layer are used during the first and second loop iterations, respectively. Functionally, these LoRA modules introduce low-rank deltas to all of the shared, linear weight matrices. More concretely, for a base [...] As depicted in Figure 1, we further propose the Relaxed Recursive Transformer, an extension of the Recursive Transformer in which the weight tying across repeated layer blocks is slightly relaxed through the incorporation of multiple layer-specific, low-rank adaptation (LoRA) modules (Hu et al., 2022). Despite its simplicity, this strategy offers several non-trivial advantages. First, it allows for low-rank deltas between shared layers, while only adding minimal overhead. Second, the rank of",
+      "score": 0.21593748,
+      "raw_content": null,
+      "id": "8f7cc4-01"
+    },
+    {
+      "url": "https://github.com/lucidrains/block-recurrent-transformer-pytorch",
+      "title": "GitHub - lucidrains/block-recurrent-transformer-pytorch: Implementation of Block Recurrent Transformer - Pytorch · GitHub",
+      "content": "import torch from block_recurrent_transformer_pytorch import BlockRecurrentTransformer model = BlockRecurrentTransformer num_tokens = 20000 # vocab size dim = 512 # model dimensions depth = 6 # depth dim_head = 64 # attention head dimensions heads = 8 # number of attention heads max_seq_len = 1024# the total receptive field of the transformer, in the paper this was 2  block size block_width = 512# block size - total receptive field is max_seq_len, 2  block size in paper. the block furthest [...] ``` [...] ```",
+      "score": 0.21002041,
+      "raw_content": null,
+      "id": "65c259-02"
+    },
+    {
+      "url": "https://deepmind.google/research/publications/122290",
+      "title": "Relaxed Recursive Transformers: Effective Parameter Sharing with Layer-wise LoRA — Google DeepMind",
+      "content": "from a standard, pre-trained Transformer, but only uses a single block of unique layers that are applied multiple times in a loop. We further show that the performance of the Recursive Transformer can be substantially improved with little additional overhead by incorporating loop-specific, low-rank adapters that facilitate layer specialization, while maintaining a compact representation. Through careful initialization and minimal additional uptraining, we observe that recursive models, [...] Large language models (LLMs) are computationally expensive to deploy. Parameter sharing offers a promising path towards reducing their size and cost, but its effectiveness in modern LLMs remains limited. In this work, we revisit parameter sharing for LLMs, and introduce a novel method for converting existing LLMs into smaller, ``Recursive Transformers'' that share parameters across layers, with minimal loss of performance. The Recursive Transformer is efficiently initialized from a standard, [...] ## Abstract",
+      "score": 0.20953475,
+      "raw_content": null,
+      "id": "1a873c-03"
+    },
+    {
+      "url": "https://dmytro-kuzmenko.medium.com/block-recurrent-transformer-overview-9a6e25078672",
+      "title": "Block-Recurrent Transformer: Advanced Architecture with ...",
+      "content": "The authors introduce the Block-Recurrent Transformer, which applies a transformer layer in a recurrent fashion along a sequence,",
+      "score": 0.19333042,
+      "raw_content": null,
+      "id": "38d528-04"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=1pfxHTKbVZo&vl=en",
+      "title": "Recurrent Transformer: Better LLM Decoding",
+      "content": "The Recurrent Transformer introduces a simple architectural change where layers attend to key-value pairs computed from their own previous",
+      "score": 0.18479727,
+      "raw_content": null,
+      "id": "af5a53-05"
+    },
+    {
+      "url": "https://proceedings.mlr.press/v202/li23ap/li23ap.pdf",
+      "title": "[PDF] Structured Compression of Large Language Models based on Low ...",
+      "content": "We draw inspiration from multi-task learning (Jalali et al., 2010), where linear models are used for multi-task regres-sion. In out settings, every linear layer in transformer mod-els can be naturally viewed as a linear multi-task model that learns different latent features. In that case, low-rank ap-proximations are designed to store shared features across all coherent parts of neurons, and sparse approximations aim to learn distinct features from incoherent parts of neurons. Be-sides, [...] 3. Method We propose a compression method for transformer models.\nSpecifically, we approximate a weight matrix by the sum of a low-rank matrix and a sparse matrix (as illustrated by Figure 2). The combination of these two approximations makes our compression method more efficient and stable. [...] LoSparse: Structured Compression of Large Language Models based on Low-Rank and Sparse Approximation Yixiao Li  1 Yifan Yu  1 Qingru Zhang 1 Chen Liang 1 Pengcheng He 2 Weizhu Chen 2 Tuo Zhao 1 Abstract Transformer models have achieved remarkable results in various natural language tasks, but they are often prohibitively large, requiring massive memories and computational resources. To re-duce the size and complexity of these models, we propose LoSparse (Low-Rank and Sparse ap-proximation), a",
+      "score": 0.18396018,
+      "raw_content": null,
+      "id": "449b3c-06"
+    },
+    {
+      "url": "https://openaccess.thecvf.com/content/CVPR2024/papers/Guo_PELA_Learning_Parameter-Efficient_Models_with_Low-Rank_Approximation_CVPR_2024_paper.pdf",
+      "title": "PELA: Learning Parameter-Efficient Models with Low-Rank ...",
+      "content": "3.2. Feature Distillation As highlighted in the previous sub-section, the low-rank approximation can alter the feature distribution of the pre-trained model.\nTo address this problem, we resort to feature-based knowledge distillation, which has been proven effective in aligning the features between mod-els . Nevertheless, the low-rank compression is per-formed on each matrix multiplication operation, rather than specific Transformer blocks or layers. [...] 6  Patrick H. Chen, Si Si, Yang Li, Ciprian Chelba, and Cho-Jui Hsieh. Groupreduce: Block-wise low-rank approxima-tion for neural language model shrinking. In NeurIPS, pages 11011–11021, 2018. 3  Yen-Chun Chen, Linjie Li, Licheng Yu, Ahmed El Kholy, Faisal Ahmed, Zhe Gan, Yu Cheng, and Jingjing Liu. [...] retrieval, and visual question answering for the vision-language Trans-former. Our approach achieves performance that is highly comparable to the backbone model, with differences mostly around 0.6 points, despite using only 1/3 to 2/3 of the orig-inal FLOPs. In addition, this parameter-efficiency benefit further enables the model to scale with larger batch sizes, leading to improved performance that sometimes even out-performs backbones.",
+      "score": 0.1386369,
+      "raw_content": null,
+      "id": "3e65e1-07"
+    },
+    {
+      "url": "https://www.microsoft.com/en-us/research/wp-content/uploads/2024/05/ICASSP2024_ResidualTransformer.pdf",
+      "title": "residualtransformer: residual low-rank learning with",
+      "content": "We focus on applying our method to the Transformer layers , as the Transformer architecture has been widely adopted as a build-ing block in various natural language and speech processing tasks [11, 4, 12, 13, 14, inter alia], and usually it accounts for a signifi-cant portion of the total number of model parameters. It should be noted that our method can also be applied to weight matrices in other types of neural network layers (e.g., LSTM, embeddings, convolu-tion, etc.), which will be our [...] The idea of reusing Transformer layer was proposed in  for natural language processing tasks with a different motivation: they regard the repeated applications of the network function as a comple-mentary way of introducing a recurrent inductive bias to Transform-ers, and it was observed that their method outperforms the vanilla Transformer on several tasks.  adopted the cross-layer weight-sharing in the pretraining/fine-tuning setting to improve model scal-ability.  extends it to the speech [...] Our method is also inspired by ResNet , where a residual block is to learn the residual function after subtracting the identity mapping. In our case, low-rank “residual weights” of Transformer layers are added and trained together with the shared weights, which is different from simply replacing the full-rank weights described in [18, 9]. Therefore, we name our method ResidualTransformer.",
+      "score": 0.12886485,
+      "raw_content": null,
+      "id": "a808a6-08"
+    }
+  ],
+  "response_time": 1.62,
+  "request_id": "ce8b531c-e040-4289-8108-6a415d65f746"
+}

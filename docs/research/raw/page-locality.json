@@ -1,0 +1,90 @@
+{
+  "query": "LLM training physical page locality expert routing storage pages byte traffic objective",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.vastdata.com/blog/optimizing-checkpoint-bandwidth-for-llm-training",
+      "title": "Optimizing Checkpoint Bandwidth for LLM Training - VAST Data",
+      "content": "provision storage to support efficiency checkpointing while preserving as much power, space, and budget as possible for GPUs. [...] This demand-side perspective has important implications for designing balanced training infrastructure across compute, networks, and storage. [...] consume under ideal conditions—but do not account for how production workloads actually interact with storage.",
+      "score": 0.26776657,
+      "raw_content": null,
+      "id": "7fed39-00"
+    },
+    {
+      "url": "https://datatracker.ietf.org/doc/html/draft-calabria-bmwg-ai-fabric-inference-bench-00",
+      "title": "draft-calabria-bmwg-ai-fabric-inference-bench-00",
+      "content": "Large Language Model (LLM) inference serving has emerged as a dominant consumer\nof datacenter network capacity, with fundamentally different fabric requirements\ncompared to training workloads. While training workloads are characterized by\nbulk synchronous collective operations (AllReduce, AllGather) with predictable\nperiodicity, inference workloads exhibit bursty, latency-sensitive\nrequest/response patterns with strict Service Level Objectives (SLOs) on [...] Mixture-of-Experts models distribute expert sub-networks across GPUs and route\ntokens to the appropriate experts via AllToAll communication. This section\nbenchmarks the fabric's ability to support the resulting fine-grained,\nlatency-sensitive inter-GPU traffic patterns.¶\n\n### 7.1. AllToAll Dispatch Throughput\n\nObjective: To determine the maximum AllToAll dispatch throughput for MoE\nexpert parallelism across the DUT fabric.¶ [...] Measurement: Report per-dispatch latency (us) at P50, P95, P99 for each\nmode. Report the latency ratio LL/Normal for equivalent EP sizes. Report the\nfabric bandwidth utilization (%) for each mode.¶\n\n### 7.3. Wide Expert Parallelism Scaling\n\nObjective: To characterize AllToAll dispatch performance as EP group size\nscales beyond a single node (wide EP), requiring inter-node fabric communication.¶",
+      "score": 0.25178608,
+      "raw_content": null,
+      "id": "1be71c-01"
+    },
+    {
+      "url": "https://arxiv.org/list/cs/new",
+      "title": "Computer Science",
+      "content": "with TBD for a learned small-model error predictor and TBD for entropy routing. These results show that predicting incremental value, rather than model uncertainty, is a simple and effective objective for efficient LLM cascades. [...] Mixture-of-Experts (MoE) pretraining relies on an auxiliary load-balancing loss (LBL) to drive per-expert utilization toward uniformity. Post-training inherits a different situation: the base router already encodes non-uniform expert co-activation structure, which a re-imposed uniformity objective flattens away. We show that downstream performance depends instead on holding this inherited routing softly, a principle we term soft router anchoring, and instantiate it as Router Prior Bias (RPB), a [...] grounded KG reasoning with LLM-generated mechanistic inference for drug repurposing. DrugReason adaptively routes diverse reasoning paths to specialized experts conditioned on the query context, while a cross-expert distillation objective enables knowledge sharing without sacrificing expert specialization. Experiments on PharmaDB, DDInter, and DrugBank show that DrugReason improves average performance over strong single-view reasoning baselines and achieves competitive or superior results",
+      "score": 0.2499142,
+      "raw_content": null,
+      "id": "3ba7b3-02"
+    },
+    {
+      "url": "https://llm-d.ai/blog/kvcache-wins-you-can-see",
+      "title": "KV-Cache Wins You Can See: From Prefix Caching in vLLM to ... - llm-d",
+      "content": "The llm-d project provides a series of “well-lit paths” - tested, benchmarked solutions for deploying large language models in production. Our first path, Intelligent Inference Scheduling, established a baseline for AI-aware routing by balancing both cluster load and prefix-cache affinities. The default configuration for that path uses an approximate method for the latter, predicting cache locality based on request traffic. [...] By moving from AI-blind routing to a precise, KV-cache aware strategy, we unlock order-of-magnitude improvements in latency and throughput on the same hardware. The well-lit path of precise prefix-cache awareness offers a tested, benchmarked solution to make your distributed deployments dramatically more efficient.\n\nChoosing the Right Strategy [...] `random-scheduling`: A naive scheduler, acting as the control group.\n `load-scheduling`: A scheduler aware of only of load scorers: vLLM queueing + kv-cache-utilization\n `approximate-scheduling`: The default configuration in the intelligent inference scheduling path, extending load-aware scheduling with the approximate prefix-cache scorer.\n  + This plugin builds an approximate-locality index based on routing history.\n `precise-scheduling`: The advanced well-lit path described in this post.",
+      "score": 0.1570725,
+      "raw_content": null,
+      "id": "94d892-03"
+    },
+    {
+      "url": "https://www.solo.io/blog/how-model-aware-traffic-routing-supports-an-effective-ai-cost-management-strategy",
+      "title": "How Model Aware Traffic Routing Supports An Effective AI Cost Management Strategy | Solo.io",
+      "content": "### Program agentgateway for LLM consumption\n\nFree Lab: Learn to proxy OpenAI requests through an agentgateway-backed AI gateway with kgateway, managing LLM traffic, credentials, and advanced features.\n\nRead Lab [...] ### Getting started with Multi-LLM provider routing\n\nRead Blog [...] ### 4 Reasons Why You Need an AI Gateway\n\nIntegrating LLM models in your applications? See our infographic to learn the top four reasons why you need an AI Gateway!\n\nRead Infographic",
+      "score": 0.1493951,
+      "raw_content": null,
+      "id": "e6cacd-04"
+    },
+    {
+      "url": "https://www.linkedin.com/posts/manoj-palanikumar_4-content-types-that-drive-high-intent-traffic-activity-7391002301982937088-EskI",
+      "title": "How to Drive Traffic with LLM Citations: Study Reveals Top Content Types | Manoj Palanikumar posted on the topic | LinkedIn",
+      "content": "means GBP, Yelp, Nextdoor, Thumbtack, Angi, etc.), and any other place where LLMs train. From the article: \"...our success metrics need to change. Referral traffic neither works for ChatGPT nor Google, as AI Overviews and AI mode swallow more clicks. Instead, we need to adopt visibility-first.\" [...] and the results are fascinating - the winning content types differ by LLM. In ChatGPT: 🏆 #1: Location-based pages with stats specific to that country or city 🥈 #2: Competitor pricing pages — especially when your page breaks down alternatives (e.g., “HubSpot pricing vs [Your Product]”). These perform well since ChatGPT often fetches fresh web data for pricing-related queries. In Perplexity: 🏆 #1: Listicle blogs — e.g., “Top 10 Employee Monitoring Tools,” “Best Customer Engagement Platforms,” [...] This is really interesting! Not sure about Perplexity and others but I've also noticed GPT has been giving more imp to pricing and product comparision pages\n\nLike Reply  1 Reaction   2 Reactions\n\nJafar Sadhik   4w \n\n Report this comment\n\nFascinating breakdown. The nuance across LLMs highlights how content strategy needs to adapt. Location-based pages and pricing comparisons make a lot of sense given the intent signals. Looking forward to the full dataset.\n\nLike Reply  1 Reaction   2 Reactions",
+      "score": 0.14253029,
+      "raw_content": null,
+      "id": "9ba00a-05"
+    },
+    {
+      "url": "https://www.alluxio.io/blog/building-high-performance-data-access-layer-for-model-training-and-model-serving-for-llm",
+      "title": "Building High-performance Data Access Layer for Model ... - Alluxio",
+      "content": "Bringing a large language model from its initial training to deployment requires numerous systems and components. At Zhihu, we grappled with a multi-cloud, cross-region AI platform, requiring an efficient solution to facilitate the rapid training and delivery of models for production use cases. This led us to adopt Alluxio, the high-performance data access layer for LLM. This blog provides an in-depth look at Zhihu’s challenges, journey, and solution for LLM training and deployment. Through [...] AI/ML Infra Meetup with AMD, Alluxio, & ML Trading Expert (San Francisco & Virtual)\n\nRSVP Now\n\n\n\nBuilding High-performance Data Access Layer for Model Training and Model Serving for LLM\n\nJune 15, 2023\n\nBy\n\nHope Wang [...] Furthermore, network congestion is a concern. The size of LLM can reach tens or even hundreds of GB. During model serving, the model files must be accessed from the offline HDFS across the network to the online cloud. With tens to hundreds of containers concurrently reading files on HDFS, the network can easily be congested, disrupting other cross-cloud services and leading to a significant number of timeouts or failures.\n\n# 4. Journey at Zhihu: From HDFS Replication to Union Store, to Alluxio",
+      "score": 0.12677461,
+      "raw_content": null,
+      "id": "248e49-06"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=YqV1qWhZyd0",
+      "title": "Advanced Local SEO Course (7 Aggressive Tips for LLM SEO)",
+      "content": "In this video, I break down 7 aggressive Local SEO tips that go beyond the usual basic advice you've probably heard a million times.",
+      "score": 0.11579087,
+      "raw_content": null,
+      "id": "f74ff2-07"
+    },
+    {
+      "url": "https://www.dailydoseofds.com/p/kv-cache-engineering-for-llm-serving",
+      "title": "KV Cache Engineering for LLM Serving - Daily Dose of Data Science",
+      "content": "CLA requires training.\n FP8 introduces quantization error.\n Eviction discards context.\n And the serving engine must also support the resulting layout.\n\nThese are some situations you may face, along with solutions: [...] ``` [...] ```",
+      "score": 0.082704924,
+      "raw_content": null,
+      "id": "ddb984-08"
+    },
+    {
+      "url": "https://microsoft.ai/pdf/mai-thinking-1.pdf",
+      "title": "[PDF] MAI-Thinking-1: Building a Hill-Climbing Machine - Microsoft AI",
+      "content": "This pipeline yields an English STEM corpus of 680B tokens, of which 76B are mathematics-related.\nFor multilingual data, we obtain an additional 760B STEM tokens, including 58B high-quality mathematics-related tokens.\nCode pages.\nFor code-specific web pages, we reuse the STEM pages pipeline, including topic classifica-tion, educational-value classification, and LLM-based extraction, filtering on the Computer Science topic. [...] Depending on the document type, OCR is performed using a vision-language model or OCR services. Doc-uments are chunked, pages without STEM content are discarded, and boilerplate is removed. A separate stage builds a hierarchical representation using structural cues in the OCR output, and resolves broken cross-references, misaligned numbering, and split-across-page artifacts. Finally, in the Question and Answer (QA) extraction stage, an LLM marks question and answer spans within the cleaned [...] Profiling revealed three primary bottlenecks: DP communication, deterministic attention kernels, and expert routing overhead. Enabling GPU Direct RDMA support improved overlap between communica-tion and compute and reduced end-to-end training time by approximately 1.1×. Due to the inefficiency of FlashAttention-2’s (FA2) deterministic mode on GB200 and lack of availability of FA4, we developed a custom block-sparse attention backend that improved step time by an additional 1.06×. Given the",
+      "score": 0.058998574,
+      "raw_content": null,
+      "id": "679b2d-09"
+    }
+  ],
+  "response_time": 2.02,
+  "request_id": "85804c91-4e5f-407a-88da-883c6b3c83ba"
+}

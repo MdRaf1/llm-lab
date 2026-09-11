@@ -1,0 +1,58 @@
+{
+  "query": "llama.cpp MoE expert offloading disk NVMe low RAM run DeepSeek 671B consumer PC",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://huggingface.co/blog/Doctor-Shotgun/llamacpp-moe-offload-guide",
+      "title": "Performant local mixture-of-experts CPU inference with GPU acceleration in llama.cpp",
+      "content": "So you want to try one of those fancy huge mixture-of-experts (MoE) models locally? Well, whether you've got a gaming PC or a large multi-GPU workstation, we've got you covered. As long as you've downloaded enough RAM beforehand.\n\n## Anatomy of a MoE Model\n\nMoE models are described in terms of their total parameters and active parameters - i.e. DeepSeek V3 671B A37B has 671B total parameters, but we are using only 37B parameters at a time during each forward pass through the model. [...] In their current form (i.e. DeepSeek V3, GLM 4.X, Kimi K2, Qwen 3 MoE), they contain several major components (for the sake of simplicity):\n\nThe first three are \"always active\" in the sense that these model parameters are being used in every forward pass through the model. The last component, the routed experts, take up the vast majority of the model's total size, but we only activate a fraction of these parameters during each forward pass.\n\n## Optimizing CPU offloading in llama.cpp [...] Or use the built in function:\n\n`--n-cpu-moe 31`\n\nNote: `--n-cpu-moe` starts counting layers starting from the highest numbered layers. This can lead to a slightly discrepancy in how many layers are offloaded because models that have Dense FFN layers typically have them at the start of the model (i.e. the first 3 layers of DeepSeek V3).\n\n`--n-cpu-moe`\n\nIf you have multiple GPUs, you can specify layers to assign to each device:\n\n`-ot \"blk\\.([0-9])\\.=CUDA0,blk\\.(1[0-9])\\.=CUDA1,exps=CPU\"`",
+      "score": 0.6479992,
+      "raw_content": null,
+      "id": "2f59dd-00"
+    },
+    {
+      "url": "https://forum.level1techs.com/t/deepseek-deep-dive-r1-at-home/225826",
+      "title": "DeepSeek Deep Dive R1 at Home!",
+      "content": "This is true regardless of Optane NVMe, or Gen 5 T705 RAID0 array, etc… The current software implementation can’t take full advantage of the `O_DIRECT` performance of these drives yet.\n\n`O_DIRECT`\n\nBut you can get smaller quantized versions of the real R1 671b that fit in less than 256GB RAM which works okay!\n\nI know llama.cpp had some rpc backend, but it seems pretty early and experimental. [...] `fio`\n\nThis is awesome info, thanks! I can’t remember from your other thread whether you tried to run the version of the 671b model from the ollama model library, or if it was too big to attempt to run from NVME.\n\nvideo soon! :smiley:\n\n:smiley:\n\nFor the “CPU Only” 2 processor system mentioned in the video, in NPS0 and NPS1 mode (depending on what we were doing)\n\n## AMD EPYC 9684X 96-Core Processor [...] Also I would advise against setting up a large Linux Swap file. In my experiments it technically works but was much slower, and as it writes page outs to your NVMe drive it will hurt the write cycle lifetime of the drive. The default `llama.cpp` `mmap()` implementation is READ ONLY so doesn’t kill your SSDs. (it may warm it up though hah).\n\n`llama.cpp`\n`mmap()`",
+      "score": 0.64719695,
+      "raw_content": null,
+      "id": "3aa9bb-01"
+    },
+    {
+      "url": "https://github.com/ggml-org/llama.cpp/issues/11532",
+      "title": "Feature Request: MoE only load activated expert(s) to GPU while rest non-used experts are not loaded (to CPU/GPU) for DeekSeek-R1 Inference on consumer GPU · Issue #11532 · ggml-org/llama.cpp · GitHub",
+      "content": "Running DeekSeep-R1 or V3 inference needs 8xH100 80GB due to huge memory footprint, and it's very challenging to do R1 or V3 inference on single consumer GPU RAM (e.g. 24GB 4090) + limited CPU memory (say 32GB) with 685B MoE params even with low-bit quantization. [...] I'm wondering if similar features is available or WIP inside llama.cpp or any other popular inference frameworks ?\n\nReally appreciate your help!\n\n### Motivation\n\nThis will help llama.cpp users to run DeepSeek-R1, the best reasoning LLM by far, which has 685B MoE param but only 37B activated param, on consumer GPU device (4090 24GB) plus consumer CPU (i7/i9 32GB mem), with low-bit quantization, with an acceptable inference speed.\n\n### Possible Implementation\n\nNo response\n\n## Metadata [...] DeepSeek-R1 MoE has 61 layers, current llama implementation will load n-gpu-layers of MoE to GPU memory (say 7 layers on 24GB 4090) while remaining layers of weights all on CPU memory, but when CPU only has limited memory (say 32GB), there will be huge swapping and make the inference speed extremely slow. but if we only load the \"activated\" expert (37B), it can fit into single 24GB 4090, also no need to do expensive swapping for unused expert on CPU memory/disk, i expect the 685B DeepSeek-R1",
+      "score": 0.6219319,
+      "raw_content": null,
+      "id": "6e8323-02"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=_PxT9pyN_eE",
+      "title": "Running FULL DeepSeek R1 671B Locally (Test and Install!)",
+      "content": "is just running it with llama.com CPP set up and able to actually run this model now if we look up here into the table there are a few different versions of dynamic quants of this model that these folks actually did upload to hugging face so there is the 1.58 bit which is the 131 GB size one which I have actually running here in the terminal and if we click on this we will see the hugging face page opens for it and it is three 2 50 GB downloads and 141 GB downloads around that there are some [...] We start by explaining how the dynamic quantization process works and how it allows us to run DeepSeek R1 on an enthusiast-grade system with at least 80GB of combined system memory. Next, we monitor performance, analyzing how the model utilizes system RAM and VRAM. Then, we walk through the full setup process using llama.cpp, covering key configurations that can be tricky for first-time users. [...] system that you are using this with with that out of the way and something I did just kind of want to cover because it gave me some trouble for a while um with the version mismatch and things like that we are basically now good to just go ahead and copy this and paste it into the terminal which will then go ahead and kind of build llama CPP for our system which is what will allow us to actually go ahead and then subsequently run this full deep seek Dynamic Quant R1 version depending on your",
+      "score": 0.56517935,
+      "raw_content": null,
+      "id": "5726d3-03"
+    },
+    {
+      "url": "https://medium.com/@GenerationAI/deepseek-r1-671b-on-800-configurations-ed6f40425f34",
+      "title": "Local DeepSeek-R1 671B on $800 configurations",
+      "content": "The MoE (Mixture of Experts) architecture’s tens of billions of active parameters make it feasible to further enhance performance by adding tens (<50) of gigabytes of high-speed memory (VRAM) and corresponding compute power (via GPU or AMX). This is exactly the architecture used in ktransformers. There are many GPU options that can support this setup — we’ll be conducting experiments and sharing our analysis soon. Stay tuned! [...] No matter how competitors attack DeepSeek, the V3 and R1 models are fully open-source LLMs with capabilities rivaling various commercial models. You can inspect every line of its code, run it on a completely offline machine, and fine-tune any “bias” in its output that you find unsatisfactory — making it far more controllable and secure than models like ChatGPT, Gemini, or Claude. Moreover, its advanced MoE architecture frees inference from the need for data center-level computing power.",
+      "score": 0.5596998,
+      "raw_content": null,
+      "id": "07e323-04"
+    },
+    {
+      "url": "https://digitalspaceport.com/how-to-run-deepseek-r1-671b-fully-locally-on-2000-epyc-rig",
+      "title": "How To Run Deepseek R1 671b Fully Locally On a $2000 ...",
+      "content": "Now lets pull the ollama guff deepseek 671b down. This will eat up like 400GB of disk space. I hope your NVMe is decent.\n\nCopy Code Copied Use a different Browser\n\n```\n\n```\nollama pull deepseek-r1:671b\n```\n\n```\n\nThat will take a while. Take a moment to think of that egress bill…\n\n### Install OpenWEBUI\n\nWe need to run this in either docker or in python. I will deploy this for you in docker here. Ensure we dont have garbage installed that will conflict.\n\nCopy Code Copied Use a different Browser [...] In conclusion, we installed a fully functional bare metal Ollama + OpenWEBUI setup. I am SURE there are a lot of other great runners out there like llama.cpp, exo, and vLLM but those will be separate guides when I get a decent handle on working them. Llama.cpp is likely first as I have done a compile, bench and run recently and it all worked out very nice! Lot of knobs on that one. vLLM is a mess of a thing and exo is simple but keeps crashing after I start it. No time to debug those things [...] -OLLAMA\\_NUM\\_PARALLEL Maximum number of parallel requests  \n -OLLAMA\\_NOPRUNE Do not prune model blobs on startup  \n -OLLAMA\\_ORIGINS A comma separated list of allowed origins  \n -OLLAMA\\_SCHED\\_SPREAD Always schedule model across all GPUs",
+      "score": 0.50564,
+      "raw_content": null,
+      "id": "fc3f03-05"
+    }
+  ],
+  "response_time": 1.45,
+  "request_id": "aba8a012-c3cd-4dde-98c0-aa12b4d0ee0f"
+}

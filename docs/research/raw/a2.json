@@ -1,0 +1,66 @@
+{
+  "query": "expert offloading SSD NVMe disk streaming MoE inference CPU only no GPU low RAM system",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://github.com/ggml-org/llama.cpp/discussions/27149",
+      "title": "Expert-Aware SSD Streaming for MoE Models on Memory-Constrained Hardware · ggml-org/llama.cpp · Discussion #27149 · GitHub",
+      "content": "| Idea Stream only active expert weights from NVMe SSD per token for MoE models, instead of loading the entire model into RAM. This is complementary to #20757 (GPU expert cache) — that proposal targets GPU+RAM setups; this one targets machines with no GPU and insufficient RAM (8-16GB consumer laptops).  The core insight: the assumption that \"the entire model must be loaded into memory before you can use it\" is a software architecture choice, not a law of nature. MoE models already tell us which [...] | Huge thank you to @jerryjokesalot and the entire llama.cpp community — this is an incredible direction and the compiled benchmark results are genuinely impressive. The expert-contiguous re-layout cutting page faults 36× is the kind of insight that changes what's possible on consumer hardware.  A few thoughts as someone watching this from the NVMe/MoE offloading angle:  Convergence with PR #25294 — The --moe-stream-cache implementation already handles device-side slot caching + CPU [...] | 3.47 tok/s | 4.10 tok/s | | 100% | 4.46 tok/s | 4.45 tok/s |   Compute ceiling: 4.4 tok/s (CPU only). SSD: 3.0+ GB/s from contiguous layout. At 88% hit, SSD reads are fully hidden behind compute.  Text-calibrated pinning — random activation profiles give 6% hit (= chance). Calibrating from 10 tokens of real text gives 42% hit, matching oracle top-8. Calibrated + LRU = 56%.  End-to-end inference — Python engine generating verified correct text from Qwen3-30B-A3B using the contiguous cache.",
+      "score": 0.76279575,
+      "raw_content": null,
+      "id": "cf42a0-00"
+    },
+    {
+      "url": "https://arxiv.org/html/2508.06978v1",
+      "title": "SSD Offloading for LLM Mixture-of-Experts Weights Considered Harmful in Energy Efficiency",
+      "content": "Our analysis shows that offloading MoE weights to SSDs significantly increases energy use.\nInference on DeepSeek-R1 with expert weights stored on SSD consumes approximately 4.9×\\times more energy per token compared to keeping them in HBM, and 3.1×\\times more than offloading to CPU memory (Fig. 1).\nThe energy for accessing weights on the SSD accounts for a staggering 80% of the total per-token energy in this scenario, underscoring the severity of the energy penalty. [...] Techniques such as MoE-prefetching  exploit this by offloading the large set of expert weights to SSD or CPU memory, aiming to hide the data transfer latency by overlapping it with computation on the active experts.\nIn particular, while latency may be hidden, the energy consumed during these data transfers is not reduced, especially when accessing energy-hungry SSDs. [...] LLM inference. Our analysis, comparing SSD, CPU memory (DDR), and HBM storage scenarios for models like DeepSeek-R1, reveals that offloading MoE weights to current SSDs drastically increases per-token-generation energy consumption (e.g., by up to ∼\\sim12×\\times compared to the HBM baseline), dominating the total inference energy budget. Although techniques like prefetching effectively hide access latency, they cannot mitigate this fundamental energy penalty. We further explore future",
+      "score": 0.5683445,
+      "raw_content": null,
+      "id": "99aed6-01"
+    },
+    {
+      "url": "https://www.alphaxiv.org/abs/2508.06978",
+      "title": "SSD Offloading for LLM Mixture-of-Experts Weights ...",
+      "content": "LLM inference. Our analysis, comparing SSD, CPU memory (DDR), and HBM storage scenarios for models like DeepSeek-R1, reveals that offloading MoE weights to current SSDs drastically increases per-token-generation energy consumption (e.g., by up to ~12x compared to the HBM baseline), dominating the total inference energy budget. Although techniques like prefetching effectively hide access latency, they cannot mitigate this fundamental energy penalty. We further explore future technological [...] Large Language Models (LLMs) applying Mixture-of-Experts (MoE) scale to trillions of parameters but require vast memory, motivating a line of research to offload expert weights from fast-but-small DRAM (HBM) to denser Flash SSDs. While SSDs provide cost-effective capacity, their read energy per bit is substantially higher than that of DRAM. This paper quantitatively analyzes the energy implications of offloading MoE expert weights to SSDs during the critical decode stage of LLM inference. Our [...] K. Alizadeh, I. Mirzadeh, D. Belenko, K. Khatamifard, M. Cho, C. C. D. Mundo, M. Rastegari, and M. Farajtabar, “LLM in a Flash: Efficient Large Language Model Inference with Limited Memory,” arXiv preprint arXiv:2312.11514, 2024.\n\nPre-gated MoE: An Algorithm-System Co-Design for Fast and Scalable Mixture-of-Expert Inference",
+      "score": 0.53895956,
+      "raw_content": null,
+      "id": "32c836-02"
+    },
+    {
+      "url": "https://www.spheron.network/blog/nvme-kv-cache-offloading-llm-inference",
+      "title": "NVMe KV Cache Offloading for LLM Inference: Serve 10x More Users on the Same GPU (2026)",
+      "content": "yaml\n\n```\nchunk_size: 256\nlocal_cpu: false\nmax_local_cpu_size: 0\nlocal_disk: true\nlocal_disk_path: /nvme/lmcache\nmax_local_disk_size: 200 # GB - set to ~80% of available NVMe space\nremote_url: null\n```\n\nSetting `local_cpu: false` routes cold blocks directly to NVMe, skipping CPU DRAM. If you want a warm tier in CPU DRAM between GPU and NVMe, set `local_cpu: true` and configure `max_local_cpu_size` accordingly.\n\nCheck available NVMe space before setting `max_local_disk_size`:\n\nbash [...] | Feature | vLLM `--swap-space` | LMCache disk backend |\n --- \n| Storage tier | CPU RAM only | NVMe, Redis, remote storage |\n| Survives server restart | No | Yes |\n| Shared across replicas | No | Yes (with shared storage) |\n| Block granularity | vLLM internal | Configurable chunk _ size | [...] For MoE models specifically, dynamic expert quantization on fewer GPUs addresses the weight memory side of the equation rather than the KV cache side. The two techniques are complementary: mixed-precision expert weights reduce baseline VRAM consumption, and NVMe KV offloading handles context window growth on top.\n\n## KV Cache Storage Tiers Explained\n\nThe three-tier hierarchy assigns KV blocks to storage based on how recently they were accessed and how likely they are to be needed again:",
+      "score": 0.51969254,
+      "raw_content": null,
+      "id": "a836e6-03"
+    },
+    {
+      "url": "https://discuss.vllm.ai/t/enable-expert-offloading/1884",
+      "title": "Enable Expert Offloading - General - vLLM Forums",
+      "content": "When cpu\\_offload\\_gb is enabled, model weights—including all MoE experts—are loaded into CPU memory, and the specified amount is offloaded from GPU to CPU. During inference, the required weights (including expert weights) are transferred from CPU to GPU on-the-fly for computation, then released from GPU memory after use. No on-demand or partial expert loading occurs; all expert weights must be present in either GPU or CPU memory at startup, and the data exchanged is the model weights [...] vLLM requires all experts to be loaded at initialization, just like any other model weights. However, if all experts do not fit on GPU(s), you can use the cpu\\_offload\\_gb parameter to offload a specified number of GBs to CPU memory, which will be swapped onto GPU for each inference. Note that this approach is slow and there is no support for on-demand loading of only the gated experts; all experts must be present in memory (GPU or CPU) at startup. On-demand or JIT expert loading is not [...] # Enable Expert Offloading\n\nHow to enable expert offloading when using a MoE LLM for inference?",
+      "score": 0.5040288,
+      "raw_content": null,
+      "id": "328f0a-04"
+    },
+    {
+      "url": "https://xinnor.io/blog/does-ai-model-offloading-matter-benchmarking-ram-and-nvme-strategies-for-llm-training",
+      "title": "Does AI model offloading matter? Benchmarking RAM and NVMe ...",
+      "content": "For data, WikiText-2 is used. Extracted from Wikipedia “Good” and “Featured” articles, it is designed as a language modeling benchmark with natural text (no heavy preprocessing). Text is tokenized and then packed into fixed-length blocks (4096 tokens). Because the goal of these experiments is systems behavior, we do not target model quality, only trying to stress the hardware.\n\n## Hardware & software setup\n\nCPU: Intel Core i5-14600K (6 P-cores, 8 E-cores) [...] 1. Parameters on GPU, offload all optimizer states to single NVMe, optimizer calculations use CPU.\n2. Parameters on GPU, offload all optimizer states to RAID0 over 3 NVMes, optimizer calculations use CPU.\n3. Offload parameters and all optimizer states to single NVMe, optimizer calculations use CPU.\n4. Offload parameters and all optimizer states to RAID0 over 3 NVMes, optimizer calculations use CPU. [...] First, even when optimizer state is offloaded from GPU, gradients still need a landing place during backpropagation. DeepSpeed maintains gradient partitions in CPU RAM until the optimizer step. For our experiments up to 16B parameters, the available 96 GB of system RAM is sufficient. But for larger models gradient buffering in RAM is a limiting factor.",
+      "score": 0.38650924,
+      "raw_content": null,
+      "id": "74ca04-05"
+    },
+    {
+      "url": "https://tinycomputers.io/posts/partial-llm-loading-running-models-too-big-for-vram.html",
+      "title": "Partial LLM Loading: Running Models Too Big for VRAM | TinyComputers.io",
+      "content": "If you're streaming weights from disk rather than CPU RAM, consider your SSD's endurance. A 70B model with 80 layers means moving roughly 1.75GB per token generated (all layers traversed once). Generate 1000 tokens and you've read 1.75TB from the SSD. [...] Cloud inference works but adds latency, costs money per token, and means your data leaves your machine.\n\nPartial loading offers a fourth path: keep the model weights somewhere other than VRAM (CPU RAM, disk, NVMe) and load them into the GPU only when needed. You take a latency hit on every layer that needs to be fetched, but you can run models that would otherwise be impossible.\n\n### Understanding Transformer Layer Architecture [...] Advantages:\n\n Simple to configure\n Automatic handling of which layers go where\n Works with GGUF quantized models\n CPU layers use optimized AVX-512 implementations\n\nDisadvantages:\n\n Static partitioning: layers stay where they're assigned\n CPU inference is much slower than GPU\n Limited to llama.cpp's supported architectures\n\n#### 2. HuggingFace Accelerate Disk Offloading\n\nHuggingFace's Accelerate library provides `device_map=\"auto\"` with disk offloading:",
+      "score": 0.2713837,
+      "raw_content": null,
+      "id": "d92000-06"
+    }
+  ],
+  "response_time": 0.91,
+  "request_id": "2a40025e-95f0-4ec2-8940-255834c772d2"
+}

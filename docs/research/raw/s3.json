@@ -1,0 +1,58 @@
+{
+  "query": "expert activation locality reuse across consecutive tokens measurement MoE offloading cache hit rate",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.semanticscholar.org/paper/MoE-Infinity%3A-Activation-Aware-Expert-Offloading-Xue-Fu/5e612ce3f2fdde6906aba85f1e7ab5113add1212",
+      "title": "MoE-Infinity: Activation-Aware Expert Offloading for Efficient MoE Serving | Semantic Scholar",
+      "content": "4\n[PDF]\n\n### Mixture of Cache-Conditional Experts for Efficient Mobile Device Inference\n\nAndrii SkliarT. V. Rozendaal B. Bejnordi\n\nComputer Science\n\nTrans. Mach. Learn. Res.\n\n 2025\n\nThis work introduces a novel cache-aware routing strategy that leverages expert reuse during token generation to improve cache locality and offers a flexible, training-free solution to extend MoE's applicability across real-world applications.\n\n 13\n[PDF] [...] M O E-I NFINITY features sequence-level expert activation tracing, a new approach adept at identifying sparse activations and capturing the temporal locality of MoE inference, which substantially reduces the latency overheads usually associated with offloading experts for improved cost performance.\n\nView via Publisher\n\n## Figures from this paper\n\n figure 1\n\n  figure 1\n figure 2\n\n  figure 2\n figure 3\n\n  figure 3\n figure 4\n\n  figure 4\n figure 5\n\n  figure 5\n figure 6\n\n  figure 6\n figure 7 [...] 2025\n\nDAOP dynamically allocates experts between CPU and GPU based on per-sequence activation patterns, and selectively pre-calculates predicted experts on CPUs to minimize transfer latency and enable efficient resource utilization across various expert cache ratios while maintaining model accuracy through a novel graceful degradation mechanism.\n\n 23\n[PDF]\n\n### Accelerating Edge Inference for Distributed MoE Models with Latency-Optimized Expert Placement\n\nTian WuLiming Wang Jinhang Zuo",
+      "score": 0.66777676,
+      "raw_content": null,
+      "id": "924816-00"
+    },
+    {
+      "url": "https://arxiv.org/html/2410.17954v2",
+      "title": "ExpertFlow: Efficient Mixture-of-Experts Inference via Predictive Expert Caching and Token Scheduling",
+      "content": "Ineffective expert caching. Expert caching is central to controlling GPU memory usage. The commonly used LRU policy (Eliseev and Mazur, 2023) evicts experts purely by recency and overlooks routing patterns, leading to unstable cache hit rates under MoE’s dynamic activations. SE-MoE (Yu et al., 2024) improves locality by caching all experts from two consecutive layers through a ring-buffer design, but this creates large memory overhead for models with many experts (e.g., Switch-128) and [...] Our RPP achieves up to 95% expert prediction accuracy with strong cross-domain generalization. The TS improves throughput by up to 16.19% via enhanced expert reuse. The ECE attains a cache hit ratio of 91.96%, outperforming LRU by up to 61.15%.\n\n## 2. Related Work\n\n### 2.1. Mixture-of-Experts (MoE) [...] 4 increases speedup from 5.86×\\times to 9.99×\\times. For Mixtral-8, Qwen1.5 and Deepseek-MoE (Figs. 6b–d), throughput improves with larger BS due to TS-enabled expert reuse; we outperform Cache-MoE by up to 1.99×\\times (Mixtral-8), 2.12×\\times (Qwen1.5) and 1.94×\\times (Deepseek-MoE) via accurate prefetching and reduced load latency.",
+      "score": 0.64986813,
+      "raw_content": null,
+      "id": "935784-01"
+    },
+    {
+      "url": "https://arxiv.org/html/2508.17137v1",
+      "title": "MoE-Beyond: Learning-Based Expert Activation Prediction on Edge Devices",
+      "content": "Cache hit rate serves as our primary system-level evaluation metric, capturing the proportion of expert activations successfully served from the GPU cache without offloading. This is particularly critical on edge devices and memory-constrained GPUs, where minimizing PCIe transfer latency and maximizing in-memory utilization is key. [...] Figure 7 shows how MoE-Beyond consistently outperforms MoE-Infinity across varying GPU expert capacities. Even when only 10% of experts fit in memory, MoE-Beyond achieves a hit rate of over 70%, compared to just 17% for MoE-Infinity. As the memory budget increases, MoE-Beyond maintains a lead of 10–25 percentage points, converging to 100% hit rate faster. [...] WebGLM-QA dataset , achieving 97.5% accuracy and an 86.6% F1-score. Simulation results show that MoE-Beyond improves GPU cache hit rate from 17% to 72% when only 10% of experts fit in GPU cache, outperforming heuristic baselines.",
+      "score": 0.54971373,
+      "raw_content": null,
+      "id": "bc5b39-02"
+    },
+    {
+      "url": "https://tldr.takara.ai/p/2401.14361",
+      "title": "MoE-Infinity: Activation-Aware Expert Offloading for Efficient MoE Serving | Takara TLDR",
+      "content": "By analyzing these selected traces, MoE-Infinity guides the replacement and prefetching of the expert cache, providing 3.1-16.7x per-token latency improvements over numerous state-of-the-art systems, including vLLM, Ollama, DeepSpeed and BrainStorm across various MoE models (DeepSeek and Mixtral) when handling different LLM tasks. MoE-Infinity's source code is publicly available at [...] In this setting, MoE models exhibit a high degree of activation sparsity, meaning a small number of experts are frequently reused in generating tokens during the decode phase. Leveraging this idea, we design a sparsity-aware expert cache, which can trace the sparse activation of experts during inference and carefully select the trace that represents the sparsity pattern. [...] tldr.takara.ai\n\nMoE-Infinity: Activation-Aware Expert Offloading for Efficient MoE Serving\n\n2401.14361\n\n## Authors\n\nZhan Lu,Luo Mai,Mahesh Marina,Leyang Xue,Yao Fu\n\n## Abstract",
+      "score": 0.5462305,
+      "raw_content": null,
+      "id": "a242c0-03"
+    },
+    {
+      "url": "https://www.emergentmind.com/topics/expert-offloading",
+      "title": "Expert Offloading for Scalable AI - Emergent Mind",
+      "content": "Prediction accuracy over expert selection directly impacts cache hit ratio and amortized latency. Methods include per-sequence activation tracing (MoE-Infinity)(Xue et al., 2024), layer-wise gate prediction (DAOP)(Zhang et al., 2024), and transformer-based routing path predictors (ExpertFlow)(He et al., 2024). [...] Speculative execution: Use lightweight quantized or shadow models to predict expert activation across multiple future tokens, enabling out-of-band prefetching and maximal overlap of I/O and compute. MoE-SpeQ introduces an Amortization Roofline Model to quantitatively tune the speculation window for throughput optimality (Wang et al., 18 Nov 2025). SpecMoE-Off integrates draft-model speculative chunking, hiding up to 2.5× of the expert-transfer latency (Wang et al., 29 Aug 2025). [...] Expert Offloading is a strategy to dynamically allocate neural network experts across heterogeneous resources to balance performance and energy consumption.\n It leverages mechanisms such as prediction, prefetching, caching, and speculative execution to optimize latency and memory utilization in MoE and early-exit architectures.",
+      "score": 0.47986987,
+      "raw_content": null,
+      "id": "61c946-04"
+    },
+    {
+      "url": "https://blog.lmcache.ai/en/2026/04/03/lmcaches-new-architecture-boosts-moe-inference-performance-by-10x",
+      "title": "LMCache's New Architecture Boosts MoE Inference Performance by 10",
+      "content": "Each request is routed to a specific DP rank, where attention is executed locally. During MoE layers, tokens are dynamically dispatched to experts across GPUs and then aggregated. This architecture provides strong scalability, efficient memory usage, and minimal communication overhead—making it well suited for serving large MoE models. [...] export VLLM_USE_FLASHINFER_MOE_FP8=0 export VLLM_USE_DEEP_GEMM=1 \nvllm serve Qwen/Qwen3-235B-A22B-Instruct-2507-FP8 \\ \n--data-parallel-size 8  --enable-expert-parallel --gpu-memory-utilization 0.8 \\ \n--max-num-batched-tokens 1024  --kv-offloading-size 50  \\\n--disable-hybrid-kv-cache-manager  \\\n--max-model-len auto [...] --max-model-len auto\n\nexport VLLM_USE_FLASHINFER_MOE_FP8=0 export VLLM_USE_DEEP_GEMM=1 vllm serve Qwen/Qwen3-235B-A22B-Instruct-2507-FP8 \\ --data-parallel-size 8 --enable-expert-parallel --gpu-memory-utilization 0.8 \\ --max-num-batched-tokens 1024 --kv-offloading-size 50 \\ --disable-hybrid-kv-cache-manager \\ --max-model-len auto",
+      "score": 0.28375953,
+      "raw_content": null,
+      "id": "c6a9ab-05"
+    }
+  ],
+  "response_time": 1.17,
+  "request_id": "75d662d8-86e1-4be6-8cde-780440a4cc33"
+}

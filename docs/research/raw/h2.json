@@ -1,0 +1,58 @@
+{
+  "query": "expert co-activation graph offline disk layout placement optimization MoE storage clustering",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://arxiv.org/html/2607.05116v1",
+      "title": "Communication-Aware Placement and Pruning for Efficient Mixture-of-Experts Inference",
+      "content": "Expert placement and expert pruning have become common approaches for optimizing MoE inference systems.\nExpert placement methods[7, 8, 9, 10, 11, 12] are lossless.\nSince the activation frequencies of different experts remain uneven, the distributed MoE inference generally suffers from severe load imbalance.\nBy co-locating frequently and infrequently activated experts on the same device, it can balance the computation load and improve overall inference efficiency. [...] Prior work mainly addresses this issue by adjusting expert placement across devices. Some approaches monitor expert popularity at runtime and co-locate hot and cold experts to improve load balance [25, 26]. However, these methods primarily treat expert placement as a load-balancing problem and do not explicitly consider its impact on communication volume. As a result, they may overlook an important source of overhead in MoE inference systems, where communication can become a major bottleneck. [...] CAP requires an offline optimization phase before deployment to generate and adjust expert groupings. This process consists of two stages. The first stage generates the candidate groupings, including collecting routing statistics, constructing the initial placement, and performing adjustment. This stage is hardware-independent and only needs to be executed once for a given model. To keep this process efficient, we implement both expert grouping and adjustment with GPU-efficient vectorized code.",
+      "score": 0.5775198,
+      "raw_content": null,
+      "id": "8cff8b-00"
+    },
+    {
+      "url": "https://arxiv.org/html/2510.05497v5",
+      "title": "Patterns behind Chaos: Forecasting Data Movement for Efficient Large-Scale MoE LLM Inference",
+      "content": "Certain experts are frequently activated simultaneously, exhibiting strong co-activation patterns. Assigning these co-activated expert pairs to different compute units maximizes hardware parallelism and prevents workload concentration on specific units. However, separation also introduces cross-unit communication overhead. The effectiveness depends on system topology and batch size, requiring careful trade-off between parallelism benefits and communication costs. [...] Spatial relations capture how expert activations are distributed across compute units within a given time window. This distributional information enables multi-unit strategies that optimize expert placement and workload balancing across the system, reducing data movement and preventing bottlenecks. We classify spatial relations into single-expert activation imbalance and expert-pair co-activation affinity as shown in Figure 3(b), and investigate how task types influence these patterns to inform [...] Hot experts vary by task and language. English queries, for instance, activate different expert subsets than Chinese queries. Providing task metadata during serving enables proactive expert placement: when workloads are predominantly English, systems can pre-duplicate or reassign English-relevant experts, reducing communication and balancing loads. This task-to-expert mapping requires only one-time offline profiling per model and can be reused throughout deployment, making the approach",
+      "score": 0.4224814,
+      "raw_content": null,
+      "id": "36a5e2-01"
+    },
+    {
+      "url": "https://www.preprints.org/manuscript/202503.0611",
+      "title": "Improving Deep Learning Performance with Mixture of Experts and Sparse Activation[v1] | Preprints.org",
+      "content": "In the following sections, we will discuss training methodologies, optimization techniques, and real-world applications of MoE models . [...] Training an MoE model involves optimizing both the expert networks and the gating function . Given a dataset , the training objective is typically to minimize a loss function of the form:where  represents the primary loss function (e.g., cross-entropy or mean squared error), and  is a regularization term to encourage load balancing and prevent expert over-specialization . The MoE model is trained using gradient-based optimization methods such as Stochastic Gradient Descent (SGD) or Adam . [...] While MoE models offer significant advantages in scalability and efficiency, they also introduce new challenges related to training stability, interpretability, fairness, and hardware optimization . Addressing these issues will require advances in algorithm design, regularization techniques, and hardware-aware implementations . Future research should focus on improving expert utilization, ensuring fairness, and making MoE models more robust and interpretable. The next section concludes this",
+      "score": 0.27476397,
+      "raw_content": null,
+      "id": "9bb658-02"
+    },
+    {
+      "url": "https://www.usenix.org/system/files/nsdi26-gandhi.pdf",
+      "title": "[PDF] Sparse Checkpointing for Fast and Reliable MoE Training - USENIX",
+      "content": "expert placement or sharding, where applicable; and (4) a Mean Time Between Failures (MTBF) to characterize failure rates and corresponding recovery overhead. [...] below: Inputs. Our simulator requires four primary inputs: (1) a training job specification, including the model architecture, global_batch_size, optimizer configuration, and hyper-parameters such as micro_batch_size; (2) a cluster con-figuration specifying GPU type and count, GPU allocation per node, inter-node bandwidth, topology, and hardware het-erogeneity; and (3) a parallelization plan describing pipeline stage partitioning, tensor- and data-parallel degrees, and MoE expert placement or [...] For expert j in layer l, the activation count is: Al j = ∑ xi∈D 1 h γ(el j,xi) = 1 i where D is the training dataset and γ(el j,xi) indicates whether expert j in layer l is activated for token xi. Popularity dis-tributions are naturally skewed—some experts are activated more frequently than others, and are commonly referred to as popular experts [24, 60]. MoEvement opportunistically ex-ploits this imbalance by sorting experts in ascending order of popularity using the OrderOperators() function,",
+      "score": 0.22869907,
+      "raw_content": null,
+      "id": "c13211-03"
+    },
+    {
+      "url": "https://proceedings.mlr.press/v70/mirhoseini17a/mirhoseini17a.pdf",
+      "title": "Device Placement Optimization with Reinforcement Learning",
+      "content": "assignment than the expert-designed placement. [...] A well-known graph partitioning algorithm with an open source software library is the Scotch optimizer (Pellegrini, 2009), which we use as a baseline in our experiments. [...] Neural MT.\nWe ﬁrst compare the per-device computa-tional loads by RL-based placement and expert-designed placement for the NMT model.",
+      "score": 0.2225062,
+      "raw_content": null,
+      "id": "45d284-04"
+    },
+    {
+      "url": "https://github.com/byungsoo-oh/ml-systems-papers",
+      "title": "GitHub - byungsoo-oh/ml-systems-papers: Curated collection of papers in machine learning systems · GitHub",
+      "content": "[NAACL'25] MoLA: MoE LoRA with Layer-wise Expert Allocation\n [NAACL'25] Marrying LLMs with Dynamic Forecasting: A Graph Mixture-of-expert Perspective\n [NAACL'25] Sparser Mixture-of-Adapters with Cross-Layer Generalization\n [NAACL'25] SimSMoE: Toward Efficient Training Mixture of Experts via Solving Representational Collapse\n [Mobicom'25] D2MoE: Dual Routing and Dynamic Scheduling for Efficient On-Device MoE-based LLM Serving [...] [ASPLOS'26] LAER-MoE: Load-Adaptive Expert Re-layout for Efficient Mixture-of-Experts Training\n [EuroSys'26] Taming Latency-Memory Trade-Off in MoE-Based LLM Serving via Fine-Grained Expert Offloading\n [EuroSys'26] MegaScale-MoE: Large-Scale Communication-Efficient Training of Mixture-of-Experts Models in Production\n [PACT'25] ScaleMoE: A Fast and Scalable Distributed Training Framework for Large-Scale Mixture-of-Experts Models [...] [DAC'25] HybriMoE: Hybrid CPU-GPU Scheduling and Cache Management for Efficient MoE Inference\n [TKDE'25] A Survey on Mixture of Experts\n [ICLR'25] NetMoE: Accelerating MoE Training through Dynamic Sample Placement\n [EuroSys'25] Samoyeds: Accelerating MoE Models with Structured Sparsity Leveraging Sparse Tensor Cores\n [EuroMLSys'25] Priority-Aware Preemptive Scheduling for Mixed-Priority Workloads in MoE Inference\n [EuroMLSys'25] Accelerating MoE Model Inference with Expert Sharding",
+      "score": 0.16717818,
+      "raw_content": null,
+      "id": "085db3-05"
+    }
+  ],
+  "response_time": 1.17,
+  "request_id": "682ed0fe-40b9-4558-b19a-5efb233fd444"
+}

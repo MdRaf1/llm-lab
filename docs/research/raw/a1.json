@@ -1,0 +1,50 @@
+{
+  "query": "SpecMD Apple comprehensive study speculative expert prefetching MoE",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://www.themoonlight.io/tw/review/specmd-a-comprehensive-study-on-speculative-expert-prefetching",
+      "title": "[論文評述] SpecMD: A Comprehensive Study On Speculative Expert Prefetching",
+      "content": "Title: [論文評述] SpecMD: A Comprehensive Study On Speculative Expert Prefetching\n## [論文評述] SpecMD: A Comprehensive Study On Speculative Expert Prefetching. AIRethink MoE caching: Discover why traditional policies fail and unlock peak performance with a novel, benchmarked eviction strategy. However, translating this theoretical efficiency into practical performance is hampered by the substantial memory footprint required to keep all experts resident, which can be prohibitively expensive for memory-constrained devices. To address this, expert caching mechanisms are crucial, involving four key aspects: routing (expert selection), prefetching (anticipating future expert needs), eviction (freeing cache space), and miss handling (responding to absent experts). Existing approaches to MoE cache management are often hardware-centric and thus overfit to specific scenarios, leaving a generalized understanding of policy interactions and optimal configurations across diverse deployment settings underexplored. To bridge this gap, the authors introduce **SpecMD (Speculative MoE Decoding)**, a standardized, open-source benchmarking framework designed for reproducible comparison and comprehensive study of MoE caching strategies. SpecMD enables (1) controlled evaluation of prior approaches under identical conditions, (2) systematic exploration of policy interactions and compositions, and (3) characterization of performance across a full spectrum of hardware constraints. Through SpecMD, the authors conduct an exhaustive benchmarking study of MoE caching policies, including LRU caching, fetch cascade, and expert substitution, across four MoE models (Mixtral-8x7B, OLMoE-1B-7B, Phi-3.5-MoE, Qwen1.5-MoE) and three emulated hardware configurations (1%, 5%, 25% cache capacity). Motivated by the observation that MoE's deterministic access patterns are mismatched with conventional eviction policies, the authors propose **Least-Stale**, a novel eviction policy. Least-Stale combines temporal (access time) and spatial (layer positioning) awareness to minimize collision misses—where experts are evicted only to be immediately needed again. Eviction prioritizes stale experts, which are least likely to be immediately reused, followed by current experts from \"left\" layers, effectively preventing the premature eviction of experts needed for upcoming layers. **Eviction Policies**: Determine which experts to remove when cache capacity is exceeded. In conclusion, SpecMD serves as a critical framework for rigorously evaluating MoE caching policies. The study challenges conventional caching wisdom for MoE, highlighting the ineffectiveness of temporal locality assumptions and proposing Least-Stale, a novel eviction policy that leverages MoE's deterministic access patterns to significantly reduce collision misses and improve TTFT.",
+      "score": 0.9177831,
+      "raw_content": null,
+      "id": "20bfc8-00"
+    },
+    {
+      "url": "https://arxiv.org/html/2602.03921v1",
+      "title": "SpecMD: A Comprehensive Study On Speculative Expert Prefetching",
+      "content": "Using SpecMD, we conducted an exhaustive benchmarking study of MoE caching policies. We tested LRU caching Eliseev and Mazur (2023), fetch cascade Tang et al. (2024), and expert substitution Zhu et al. (2025) under controlled and comparable conditions. We evaluate four MoE models (Mixtral-8x7B, OLMoE-1B-7B, Phi-3.5-MoE, Qwen1.5-MoE) and three different hardware configurations. From our studies, we made the following observations: [...] Previous works have proposed hardware-centric caching policies, but how these various caching policies interact with each other and different hardware specification remains poorly understood. To address this gap, we develop SpecMD, a standardized framework for benchmarking ad-hoc cache policies on various hardware configurations. Using SpecMD, we perform an exhaustive benchmarking of several MoE caching strategies, reproducing and extending prior approaches in controlled settings with realistic [...] Refer to caption\n\nIt is for this end that we develop SpecMD (Speculative MoE Decoding), a standardized benchmarking framework designed to enable reproducible comparison of MoE caching strategies. Through this framework, we gain three capabilities: (1) controlled comparison of prior approaches under identical conditions, (2) exploration of policy interactions and compositions, and (3) characterization of performance across the full hardware constraint space.",
+      "score": 0.8719229,
+      "raw_content": null,
+      "id": "441bd2-01"
+    },
+    {
+      "url": "https://arxiv.org/html/2602.03921",
+      "title": "SpecMD: A Comprehensive Study On Speculative Expert Prefetching",
+      "content": "Using SpecMD, we conducted an exhaustive benchmarking study of MoE caching policies. We tested LRU caching Eliseev and Mazur (2023), fetch cascade Tang et al. (2024), and expert substitution Zhu et al. (2025) under controlled and comparable conditions. We evaluate four MoE models (Mixtral-8x7B, OLMoE-1B-7B, Phi-3.5-MoE, Qwen1.5-MoE) and three different hardware configurations. From our studies, we made the following observations: [...] Previous works have proposed hardware-centric caching policies, but how these various caching policies interact with each other and different hardware specification remains poorly understood. To address this gap, we develop SpecMD, a standardized framework for benchmarking ad-hoc cache policies on various hardware configurations. Using SpecMD, we perform an exhaustive benchmarking of several MoE caching strategies, reproducing and extending prior approaches in controlled settings with realistic [...] Refer to caption\n\nIt is for this end that we develop SpecMD (Speculative MoE Decoding), a standardized benchmarking framework designed to enable reproducible comparison of MoE caching strategies. Through this framework, we gain three capabilities: (1) controlled comparison of prior approaches under identical conditions, (2) exploration of policy interactions and compositions, and (3) characterization of performance across the full hardware constraint space.",
+      "score": 0.8719229,
+      "raw_content": null,
+      "id": "177cd7-02"
+    },
+    {
+      "url": "https://www.themoonlight.io/en/review/moe-speq-speculative-quantized-decoding-with-proactive-expert-prefetching-and-offloading-for-mixture-of-experts",
+      "title": "[Literature Review] MoE-SpeQ: Speculative Quantized Decoding ...",
+      "content": "The speculative prefetching strategy achieved over 96% expert cache hit rate across various memory capacities, significantly outperforming LRU-based approaches.\n An ablation study revealed that the fused kernel optimization contributes more significantly to performance gains than asynchronous prefetching. [...] + Phase III: Activation-Driven Cache Saturation: Aggressively prefetches all remaining predicted experts as draft generation nears completion, ensuring the VRAM cache is saturated for the verification stage.\n3. The Execution Engine: This engine optimizes both draft generation and parallel verification for speed and memory efficiency. [...] Hierarchical and Layer-Aware Cache Management: It orchestrates data movement through a three-phase pipeline:\n     + Phase I: Locality-Aware Cache Priming: Services initial expert requests from the existing VRAM cache.\n     + Phase II: Adaptive Bandwidth-Guided Prefetch: Strategically prefetches a subset of predicted experts from the middle of the ELB to efficiently utilize PCIe bandwidth.",
+      "score": 0.5709301,
+      "raw_content": null,
+      "id": "100bdc-03"
+    },
+    {
+      "url": "https://arxiv.org/pdf/2510.10302",
+      "title": "SP-MoE: Speculative Decoding and Prefetching for Accelerating...",
+      "content": "Interpretation of Algorithm 1. Integrating the computed cutoff layer 𝐿with our cross-model predictor design, SP-MoE employs speculative expert prefetching. During drafting, for each layer 𝑙∈{0, · · · , 𝐿}, SP-MoE first generates predic-tion scores for all the experts using the attention outputs 𝑠computed in the current layer (line 2). It then selects the top-k critical experts based on the gating scores. For those predicted critical experts that are cached in 𝑄𝑐𝑎𝑐ℎ𝑒within 6 SP-MoE : Speculative [...] 4.4 Cache Implementation SP-MoE employs the LRU caching strategy to optimize ex-pert eviction in MoE layers. We leverage a cache queue𝑄𝑐𝑎𝑐ℎ𝑒 to track the expert access order. For new experts not in the queue, we evict the head-of-queue expert, replace it with the new one, and push it to the tail. For existing experts in the queue, we first remove them and then reinsert them from the back. Based on the LRU caching strategy, this mechanism prevents recently prefetched experts from being evicted. [...] 8 Conclusion and Future Work This paper presents SP-MoE, a system for efficient MoE-based LLM inference on resource-constrained devices. By combining expert offloading with speculative decoding, Spec-MoE exploits SD’s two-stage structure for accurate draft-stage prefetching and introduces a pipelined runtime with asynchronous prefetching and batched I/O to eliminate band-width contention. Extensive experiments show that SP-MoE achieves a 1.07×–3.5× TPOT speedup over SD-enabled state-of-the-art",
+      "score": 0.48323447,
+      "raw_content": null,
+      "id": "3535ab-04"
+    }
+  ],
+  "response_time": 2.87,
+  "request_id": "c8aa1528-5cbf-40a7-8148-39b5db2d3f32"
+}

@@ -1,0 +1,74 @@
+{
+  "query": "procedural generated weights neural network PRNG seeds hypernetwork implicit parameter generation transformer compression",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://openreview.net/pdf/f4f7a08320df56470b978e19dfe2fcca30169f3b.pdf",
+      "title": "IMPLICIT NEURAL REPRESENTATION GENERATION",
+      "content": "099 100 101 102 103 104 105 106 107 Under review as a conference paper at ICLR 2026 disrupts the neural network’s natural gradient flow, reducing representation quality. Although Hy-PoGen (Ren et al., 2025) attempts to model these dependencies using backpropagation’s chain rule, its use of separate MLPs for Jacobian matrices limits scalability when handling large datasets or high-dimensional signals. While recent Transformer-based alternatives (e.g., LDMI (Peis et al., 2025)) improve [...] To address this issue, we introduce an adaptive parameter initialization mechanism that ensures the hypernetwork-generated parameters are aligned with the desired initialization distribution for stable training. Specifically, the scaling factor sτ is applied to the hypernetwork output, HΩ(zτ)i, to adjust the variance of the generated weights. The scaling factor sτ(i) is computed by taking the ratio of the target variance, vartarget(i), to the actual variance of the hypernetwork output, [...] Instead of directly predicting target parameters θ∗from task embedding zτ, recent work HyPoGen (Ren et al., 2025) introduced an optimization-biased hypernetwork that generates parameter updates ∆θ = H(zτ, θ) and refines them iteratively: θ(t) = λ∆θ(t−1) +θ(t−1), where λ is the step size. The key idea is that parameter generation should mimic the formulation of neural network optimization - using the chain rule of backpropagation: ∂fθ(x) ∂θi =   L Y j=i+1 ∂hj ∂hj−1  ∂hi ∂θi , (4) where",
+      "score": 0.45159313,
+      "raw_content": null,
+      "id": "9cdfe2-00"
+    },
+    {
+      "url": "https://openreview.net/forum?id=k4wasQnZ3w",
+      "title": "Implicit Neural Representation Generation with ...",
+      "content": "This paper presents a Transformer-based hypernetwork framework for generating Implicit Neural Representations (INRs).",
+      "score": 0.28953284,
+      "raw_content": null,
+      "id": "112c50-01"
+    },
+    {
+      "url": "https://arxiv.org/html/2503.00838v1",
+      "title": "Foundation Models Secretly Understand Neural Network Weights",
+      "content": "Hypernetworks are neural networks that produce or modify the parameters of another network. In this paper, we focus on hypernetworks that generate implicit neural representations. Hypernetworks are used as a means of conditioning implicit neural representation generation and also to create generalizable implicit neural representations. Early works using hypernetworks to generate implicit neural representations (Mescheder et al., 2019; Sitzmann et al., 2020b; Sitzmann et al., 2019; Sitzmann et [...] #### Prompt Tuning Transformer-based Hypernetworks [...] A hypernetwork is a neural network that produces the weights of another neural network. In our case, a hypernetwork gϕg\\_{\\phi} produces the weights of an INR fθf\\_{\\theta} given some partial observations vv of the signal II: gϕ​(v)=θg\\_{\\phi}(v)=\\theta. The hypernetwork model is then supervised by a reconstruction loss between the vv and the predicted partial observation v′=F⁡(fgϕ​(v)​(x))v^{\\prime}=F(f\\_{g\\_{\\phi}(v)}(x)), where xx are the coordinates corresponding to vv and FF is the forward",
+      "score": 0.2843628,
+      "raw_content": null,
+      "id": "e0cf4f-02"
+    },
+    {
+      "url": "https://scholar.google.com/citations?view_op=view_citation&hl=en&user=gAUCT2wAAAAJ&citation_for_view=gAUCT2wAAAAJ%3AS16KYo8Pm5AC",
+      "title": "Algorithmic Compression via Pretrained Neural Networks",
+      "content": "by T Genewein · 2026 · Cited by 3 — This paper reviews a series of theoretical and empirical works, aiming to bridge the gap between the practical success of LLMs and formal theories of",
+      "score": 0.26402897,
+      "raw_content": null,
+      "id": "b81d76-03"
+    },
+    {
+      "url": "https://arxiv.org/html/2410.10714v1",
+      "title": "SeedLM: Compressing LLM Weights into Seeds of Pseudo ...",
+      "content": "We introduce SeedLM, a simple yet effective compression technique which can compress weights to 3-4 bits with minimal accuracy loss. SeedLM is",
+      "score": 0.21955535,
+      "raw_content": null,
+      "id": "62794c-04"
+    },
+    {
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11362460",
+      "title": "Effective weight optimization strategy for precise deep learning forecasting models using EvoLearn approach",
+      "content": "models with randomly initialized weight parameters (lines 2 to 7 in Algorithm 1).Following this, the defined models are complied and trained using the back-propagation51. The set of weights generated after running $n _ e p o c h s$ of back-propagation represents one candidate of the initial population. This training procedure with random initialization is repeated $i n i t _ p o p _ s i z e$ number of times, where $i n i t _ p o p _ s i z e$ represents the number of candidates or size of the [...] optimal weight parameters. Best combinations of network weights are produced by integrating GA with the back-propagation.The presented work introduces an evolutionary algorithm-based model-selection technique against the conventional method of selecting the best model among the set of trained learnable models.With the integration of the GA along with the back-propagation algorithm, it was found that the trained models attain saturation earlier than the conventional learning technique. [...] EvoLearn integrates GA with back-propagation by initially training neural networks using back-propagation to establish a population of diverse models with different weights. The GA then optimizes these weights through selection, crossover, and mutation, focusing on minimizing a combined error from both training and validation sets. This hybrid approach allows for a broader exploration of the weight space, preventing overfitting and improving generalization. Compared to conventional",
+      "score": 0.047465697,
+      "raw_content": null,
+      "id": "a40a2d-05"
+    },
+    {
+      "url": "https://d2l.ai/chapter_linear-regression/weight-decay.html",
+      "title": "3.7. Weight Decay",
+      "content": "4. Linear Neural Networks for Classification [...] Because weight decay is ubiquitous in neural network optimization, the deep learning framework makes it especially convenient, integrating weight decay into the optimization algorithm itself for easy use in combination with any loss function. Moreover, this integration serves a computational benefit, allowing implementation tricks to add weight decay to the algorithm, without any additional computational overhead. Since the weight decay portion of the update depends only on the current value of [...] correspond to less constrained \\(\\mathbf{w}\\), whereas larger values of \\(\\lambda\\) constrain \\(\\mathbf{w}\\) more considerably. Whether we include a corresponding bias penalty \\(b^2\\) can vary across implementations, and may vary across layers of a neural network. Often, we do not regularize the bias term. Besides, although \\(\\ell\\_2\\) regularization may not be equivalent to weight decay for other optimization algorithms, the idea of regularization through shrinking the size of weights still",
+      "score": 0.03277815,
+      "raw_content": null,
+      "id": "691b3c-06"
+    },
+    {
+      "url": "https://medium.com/aimonks/optimizing-neural-network-efficiency-with-weight-sharing-a-study-on-computational-reduction-and-a4d1b9913fcc",
+      "title": "Medium",
+      "content": "Problem: While CNNs have become a staple in machine learning, the ever-increasing complexity of models raises concerns about computational and memory requirements. These challenges necessitate examining techniques to optimize network efficiency without compromising performance. [...] Context: In deep learning, convolutional neural networks (CNNs) are widely used for image and speech recognition tasks due to their hierarchical pattern recognition system. A key feature of CNNs is the use of weight sharing, which improves the efficiency and scalability of these networks. [...] Sign up\n\nSign in\n\nSign up\n\nSign in\n\nUnknown user\n\n## 𝐀𝐈 𝐦𝐨𝐧𝐤𝐬.𝐢𝐨\n\n𝐀𝐈 𝐦𝐨𝐧𝐤𝐬.𝐢𝐨\n\nAImonks () is an AI-Educational Publication.\n\nMember-only story\n\n# Optimizing Neural Network Efficiency with Weight Sharing: A Study on Computational Reduction and Performance Maintenance\n\n## Abstract\n\nEverton Gomede, PhD\n\n--\n\n1\n\nListen\n\nShare",
+      "score": 0.024295494,
+      "raw_content": null,
+      "id": "68e982-07"
+    }
+  ],
+  "response_time": 1.65,
+  "request_id": "9b0b67e0-a4de-4709-83e5-09e612ffeca0"
+}

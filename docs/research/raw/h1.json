@@ -1,0 +1,58 @@
+{
+  "query": "cache-aware draft model bias speculative decoding toward cached experts lossless",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://arxiv.org/html/2510.05421",
+      "title": "Draft, Verify, & Improve Toward Training-Aware Speculative Decoding",
+      "content": "Traditional modern speculative decoding (SD) accelerates autoregressive generation by letting a small draft model propose a block of kk tokens and a large target model verify them in parallel.\nThe target model then commits the longest agreeing prefix and continues generation. In this setting, the committed tokens from the verifier are exactly from the target model’s decoding distribution (e.g., greedy or sampling) — creating “lossless” speculation (Leviathan et al., 2023; Chen et al., 2023). [...] During generation, the drafter proposes kspeck\\_{\\text{spec}} tokens from prefix tokens hkh\\_{k}; the frozen verifier evaluates the same prefix from hLh\\_{L} and commits the longest agreeing prefix between the drafter and verifier. The frozen verifier ensures speculation remains lossless. [...] We adopt the canonical longest-prefix verification used in SD: at each position tt, the target path deterministically emits the next token under a fixed sampler. Like many other SD works,we employ greedy decoding,\n\n|  |  |  |\n --- \n|  | yt+1⋆=arg⁡maxy​pϕ​(y∣hL,t),y^{\\star}\\_{t+1}\\,=\\,\\arg\\max\\_{y}p\\_{\\phi}(y\\mid h\\_{L,t}), |  |\n\nand the procedure is lossless because verification preserves the target sampler’s output. Additionally, we consider only single-sequence verification (no tree search).",
+      "score": 0.6501347,
+      "raw_content": null,
+      "id": "3590c0-00"
+    },
+    {
+      "url": "https://www.emergentmind.com/topics/lossless-speculative-decoding",
+      "title": "Lossless Speculative Decoding",
+      "content": "Lossless speculative decoding is a method that preserves exact output distributions while using a fast draft process and parallel token verification.\n It employs a dual-model strategy where a lightweight draft proposes candidate tokens, and a target model verifies them to ensure statistical fidelity.\n Advanced adaptations like self-speculative and tree-based approaches boost throughput significantly (up to 4× for LLMs) and enhance system efficiency. [...] Lossless speculative decoding is a family of inference algorithms for LLMs, vision-LLMs (VLMs), and diffusion-based generative models that provably preserve the output distribution of the underlying target model while delivering substantial throughput and latency acceleration during token-by-token generation. The core idea is to use a fast “draft” process to propose a block or tree of future tokens, then verify these candidates in parallel by the target model. Accepted tokens are incorporated [...] ## 1. Formal Definition and Losslessness Guarantee\n\nA speculative decoding policy comprises a “draft” procedure Draft(c)→d1:k​, and a verification function Verify(c,d1:k​)→m≤k, such that the accepted prefix d1:m​ is committed to the output sequence. The procedure is called lossless if, for every sequence length i≤m, the conditional distribution of the generated tokens is exactly\n\nPspec​(xt+1:t+i​∣x1:t​)=j=1∏i​ptarget​(xt+j​∣x1:t+j−1​)",
+      "score": 0.63125396,
+      "raw_content": null,
+      "id": "d56bd5-01"
+    },
+    {
+      "url": "https://www.emergentmind.com/topics/speculative-decoding-sd",
+      "title": "Speculative Decoding (SD)",
+      "content": "Speculative decoding (SD) is a decoding paradigm for LLMs designed to mitigate the high cost and latency of standard auto-regressive generation. The approach introduces a “draft-then-verify” workflow, decoupling token proposal from verification: a computationally efficient draft model speculates several output tokens in advance, then a larger target model checks these tokens in parallel, ensuring the output sequence preserves the statistical fidelity of full auto-regressive decoding. Recent [...] Speculative Decoding is a method that decouples token proposal and verification by using a fast draft model followed by a precise target model to accelerate inference.\n It achieves significant speedups by optimizing acceptance rates and parallel token verification, with reported improvements up to 4.5× in some scenarios. [...] Early-exit/self-speculative approaches utilize shallow (i.e., truncated) versions of the target model as drafters, exploiting cached intermediate representations (Zarch et al., 8 Apr 2025, Zhong et al., 2024).",
+      "score": 0.57437146,
+      "raw_content": null,
+      "id": "000bea-02"
+    },
+    {
+      "url": "https://www.semanticscholar.org/paper/Free-Draft-and-Verification%3A-Toward-Lossless-for-Wu-Zhang/cd9feffae79c3d84bdff57ce40224a7d2a55ecec",
+      "title": "[PDF] Free Draft-and-Verification: Toward Lossless Parallel Decoding for Diffusion Large Language Models | Semantic Scholar",
+      "content": "arXiv.org\n\n 2025\n\ndLLM-Cache is proposed, a training-free adaptive caching framework that combines long-interval prompt caching with partial response updates guided by feature similarity that brings dLLM inference latency close to that of ARMs under many settings.\n\n 166\n[PDF]\n\n### Fast Inference from Transformers via Speculative Decoding\n\nYaniv LeviathanMatan KalmanYossi Matias\n\nComputer Science\n\nInternational Conference on Machine Learning\n\n 2023 [...] 2025\n\nThis paper proposes an adaptation of speculative decoding which uses discrete diffusion models to generate draft sequences, allowing parallelization of both the drafting and verification steps, providing significant speedups to the inference process.\n\n 58\n PDF\n\n### A Survey on Parallel Text Generation: From Parallel Decoding to Diffusion Language Models\n\nLingzhe ZhangLiancheng Fang Aiwei Liu\n\nComputer Science\n\narXiv.org\n\n 2025 [...] 2023\n\nInference from large autoregressive models like Transformers is slow - decoding K tokens takes K serial runs of the model. In this work we introduce speculative decoding - an algorithm to sample from…\n\n 1,964\n Highly Influential\n[PDF]\n\n### Dream 7B: Diffusion Large Language Models\n\nJiacheng YeZhihui Xie Lingpeng Kong\n\nComputer Science\n\narXiv.org\n\n 2025",
+      "score": 0.42835352,
+      "raw_content": null,
+      "id": "9a927b-03"
+    },
+    {
+      "url": "https://www.themoonlight.io/en/review/accelerating-large-scale-reasoning-model-inference-with-sparse-self-speculative-decoding",
+      "title": "[Literature Review] Accelerating Large-Scale Reasoning Model Inference with Sparse Self-Speculative Decoding",
+      "content": "Reasoning Language Models (RLMs) exhibit remarkable capabilities by generating elaborate chain-of-thought solutions, often producing tens of thousands of tokens. This lengthy output shifts the inference bottleneck from compute-bound to memory-bound, as each token generation requires loading the increasingly large Key-Value (KV) Cache, leading to substantial pressure on memory bandwidth. Existing speculative decoding methods, which use a smaller draft model to propose tokens for parallel [...] every k draft steps during the full attention verification, where Top-K selection is applied to the attention scores (averaged over draft tokens and query heads) that are rematerialized from cached attention logits and log-sum-exp intermediate results. This allows for high speculation accuracy and an adaptive sparsity that reduces KV-Cache access by a ratio of kα+1ks+1​ for a sparsity ratio s, acceptance rate α, and drafting length k. [...] To address these challenges, the paper introduces SparseSpec, a lossless and training-free acceleration framework for large-scale RLM inference that reuses the target model for self-speculation. SparseSpec's core innovation is PillarAttn, a novel dynamic sparse attention mechanism designed specifically for the draft model. PillarAttn selectively loads and computes only \"critical tokens\"—those with the highest attention scores—thereby significantly reducing memory bandwidth usage. Crucially,",
+      "score": 0.39375854,
+      "raw_content": null,
+      "id": "969247-04"
+    },
+    {
+      "url": "https://openreview.net/forum?id=CwvY6TXLxr",
+      "title": "Draft, Verify, \\& Improve: Toward Training-Aware Speculative Decoding | OpenReview",
+      "content": "Title: Draft, Verify, \\& Improve: Toward Training-Aware Speculative Decoding | OpenReview\nback arrowGo to **ICLR 2026 Conference** homepage. ## Draft, Verify, \\& Improve: Toward Training-Aware Speculative Decoding. ### Shrenik Bhansali, Larry Heck. 19 Sept 2025 (modified: 11 Feb 2026)Submitted to ICLR 2026EveryoneRevisionsBibTeXCC BY 4.0. **Keywords:** Speculation, Speculative Decoding, acceleration, llm, large langauge model, inference, efficient training. **TL;DR:** Train a self-speculation model on its own verifier feedback, matching SoTA performance with less data and training. **Abstract:** Autoregressive (AR) decoding is a major latency bottleneck for large language models. Speculative decoding (SD) accelerates AR by letting a drafter propose multi-token blocks that a verifier accepts or rejects. However, many SD systems require heavy offline training or extra components. These choices raise data/compute cost and can yield brittle drafters under distribution drift. We introduce \\emph{Draft, Verify, \\& Improve (DVI)}, a training-aware self-speculative framework that combines inference with continual online learning. We partition an LLM into a drafter and a verifier, and during generation, verifier accept/reject decisions are converted into supervision signals and used to update the drafter head. A simple \\emph{KL$\\rightarrow$RL} schedule bootstraps calibration via online distillation and then adds reward-masked cross-entropy with a on-policy policy-gradient term, preserving lossless, single model deployment. On Spec-Bench, DVI achieves a $2.16\\times$ wall-time speedup, on par with SoTA approaches like EAGLE-2, while orders of magnitude less data for training, and ablations show that DVI outperforms KL-only online distillation. DVI demonstrates that \\emph{training-aware} self-speculation can deliver state-of-the-art, lossless speedups with minimal training overhead. **Primary Area:** foundation or frontier models, including LLMs. OpenReview is a long-term project to advance science through improved peer review with legal nonprofit status. We gratefully acknowledge the support of the OpenReview Sponsors.",
+      "score": 0.2427756,
+      "raw_content": null,
+      "id": "e33187-05"
+    }
+  ],
+  "response_time": 2.78,
+  "request_id": "54cca83f-d307-43fa-8595-ca87bdc93fd2"
+}

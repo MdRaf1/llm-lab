@@ -1,0 +1,90 @@
+{
+  "query": "neural network training regularization improve lossless compression entropy weights model compression",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://openaccess.thecvf.com/content/ICCV2023/papers/Shi_Lossy_and_Lossless_L2_Post-training_Model_Size_Compression_ICCV_2023_paper.pdf",
+      "title": "Lossy and Lossless (L2) Post-training Model Size Compression",
+      "content": "Motivated by , we incorporate entropy into the regu-larization term and take Lr(·) = S(·), rather than directly calculating the compressed model size. By explicitly build-ing the relationship between compressed model size with lossless techniques and entropy term, we can guide the op-timization to pursue a better weight distribution, which is more appropriate for later lossless compression. In this way, the potential of the subsequent lossless compression can be well unleashed. [...] For lossy compression, we unify the modeling of weight distortion via a unified weight transformation for pruning, quantization, and so on. Moreover, we design a dedicated differentiable counter that accurately computes the infor-mation entropy of the compressed weights, which can reg-ulate the weights and adapt to later lossless compression, thus achieving a better compression ratio. Extensive ex-periments on various networks prove the superiority of our method compared to previous methods. [...] 17546 pression techniques together, allowing us to jointly explore various compression strategies and determine unique ones for each layer. Second, we devise a novel differentiable counter to make our entropy regularization term differen-tiable by leveraging kernel functions. This differentiable way imposes constraints on the distribution of compressed weights during optimization, contributing to more compati-ble optimized weights with later lossless compression. Con-sequently, our method",
+      "score": 0.6202772,
+      "raw_content": null,
+      "id": "10692a-00"
+    },
+    {
+      "url": "https://arxiv.org/html/2109.05075v3",
+      "title": "On the Compression of Neural Networks Using ℓ_0-Norm Regularization and Weight Pruning",
+      "content": "As previously mentioned, both ℓ2\\ell\\_{2}- and ℓ1\\ell\\_{1}-norm regularizations result in weight-update zero-attraction terms that induce weight magnitude reductions during the network training. Such a zero-attraction effect, besides preventing model overfitting, also tends to produce networks with several weights having very small magnitude values. Most of these weights have a negligible contribution to the network output and, thus, they can be pruned out. This idea is the basis for many [...] the initial accuracy obtained for αℓ0=0\\alpha\\_{\\ell\\_{0}}=0 is reduced by 0.19%0.19\\%, 2.42%2.42\\%, and 5.85%5.85\\% for the values of αℓ0\\alpha\\_{\\ell\\_{0}} of 1×10−71\\times 10^{-7}, 2.5×10−72.5\\times 10^{-7}, and 5×10−75\\times 10^{-7}, respectively. [...] The obtained curves of accuracy versus compression ratio are presented in Figure 9. From these curves, one can again notice the effectiveness of the proposed approach, producing compression rates varying from 13×13\\times (with β=5\\beta=5 and αℓ0=1×10−7\\alpha\\_{\\ell\\_{0}}=1\\times 10^{-7}) to 25×25\\times (with β=10\\beta=10 and αℓ0=1×10−6\\alpha\\_{\\ell\\_{0}}=1\\times 10^{-6}) without noticeable performance reduction. Moreover, one can observe that the change in the value of β\\beta from 5 to 10 does",
+      "score": 0.5315261,
+      "raw_content": null,
+      "id": "5b0876-01"
+    },
+    {
+      "url": "https://desirivanova.com/post/neural-compression-intro",
+      "title": "Introduction to Neural Compression",
+      "content": "Side note: The entropy model $p\\_\\zeta(z)$ corresponds to the prior in a VAE. In some applications, this prior is a fixed (simple) distribution, e.g. standard Gaussian, and its main role is to act as a regulariser. In neural compression settings the prior is learned and, as discussed above, is crucial for efficient compression. Indeed a lot of research has been focused on improving the entropy model—for example, Ballé et al. (2018) introduce a hyperprior. For a recent review on learned image [...] While the traditional compression approaches (e.g. JPEG) optimize each of these components independently, neural-based learned methods optimize them jointly, which can be hugely beneficial. Naturally, such neural approaches build upon autoencoder architectures and consist of three learnable components: encoder $\\mathcal{E}\\_{\\theta}$, decoder $\\mathcal{D}\\_\\psi$ and entropy model $p\\_\\zeta$, where $\\theta, \\psi$ and $\\zeta$ are trainable parameters.\n\n## Training objective [...] The reason why this procedure will not work is that $z$ being low-dimensional is not sufficient for efficient compression; what we require is $z$ to be low entropy. We can have a low-dimensional latent representation $z$, which is high entropy, and vice-versa—$z$ can be the same dimension as $x$ but much lower entropy, making it easy to compress losslessly. To ensure that the latent $z$ is low-entropy we need to be able to calculate that entropy, $H(z)=-\\mathbb{E}\\_{p(z)}[\\log p(z)]$, and to",
+      "score": 0.46628717,
+      "raw_content": null,
+      "id": "611794-02"
+    },
+    {
+      "url": "https://www.emergentmind.com/topics/neural-compression-techniques",
+      "title": "Neural Compression Techniques",
+      "content": "Neural compression techniques are advanced methods that use neural networks to learn nonlinear mappings for efficient data representation and precise rate-distortion balancing.\n They combine lossy and lossless coding paradigms by employing deep generative models, entropy coding, and quantization to optimize compression performance.\n Applications span image, video, text, and neural model parameter compression, demonstrating empirically significant gains over traditional codecs. [...] Neural network (model) parameter compression: Specialized techniques target the efficient storage (or transmission) of neural network weights, including quantization, pruning, entropy coding, transform coding, weight sharing, and emerging methods such as linearity-based removal (Laude et al., 2018, Baktash et al., 2019, Wiedemann et al., 2019, Dobler et al., 26 Jun 2025). [...] Neural Weight Stepping: For video, this technique encodes the first frame as neural network weights; subsequent frames are represented by sparse, low-entropy network weight updates, exploiting temporal redundancy and sparse coding regularizers (R2 in parameter or DCT domain) (Czerkawski et al., 2021).",
+      "score": 0.46089602,
+      "raw_content": null,
+      "id": "dceab4-03"
+    },
+    {
+      "url": "https://kedartatwawadi.github.io/NN_compression",
+      "title": "Lossless compression using Neural Networks",
+      "content": "### Future Work\n\n1. I think if we stick to the idealistic experiments, then one of the challenge is to consider RNNs with longer memories.\n2. The other challenge is improved convergence with 1 epoch or running. Or the other option is saving the network in an improved way. With appropriate training & quantization the weights can take 32-50x lower than the original network size, which can be pretty good.\n\nThis site is open source. Improve this page. [...] where k is the parameter we choose. (the + is over binary alphabets). In this case, we observe that the process is stationary and is deterministic once you fix the first symbols. Thus, it has entropy rate 0. Note that it seems iid until order . Thus, any sequence modelling it with a lower model wont be able to compress at all. [...] This suggests that, we should be able to use LZ based features along with the NN to improve compression somehow. This also suggests that, directly dealing with sources with very long dependencies (images, DNA) in a naive way would not work due 50 markovity limit.\n\n#### Analysis of how sequence length impacts the learning",
+      "score": 0.459586,
+      "raw_content": null,
+      "id": "8200a1-04"
+    },
+    {
+      "url": "https://theaisummer.com/regularization",
+      "title": "Regularization techniques for training deep neural networks",
+      "content": "Entropy regularization is another norm penalty method that applies to probabilistic models. It has also been used in different Reinforcement Learning techniques such as A3C and policy optimization techniques. Similarly to the previous methods, we add a penalty term to the loss function.\n\nIf we assume that the model outputs a probability distribution p(x)p(x)p(x), then the penalty term will be denoted as: [...] Regularization is a set of strategies used in Machine Learning to reduce the generalization error. Most models, after training, perform very well on a specific subset of the overall population but fail to generalize well. This is also known as overfitting. Regularization strategies aim to reduce overfitting and keep, at the same time, the training error as low as possible.\n\n## TL;DR [...] The term “Entropy” has been taken from information theory and represents the average level of \"information\" inherent in the variable's possible outcomes. An equivalent definition of entropy is the expected value of the information of a variable.\n\nOne very simple explanation of why it works is that it forces the probability distribution towards the uniform distribution to reduce variance.",
+      "score": 0.39410824,
+      "raw_content": null,
+      "id": "ab70eb-05"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=_SlPBbxuqas",
+      "title": "NN - 16 - L2 Regularization / Weight Decay (Theory + @PyTorch code)",
+      "content": "training for this amount of apocs and then I'm plotting the results this is the results that I've shown you before and this function calculates the L2 Norm for the weights and the L2 Norm for this model is this and now I will add L to regularization this is the manual way of doing this it's the same function as before I've just added this thing over here okay which calculates the L2 Norm pair parameter so it iterates all the model parameters and then it adds it to this variable L2 reg and then [...] we are doing this on a continuous time and then we can look at the difference in W's divided by the difference in time and again we ignore the loss or assume it's zero so we just have w t plus 1 minus WT this is the DW and we have minus to Alpha Lambda times W so we get this expression over here this is a differential equation very simple one the solution to it is this you can verify it if you take the derivative of this screw guards to t you just get minus Alpha tilde times the original thing [...] and we can see also that the L2 Norm of the weights in this case it's high and in this case it's much much lower so we can see that the regularization worked and the L2 Norm of the weights is lower now let me switch into code so here I'm loading the necessary libraries here I'm just defining something for plotting and setting a manual seat for reproducibility here's how I generated the data this is the true function and I'm adding a little bit of noise to it and this is the neural networks that",
+      "score": 0.32347676,
+      "raw_content": null,
+      "id": "a8b000-06"
+    },
+    {
+      "url": "https://www.pinecone.io/learn/regularization-in-neural-networks",
+      "title": "Regularization in Neural Networks | Pinecone",
+      "content": "In general, Lp norms penalize large weights. L1 regularization promotes sparsity by forcing many weights to go to zero. L2 regularization clips the weights from becoming too large while ensuring that the important components in the weight vector are larger than the other components.\n We can add noise to the inputs, outputs, or gradients of the network to prevent a neural network from overfitting on the training data. [...] In addition to these common regularization techniques, you can apply batch and layer normalization and use weight initialization techniques to improve the training of neural networks.\n\n## References\n\n R Wu et al., Deep Image: Scaling up Image Recognition, arXiv, 2015\n\n H. Zhang, M. Cisse, Y. N.Dauphin, D. Lopez-paz, Mixup: Beyond Empirical Risk Minimization, arXiv, 2017\n\n T. DeVries et al., Improved Regularization of Convolutional Neural networks with Cutout, arXiv, 2017 [...] Data augmentation is a regularization technique that helps a neural network generalize better by exposing it to a more diverse set of training examples. As deep neural networks require a large training dataset, data augmentation is also helpful when we have insufficient data to train a neural network.",
+      "score": 0.3022886,
+      "raw_content": null,
+      "id": "8cefb8-07"
+    },
+    {
+      "url": "https://xailient.com/blog/4-popular-model-compression-techniques-explained",
+      "title": "4 Popular Model Compression Techniques Explained",
+      "content": "Pruning results in compressed models that run faster. It reduces the computational cost involved in network training and reduces the overall model size. Importantly, it also saves computation time and energy.\n\nA model can be pruned during or after the training. Various techniques exist for this pruning process; some of these are:\n\n Weight Pruning\n\nWeight connections that are below some predefined thresholds are pruned (zeroed out).\n\nWeight pruning\n\nWeight pruning\n\n Neuron Pruning [...] To summarize, pruning can be applied during or after training.It can be applied to both convolutional and fully connected layers.Both the original and pruned model have the same architecture. Pruned models sometimes outperform the original architecture but rarely outperform a better architecture.\n\n### 2. The quantization technique\n\nIn DNNs, weights are stored as 32-bit floating point numbers.\n\nQuantization\n\nQuantization [...] Neuron Pruning\n\n Instead of removing the weights one by one, which can be time-consuming, we prune the neurons.\n\nNeuron pruning\n\nNeuron pruning\n\n Filter Pruning\n\nFilters are ranked according to their importance, and the least important filters are removed from the network. The importance of the filters can be calculated by L1/L2 norm.\n\nFilter pruning\n\nFilter pruning\n\n Layer Pruning\n\nLayers can also be pruned.\n\nLayer pruning\n\nLayer pruning",
+      "score": 0.18929654,
+      "raw_content": null,
+      "id": "f5a03b-08"
+    },
+    {
+      "url": "https://medium.com/@ajayverma23/model-compression-and-optimization-techniques-to-enhance-performance-and-reduce-size-3d697fd40f80",
+      "title": "Medium",
+      "content": "## What is Model Compression?\n\nModel compression refers to a set of techniques aimed at reducing the size and computational requirements of deep learning models while maintaining their performance metrics such as accuracy, precision, and recall. The primary goals are to minimize latency (the time taken for inference) and memory usage, enabling the deployment of models on edge devices with limited resources.\n\n## Key Techniques for Model Compression\n\n### Pruning [...] Example: Using Singular Value Decomposition (SVD) to decompose a tensor representing weights in a neural network into lower-dimensional tensors.\n\nPros: Efficiently captures latent structures in data while compressing models.\n\nCons: Complexity in implementation and potential loss of interpretability.\n\n### Randomness Techniques\n\n### Data Perturbation\n\n## Advanced Algorithms for Model Compression\n\n## 1. Differential Privacy [...] Sign up\n\nSign in\n\nSign up\n\nSign in\n\nUnknown user\nAjay Verma\n\n## Ajay Verma\n\nData Analyst | 6 Sigma Master Black Belt | NLP | GenAI | Ex-IBM, Accenture, Fujitsu | www.ajayverma23.com | \n\nAjay Verma\n\n## Ajay Verma\n\nData Analyst | 6 Sigma Master Black Belt | NLP | GenAI | Ex-IBM, Accenture, Fujitsu | www.ajayverma23.com | \n\n# Model Compression and Optimization: Techniques to Enhance Performance and Reduce Size\n\nAjay Verma\n\n--\n\n1\n\nListen\n\nShare",
+      "score": 0.17030124,
+      "raw_content": null,
+      "id": "c0e02f-09"
+    }
+  ],
+  "response_time": 2.56,
+  "request_id": "e26c6f81-a7cc-419a-a643-fcd5ef7ac2df"
+}

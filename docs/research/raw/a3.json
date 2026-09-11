@@ -1,0 +1,58 @@
+{
+  "query": "Fiddler ktransformers Moe-Infinity CPU offload expert cache DRAM SSD comparison 2025 2026",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "title": "Expert Offloading for Scalable AI - Emergent Mind",
+      "url": "https://www.emergentmind.com/topics/expert-offloading",
+      "content": "Cache sizing: ∑e∈Ct​​Se​≤MGPU​2 suffices for most MoEs (∑e∈Ct​​Se​≤MGPU​3active experts/token) (Liang et al., 21 May 2025); diminishing returns beyond.\n Offload targets: Prefer CPU DRAM for energy efficiency over SSD; consider hierarchical caches for frequently-used (“hot”) experts (Kyung et al., 9 Aug 2025).\n Prefetch accuracy: Single-layer lookahead achieves ~84–91% prediction accuracy; speculative models reach >99% with shadow networks (OD-MoE)(Wang et al., 3 Dec 2025). [...] Energy-constrained environments: Offloading MoE weights to SSDs is currently energetically harmful (≈5–12∑e∈Ct​​Se​≤MGPU​1 higher energy per token than DRAM), unless flash cell energy drops by an order of magnitude (~10 pJ/b)(Kyung et al., 9 Aug 2025). [...] Limitations: Extremely dynamic expert selection and low local routing consistency degrade cache efficacy; prediction overheads must be amortized (<2% for most systems); SSD offloading imposes substantial energy costs under current technology (Liang et al., 21 May 2025, Kyung et al., 9 Aug 2025).",
+      "score": 0.755078,
+      "raw_content": null,
+      "id": "21f23f-00"
+    },
+    {
+      "title": "OD-MoE: On-Demand Expert Loading for Cacheless Edge-Distributed MoE Inference",
+      "url": "https://arxiv.org/html/2512.03927v1",
+      "content": "75.51% of the Transformers engine’s speed. Compared with llama.cpp (0.8225 tokens/s on average), which runs on CPUs and caches all expert parameters in DRAM, OD-MoE is 4.49× faster owing to GPU acceleration. Against expert-offloading baselines, OD-MoE outperforms Mixtral-Offloading (2.2375 tokens/s), MoE Infinity (0.6875 tokens/s), HOBBIT (0.7850 tokens/s), and AdapMoE (3.1300 tokens/s) by 1.65×, 5.37×, 4.70×, and 1.18×, respectively. [...] |  |  |  |  |  |  |  |  |  |\n ---  ---  ---  --- \n| Category | Configuration/Dataset | Mixtral Offloading | MoE-Infinity | HOBBIT | AdapMoE | Transformer | Llama.cpp | OD-MoE |\n| (i) Benchmarks in Inference Speed | | | | | | | | |\n| TTFT (ms) | (16, 64) | 1727.81 | 5521.63 | 5456.37 | 1345.12 | 385.52 | 2025.10 | 1349.78 |\n| (16, 256) | 1705.15 | 5560.34 | 5467.42 | 1428.23 | 386.86 | 2008.60 | 1340.89 |\n| (128, 64) | 1967.16 | 5819.49 | 5898.92 | 1343.96 | 447.43 | 6592.81 | 3150.87 | [...] For the output throughput encompassing both prefilling and decoding stages, OD-MoE averages 3.3700 tokens/s, exceeding Mixtral-Offloading (2.1725 tokens/s), MoE Infinity (0.6675 tokens/s), HOBBIT (0.7575 tokens/s), and AdapMoE (3.0350 tokens/s) by 1.55×, 5.05×, 4.45×, and 1.11×, respectively.",
+      "score": 0.6213807,
+      "raw_content": null,
+      "id": "590ca4-01"
+    },
+    {
+      "title": "FlashMoE: Reducing SSD I/O Bottlenecks via ML-Based Cache Replacement for Mixture-of-Experts Inference on Edge Devices",
+      "url": "https://arxiv.org/html/2601.17063v1",
+      "content": "efficient MoE inference for edge devices. However, previous MoE inference systems like Fiddler(Kamahori et al., 2025) or DAOP(Zhang et al., 2025) rely on DRAM-based offloading and are not suitable for memory-constrained on-device environments. As recent MoE models grow to hundreds of gigabytes, RAM-offloading solutions become impractical. To address this, we propose FlashMoE, a system that offloads inactive experts to SSD, enabling efficient MoE inference under limited RAM. FlashMoE [...] The expert cache management methods in existing MoE inference systems (Kamahori et al., 2025; Eliseev and Mazur, 2023) are based on simple replacement policies which is used for page replacement. Many previous studies use traditional cache replacement algorithms such as LRU or LFU, and actually have hit-rate to some extent. However, when inference involves loading experts from SSDs—which have significantly higher I/O latency compared to DRAM—even a single cache miss can incur a substantial [...] If inactive experts can be offloaded and only necessary subsets are loaded on demand, MoE enables large LLMs to run on edge devices with reduced memory requirements. Existing offloading-based frameworks such as Fiddler (Kamahori et al., 2025), DAOP (Zhang et al., 2025), and Pre-gated MoE (Hwang et al., 2025) implement expert caches but are not optimized for on-device deployment.\n\nTo address this, we propose FlashMoE, a system-level framework for efficient MoE inference:",
+      "score": 0.5792344,
+      "raw_content": null,
+      "id": "ab5e4a-02"
+    },
+    {
+      "title": "DALI: A Workload-Aware Offloading Framework for Efficient MoE Inference on Local PCs",
+      "url": "https://arxiv.org/html/2602.03495v1",
+      "content": "3) Baselines. We compare with four state-of-the-art\nMoE offloading frameworks: llama.cpp (Gerganov, 2023),\nKTransformers (Chen et al., 2025), MoE-Lightning (Cao et al., 2025),\nand HybriMoE (Zhong et al., 2025).\nKtransformers and\nllama.cpp are layer-wise hybrid frameworks and assign MoE layers to either the CPU or GPU.\nMoE-Lightning searches the optimal model deployment strategy before inference\nbased on its proposed performance analysis model.\nHybriMoE is an expert-wise hybrid framework [...] Underutilization of heterogeneous computational resources.\nAs shown in Figure 1a,\nllama.cpp (Gerganov, 2023) and Ktransformers (Chen et al., 2025)\nassign MoE layers to either the CPU or GPU,\nexecuting each layer on the device where the parameters reside\n(referred to as layer-wise hybrid frameworks).\nHowever, due to the sequential nature of model computations,\nsuch layer-wise partitioning prevents parallel execution between CPU and GPU.\nFurthermore, when workloads of an expert are large, [...] and incorporates\nboth expert prefetching and caching techniques.\nTo ensure a fair comparison, we set the number of CPU cores to 16 and threads to 32 for\nall frameworks.\nWe also ensure that all frameworks use comparable GPU memory.\nFor HybriMoE and DALI, we cache the same number of experts\non GPU.\nFor MoE-Lightning, llama.cpp and KTransformers, which do not support expert caching on GPU,\nwe control the number of MoE layers stored and executed on the GPU in these frameworks to",
+      "score": 0.5201313,
+      "raw_content": null,
+      "id": "37e469-03"
+    },
+    {
+      "title": "[PDF] Taming Latency-Memory Trade-Off in MoE-Based LLM Serving via ...",
+      "url": "https://intellisys.haow.us/assets/pdf/Hanfei_FineMoE_EuroSys26.pdf",
+      "content": "Expert eviction priority. Similar to MoE-Infinity , FineMoE’s expert caching is based on the least frequently used (LFU) caching algorithm. We integrate the searched map to jointly determine the eviction priority. For each expert EUROSYS ’26, April 27–30, 2026, Edinburgh, Scotland Uk Hanfei Yu, Xingqi Cui, Hong Zhang, Hao Wang, and Hao Wang 𝐸𝑙,𝑗∈𝐸cache, we define the eviction priority to be PRIevict 𝑙,𝑗 := 1 𝑝𝑙,𝑗· freq𝑙,𝑗 , 𝑙∈[𝐿], 𝑗∈[𝐽], where freq𝑙,𝑗is the cache visit frequency and 𝑝𝑙,𝑗is the [...] from 6 GB to 96 GB while employing the same experimental setting in §6.2. Similarly, DeepSpeed-Inference has the worst TPOT due to being expert-agnostic. FineMoE consistently outper-forms Mixtral-Offloading, ProMoE, and MoE-Infinity under varying expert cache limits. As the cache limit increases, the performance gap between all baselines narrows due to the EUROSYS ’26, April 27–30, 2026, Edinburgh, Scotland Uk Hanfei Yu, Xingqi Cui, Hong Zhang, Hao Wang, and Hao Wang DeepSpeed Mixtral-Ofﬂoad [...] 2026. Taming Latency-Memory Trade-Off in MoE-Based LLM Serving via Fine-Grained Expert Offloading. In 21st European Con-ference on Computer Systems (EUROSYS ’26), April 27–30, 2026, Edinburgh, Scotland Uk. ACM, New York, NY, USA, 16 pages.",
+      "score": 0.50769037,
+      "raw_content": null,
+      "id": "c587c2-04"
+    },
+    {
+      "title": "[2402.07033] Fiddler: CPU-GPU Orchestration forFast Inference of Mixture-of-Experts Models",
+      "url": "https://ar5iv.labs.arxiv.org/html/2402.07033v1",
+      "content": "Offloading is one approach to run large models in such an environment. They store a subset of model weights in the CPU memory instead of the GPU memory to utilize the larger capacity Sheng et al. 2023. The required weights are transferred on demand from the CPU memory to the GPU memory during computation for inference. For MoE models, some previous works attempted to offload expert weights with caching or prefetching mechanisms Eliseev & Mazur 2023; Xue et al. 2024b. These approaches address [...] Xue et al. (2024a)  Fuzhao Xue, Zian Zheng, Yao Fu, Jinjie Ni, Zangwei Zheng, Wangchunshu Zhou, and Yang You.  Openmoe: An early effort on open mixture-of-experts language models.  2024a.\n Xue et al. (2024b)  Leyang Xue, Yao Fu, Zhan Lu, Luo Mai, and Mahesh Marina.  Moe-infinity: Activation-aware expert offloading for efficient moe serving.  arXiv preprint arXiv:2401.14361, 2024b.",
+      "score": 0.3216203,
+      "raw_content": null,
+      "id": "ad6fe2-05"
+    }
+  ],
+  "response_time": 2.6,
+  "request_id": "6efa2a98-cfe4-4ba9-b097-c5dda309e6be"
+}

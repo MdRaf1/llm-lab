@@ -1,0 +1,82 @@
+{
+  "query": "multi-token span routing parameter program mixture of experts persistent experts semi-Markov routing LLM",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://tensorops.ai/blog/what-is-mixture-of-experts-llm",
+      "title": "LLM Mixture of Experts Explained — A 2026 Field Guide | TensorOps",
+      "content": "Total / active parameters: 46.7B total, ~12.9B active.\n Expert mechanism: Each FFN block picks from eight distinct expert groups.\n Token routing: A router selects two experts per token (Top-2).\n Additive combination: The outputs of the two chosen experts are combined additively, blending their specialized knowledge.\n Efficiency: Operates at the speed and cost of a 12.9B model despite a 46.7B total footprint, ~6× faster than Llama 2 70B at higher quality. [...] ### What are the main routing strategies?\n\nToken-level routing remains the standard for LLMs — each token independently routed based on its hidden representation. Task-level routing sends all tokens for a given task (translation vs. summarization) to dedicated experts, minimizing interference. Modality-level routing sends text tokens to text experts and image patches to vision experts in multimodal systems — increasingly common as native multimodality becomes the norm. [...] Modern LLMs have to handle code, math, conversation, multilingual reasoning, vision, retrieval, and agentic workflows — each with different demands. A single dense feed-forward path forces all of this through the same parameters, creating interference. MoE lets the model specialize internally, routing different inputs through different expert pathways without ballooning per-token compute.\n\n### What happens inside an MoE layer?",
+      "score": 0.6018984,
+      "raw_content": null,
+      "id": "ff08e2-00"
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=hGd4kUHTFEU",
+      "title": "Mixture-of-Experts Routing: Visually Explained",
+      "content": "# Mixture-of-Experts Routing: Visually Explained\n## Tales Of Tensors\n2520 subscribers\n67 likes\n\n### Description\n1190 views\nPosted: 31 Jan 2026\nMixtral “8×7B” can have ~47B total parameters, yet only a small slice activates per token—because a router sends each token to a top-K set of experts and combines their outputs. [...] each, totaling around 47B. For any given token, only the top two experts activate, roughly 14B parameters worth of compute per token. Inference speed can resemble a 7B dense model, but quality trends toward a much larger model because you have more total capacity. Caveat: Speedups are setup dependent. Batch size, sequence length, and hardware matter. Deepseek v26b total with a hybrid architecture. Two shared experts are always active, plus a large pool of routed experts. The router picks the [...] that can erase your speedups. Let's dive in. To understand, contrast it with a normal transformer layer. In a standard dense feed forward network, every parameter participates for every token. Your token marches through the entire FFN block. Billions of parameters light up, compute, and contribute to the output. That's expensive. Now the sparse approach with mixture of experts that same token is routed to just two experts out of say eight available. Only those two activate the other six stay",
+      "score": 0.39145303,
+      "raw_content": null,
+      "id": "170314-01"
+    },
+    {
+      "url": "https://maartengrootendorst.com/blog/moe",
+      "title": "A Visual Guide to Mixture of Experts (MoE) - Maarten Grootendorst",
+      "content": "Mixture of Experts (MoE) is a technique that uses many different sub-models (or “experts”) to improve the quality of LLMs.\n\nTwo main components define a MoE:\n\n Experts - Each FFNN layer now has a set of “experts” of which a subset can be chosen. These “experts” are typically FFNNs themselves.\n Router or gate network - Determines which tokens are sent to which experts.\n\nIn each layer of an LLM with an MoE, we find (somewhat specialized) experts: [...] Know that an “expert” is not specialized in a specific domain like “Psychology” or “Biology”. At most, it learns syntactic information on a word level instead:\n\nMore specifically, their expertise is in handling specific tokens in specific contexts.\n\nThe router (gate network) selects the expert(s) best suited for a given input:\n\nEach expert is not an entire LLM but a submodel part of an LLM’s architecture.\n\n## The Experts [...] In the current state of LLMs, when you see a “MoE” it will typically be a Sparse MoE as it allows you to use a subset of experts. This is computationally cheaper which is an important trait for LLMs.\n\n### Selection of Experts\n\nThe gating network is arguably the most important component of any MoE as it not only decides which experts to choose during inference but also training.\n\nIn its most basic form, we multiply the input ( \\_ x ) by the router weight matrix ( \\_ W) :",
+      "score": 0.38977933,
+      "raw_content": null,
+      "id": "46d9a1-02"
+    },
+    {
+      "url": "https://cameronrwolfe.substack.com/p/moe-llms",
+      "title": "Mixture-of-Experts (MoE) LLMs - by Cameron R. Wolfe, Ph.D.",
+      "content": "The simplest possible routing algorithm would apply a linear transformation to the token vector, forming a vector of size `N` (i.e., the number of experts). Then, we can apply a softmax function to form a probability distribution over the set of experts for our token. We can use this distribution to choose experts to which our token should be routed by simply selecting the top-`K` experts in the distribution.\n\nComputing output of routing mechanism [...] For each token, we can choose which experts to be used via a routing mechanism, which is usually implemented via a simple linear transformation of the token vector. Putting this together, the modified block structure for an MoE contains: [...] A self-attention layer.\n A residual connection and a normalization operation.\n A routing mechanism that determines the routing of tokens to experts.\n An expert layer with multiple independent feed-forward networks.\n A final add and normalize operation that is applied to the final output of the expert layer for each token.",
+      "score": 0.36724812,
+      "raw_content": null,
+      "id": "71ccc0-03"
+    },
+    {
+      "url": "https://sebastianraschka.com/faq/docs/mixture-of-experts.html",
+      "title": "Mixture-of-Experts (MoE) vs. Dense LLMs",
+      "content": "where \\(E\\_i\\) is expert \\(i\\) and \\(g\\_i(x)\\) is its router weight. Routing is normally performed per token, so two tokens in the same sentence can use different experts. [...] This creates two useful parameter counts. Total parameters include every expert stored in the checkpoint. Active parameters include the selected experts and the shared parts of the model used for one token. Model names such as `235B-A22B` use this distinction, with the first number describing approximate total parameters and the second describing approximate active parameters. [...] Attention usually remains dense in both architectures. The MoE change is commonly applied to the feed-forward part of a transformer block because that part contains a large share of the model’s parameters.\n\nFor a token representation \\(x\\), the router produces a score for each expert. It keeps the top \\(k\\) experts and combines their outputs using the routing weights. A simplified expression is\n\n\\[\\operatorname{MoE}(x) = \\sum\\_{i \\in \\operatorname{TopK}(x)} g\\_i(x) E\\_i(x),\\]",
+      "score": 0.3515342,
+      "raw_content": null,
+      "id": "0a0523-04"
+    },
+    {
+      "url": "https://developer.nvidia.com/blog/applying-mixture-of-experts-in-llm-architectures",
+      "title": "Applying Mixture of Experts in LLM Architectures | NVIDIA Technical Blog",
+      "content": "Mixture of Experts (MoE) is an architectural pattern for neural networks that splits computation into multiple expert subnetworks, which are combined to create the final output.\n MoE models can increase model capacity by replacing layers with MoE layers, and sparse MoE models are more flop-efficient per parameter used, reducing compute costs compared to dense models of similar size. [...] Consider Mixtral 8x7B, a model that uses eight-expert MoE, where only two experts are used for each token. In this case, in any given forward pass of a single token within the model, the number of parameters used for any given token in a batch is much lower (12 billion parameters used of a total 46 billion parameters). This requires less compute compared to using all eight experts or a similarly-sized fully dense model. Given that tokens are batched together in training, most if not all experts [...] Routing networks (or algorithms) are used to determine which of the experts are activated in the case of a particular input. Routing algorithms can vary from simple (uniform selection or binning across average values of tensors) to complex, as explained in Mixture-of-Experts with Expert Choice Routing.",
+      "score": 0.3430341,
+      "raw_content": null,
+      "id": "b0b27f-05"
+    },
+    {
+      "url": "https://arxiv.org/html/2604.20156v1",
+      "title": "Temporally Extended Mixture-of-Experts Models",
+      "content": "Every MoE MLP layer ℓ\\ell has its own controller module, with the same architecture but separate parameters. At token tt and layer ℓ\\ell, recall that pt(ℓ)p\\_{t}^{(\\ell)} is the softmax of the router logits, and ωt−1(ℓ)\\omega\\_{t-1}^{(\\ell)} is the active expert mask from the previous step. Our controller operates directly on the LLM pre-MLP hidden representation ht(ℓ)h\\_{t}^{(\\ell)}, i.e., treat ht(ℓ)h\\_{t}^{(\\ell)} as the state ss. In the following, we walk through the major components of our [...] set is known to persist for many consecutive tokens, reducing costs from prefetching misses and enabling a simpler and more predictable serving strategy. Only the k^\\hat{k} active experts per layer need to reside on the GPU, and expert swaps occur only occasionally. Between switches, inference proceeds with k^N\\frac{\\hat{k}}{N} of the expert memory footprint. Since expert parameters dominate the total parameter count in modern MoE models (e.g., over 96% in gpt-oss-20b), this directly translates [...] ## References\n\n## 7 Related Works\n\n#### Mixture-of-Experts Models.\n\nMoE architectures have become the dominant paradigm for scaling the capacity for LLMs. Recent advancements in MoE architectures have shifted towards a high-sparsity regime, where the total number of experts far exceeds the number of active experts per layer. For instance,  has 128 experts per layer but only activates 4 per token;  has 512 experts per layer, but only activates 10 per token (plus one shared expert).",
+      "score": 0.32174814,
+      "raw_content": null,
+      "id": "a0e4d0-06"
+    },
+    {
+      "url": "https://research.google/blog/mixture-of-experts-with-expert-choice-routing",
+      "title": "Mixture-of-Experts with Expert Choice Routing",
+      "content": "|  |\n\n| Token Choice Routing. The routing algorithm picks the top-1 or top-2 experts with highest affinity scores for each token. The affinity scores can be trained together with model parameters. | [...] the best one or two experts for each token. [...] MoE operates by adopting a number of experts, each as a sub-network, and activating only one or a few experts for each input token. A gating network must be chosen and optimized in order to route each token to the most suited expert(s). Depending on how tokens are mapped to experts, MoE can be sparse or dense. Sparse MoE only selects a subset of experts when routing each token, reducing computational cost as compared to a dense MoE. For example, recent work has implemented sparse routing via",
+      "score": 0.31703547,
+      "raw_content": null,
+      "id": "b728af-07"
+    },
+    {
+      "url": "https://brunomaga.github.io/Mixture-of-Experts",
+      "title": "Distributed Mixture-of-Experts and Expert Parallelism",
+      "content": "Finally, the scale step performs a weighted sum of the top-k probabilities for each token:\n\n```\nx= torch. cat(probs_per_expert). view(- 1, 1) # multiply by router probabilities if self. k> 1: # sum over k probabilities for each input x = torch. stack([x[send_ids[:, - 1] == kk] for kk in range(self. k)]). sum(dim = 0) return x. view(B, T, C)\n```\n\nYou can find the complete implementation in the Mixture-of-Experts repo.\n\n### Applying the MoE to an existing LLM [...] Given \\(N\\) experts and a batch \\(B\\) with \\(T\\) tokens, the auxiliary loss is computed as the scaled dot-product between vector \\(f\\) of fraction of tokens and \\(P\\) as the fraction of the router probability allocated to each expert, as:\n\n\\[loss = \\alpha \\cdot N \\cdot \\sum\\_{i=1}^{N} f\\_i \\cdot P\\_i\\]\n\nwhere \\(\\alpha\\) is a user-picked hyper-parameter. Both \\(P\\) and \\(f\\) vectors should ideally have a uniform distribution, i.e. values \\(1/N\\).\n\n### Model size reduction via distillation [...] The current state-of-art MoE model is the Mixtral 8x7B, a sparse mixture of experts, with the same architecture as Mixtral 7B except that it supports a fully dense context length of 32k tokens and the feed-forward blocks are replaced by a Mixture of 8 feed-forward network experts. Model architecture is detailed in Table 1. It performs a top-2 routing, and because tokens can be allocated to different experts, “each token has access to 47B parameters, but only uses 13B active parameters during",
+      "score": 0.30340198,
+      "raw_content": null,
+      "id": "9c9cbf-08"
+    }
+  ],
+  "response_time": 1.92,
+  "request_id": "16adae0b-efd1-4fc8-b7e3-65cf7dee97d4"
+}

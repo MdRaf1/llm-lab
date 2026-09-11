@@ -1,0 +1,82 @@
+{
+  "query": "entropy constrained neural network weight training rate distortion exact lossless compressed model size LLM weights regularization",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://openreview.net/forum?id=LnKDcqOfgy",
+      "title": "Rate/Distortion Constrained Model Quantization for Efficient...",
+      "content": "We propose a compression method for pre-trained neural networks that combines quantization and entropy based neural network compression.",
+      "score": 0.4431913,
+      "raw_content": null,
+      "id": "486c0c-00"
+    },
+    {
+      "url": "https://www.reddit.com/r/MachineLearning/comments/12il30o/d_weight_compression_in_llmsneural_networks",
+      "title": "[D] Weight Compression in LLMs/Neural Networks",
+      "content": "In order to compress weights you need to have weights. Yet they claim compressing the weights improves training speed? I don't understand",
+      "score": 0.39424816,
+      "raw_content": null,
+      "id": "1dc5e4-01"
+    },
+    {
+      "url": "https://arxiv.org/html/2510.11234v2",
+      "title": "Neural Weight Compression for Language Models - arXiv",
+      "content": "To substantiate the efficacy of entropy coding and optimization via the joint rate-distortion objective (Equation 1), we compare the rate-distortion performance of various compression schemes—scalar Lloyd-Max quantization (SQ), vector quantization (VQ), trellis coded quantization (TCQ), and entropy-constrained scalar quantization (ECSQ)—across i.i.d. Gaussian and Laplacian sources, and pre-trained language model weights. For all evaluations, we fix a sample size of 2202^{20} [...] ### A.3 Network design and training\n\nHyperparmeter. Details regarding the architecture and training of our compression network are provided in Table 3. We employ an auxiliary loss to update the quantile parameters of the entropy model, which is trained separately from the main rate-distortion objective. [...] Why is NWC effective, especially at 4–6 bit range? Our analysis suggest that this may be due to the effectiveness of the entropy-constrained quantization—i.e., jointly optimized rate and distrotion—in handling heavy tails at higher rates, where prior approach falls suboptimal.",
+      "score": 0.38505143,
+      "raw_content": null,
+      "id": "466157-02"
+    },
+    {
+      "url": "https://proceedings.mlr.press/v97/gao19c/gao19c.pdf",
+      "title": "Rate Distortion For Model Compression: From Theory To ...",
+      "content": "Distortion. Assume we have a neural network fw that maps input x ∈Rdx to fw(x) in output space S. For regressors, fw(x) is deﬁned as the output of the neural network on Rdy.\nAnalogous to the square distortion in data compression, We deﬁne the distortion to be the expected ℓ2 distance between fw and f ˆ w, i.e.\nd(w, ˆ w) ≡EX \u0002 ∥fw(X) −f ˆ w(X)∥2 2 \u0003 . [...] 3.2. Rate distortion theory for model compression Now we extend the rate distortion theory for data compres-sion to model compression. To apply the rate distortion theory to model compression, we view the weights in the model as a multi-dimensional random variable W ∈Rm following distribution PW . The randomness comes from multiple sources including different distributions of training data, randomness of training data and randomness of train-ing algorithm. The compressor can also be random [...] 6.2. Supervised Compression Experiments In the previous experiment, we only use the training data to compute the weight importance matrix. But if we can use the training label as well, we can further improve the performance of pruning and quantization algorithms. If the training label is available, we can view the cross-entropy loss function L(fw(x), y) = Lw(x, y) as a function from X × Y →R+, and deﬁne the distortion function as d(w, ˆ w) = EX,Y \u0002 (Lw(X, Y ) −L ˆ w(X, Y ))2\u0003 .",
+      "score": 0.35824135,
+      "raw_content": null,
+      "id": "7d857a-03"
+    },
+    {
+      "url": "https://blog.cloudflare.com/unweight-tensor-compression",
+      "title": "Unweight: how we compressed an LLM 22% without ...",
+      "content": "Thanks for subscribing! Check your inbox to confirm.\n\nCloudflare\n\n## Getting Started\n\n## Public interest\n\n## Resources\n\n## Solutions\n\n## Company\n\n## Compliance\n\n## Developers\n\n© 2026 Cloudflare, Inc. [...] To solve this problem, we built Unweight: a lossless compression system that can make model weights up to 15–22% smaller while preserving bit-exact outputs, without relying on any special hardware. The core breakthrough here is that decompressing weights in fast on-chip memory and feeding them directly to the tensor cores avoids an extra round-trip through slow main memory. Depending on the workload, Unweight’s runtime selects from multiple execution strategies – some prioritize simplicity, [...] Several recent systems (Huff-LLM, ZipNN, and ZipServ) have shown that LLM weights can be compressed significantly, but these approaches target different problems than ours. ZipNN compresses weights for distribution and storage with decompression happening on the CPU. HUff-LLM proposes custom FGPA hardware for decoding. And ZipServ does fuse decompression with GPU inference, but targets consumer grade GPUs, which don’t work with our H100 GPUs. None of these gave us what we needed: lossless",
+      "score": 0.35206866,
+      "raw_content": null,
+      "id": "dd758a-04"
+    },
+    {
+      "url": "https://docs.openvino.ai/2025/openvino-workflow/model-optimization-guide/weight-compression.html",
+      "title": "LLM Weight Compression - OpenVINO™ documentation",
+      "content": "| Model | Optimization | Perplexity\\ | Model Size (Gb) |\n| databricks/dolly-v2-3b | FP32 | 5.01 | 10.3 |\n| databricks/dolly-v2-3b | INT8\\_ASYM | 5.07 | 2.6 |\n| databricks/dolly-v2-3b | INT4\\_ASYM,group\\_size=32,ratio=0.5 | 5.28 | 2.2 |\n| facebook/opt-6.7b | FP32 | 4.25 | 24.8 |\n| facebook/opt-6.7b | INT8\\_ASYM | 4.27 | 6.2 |\n| facebook/opt-6.7b | INT4\\_ASYM,group\\_size=64,ratio=0.8 | 4.32 | 4.1 |\n| meta-llama/Llama-2-7b-chat-hf | FP32 | 3.28 | 25.1 | [...] ```\n from  nncf  import compress_weights...# The `model` type depends on the framework:# openvino.Model for OpenVINO, onnx.ModelProto for ONNX,# torch.fx.GraphModule for TorchFX, and torch.nn.Module for PyTorch. compressed_model = compress_weights(model)\n``` [...] For more details, refer to the article on how to infer LLMs using Optimum Intel.\n\nRefer to the article about 4-bit weight quantization for more details.\n\nOnce the model has been optimized, it is ready for compilation and inference. The model can also be saved into a compressed format, resulting in a smaller binary file.\n\nThe table below summarizes the benefits and trade-offs for each compression type in terms of memory reduction, speed gain, and accuracy loss.",
+      "score": 0.3442235,
+      "raw_content": null,
+      "id": "da7783-05"
+    },
+    {
+      "url": "https://github.com/HuangOwen/Awesome-LLM-Compression",
+      "title": "Awesome LLM compression research papers and tools. - GitHub",
+      "content": "ICML 2026 (\n RKSC: Reasoning-Aware KV Cache Sharing and Confident Early Exit for Multi-Step LLM Inference   \n   ICML 2026 Workshop (\n KVEraser: Learning to Steer KV Cache for Efficient Localized Context Erasing   \n   ICML 2026 Workshop ( ( Stars\n CompressKV: Semantic-Retrieval-Guided KV-Cache Compression for Resource-Efficient Long-Context LLM Inference   \n   Arxiv 2026 ( ( Stars\n HARD-KV: Head-Adaptive Regularization for Decoding-time KV Compression   \n   ICML 2026 ( [...] ICML 2026 (\n LiftQuant: Continuous Bit-Width LLM via Dimensional Lifting and Projection   \n   ICML 2026 (\n UniSVQ: 2-bit Unified Scalar-Vector Quantization   \n   ICML 2026 (\n LC-QAT: Data-Efficient 2-Bit QAT for LLMs via Linear-Constrained Vector Quantization   \n   ICML 2026 (\n TWLA: Achieving Ternary Weights and Low-Bit Activations for LLMs via Post-Training Quantization   \n   ICML 2026 (\n CAT-Q: Cost-efficient and Accurate Ternary Quantization for LLMs   \n   ICML 2026 ( ( Stars [...] ICLR 2026 ( ( Stars\n ProxyAttn: Guided Sparse Attention via Representative Heads   \n   ICLR 2026 (\n Effective Model Pruning: Measure The Redundancy of Model Components   \n   ICML 2026 (\n The Unseen Frontier: Pushing the Limits of LLM Sparsity with Surrogate-Free ADMM   \n   ICLR 2026 (\n ARMOR: High-Performance Semi-Structured Pruning via Adaptive Matrix Factorization   \n   ICLR 2026 ( ( Stars\n RCPU: Rotation-Constrained Error Compensation for Structured Pruning of Large Language Models",
+      "score": 0.33522078,
+      "raw_content": null,
+      "id": "c684eb-06"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/mlresearch/v267/main/assets/wu25ai/wu25ai.pdf",
+      "title": "BackSlash: Rate Constrained Optimized Training of Large ...",
+      "content": "by J Wu · Cited by 6 — Experiments with different LLMs and different deep- learning tasks show significant savings in model size as compared with both unconstrained training and un-.",
+      "score": 0.27743185,
+      "raw_content": null,
+      "id": "8effa9-07"
+    },
+    {
+      "url": "https://faculty.ucmerced.edu/mcarreira-perpinan/research/MCCO/2018-06-12-AI2.pdf",
+      "title": "Model compression as constrained optimization, with ...",
+      "content": "by MA Carreira-Perpinan · Cited by 13 — A precise mathematical formulation of neural net compression as a constrained optimization problem. combination of compression technique and loss function.",
+      "score": 0.13232408,
+      "raw_content": null,
+      "id": "9d755d-08"
+    }
+  ],
+  "response_time": 1.76,
+  "request_id": "75ede7cf-1481-4461-afe9-1e38d3fba1b3"
+}

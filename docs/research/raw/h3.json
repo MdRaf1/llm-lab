@@ -1,0 +1,58 @@
+{
+  "query": "energy-optimal joules per token expert streaming SSD scheduling MoE minimize energy",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://arxiv.org/html/2508.06978v1",
+      "title": "SSD Offloading for LLM Mixture-of-Experts Weights ... - arXiv",
+      "content": "Our analysis shows that offloading MoE weights to SSDs significantly increases energy use.\nInference on DeepSeek-R1 with expert weights stored on SSD consumes approximately 4.9×\\times more energy per token compared to keeping them in HBM, and 3.1×\\times more than offloading to CPU memory (Fig. 1).\nThe energy for accessing weights on the SSD accounts for a staggering 80% of the total per-token energy in this scenario, underscoring the severity of the energy penalty. [...] Fig. 6 plots the per-token energy ratio of Llama 4 to Llama 3.3 as a function of the Flash read energy scaling factor, in a system with only GPU and SSD.\nLlama 4 on SSD becomes more energy-efficient than Llama 3.3 on HBM (ratio <1<1) only when the Flash read energy is significantly reduced—specifically, to approximately 1/10th of its current value (∼\\sim10pJ/b).\nThis “SSD winning case” is most prominent at low batch sizes (batch size <3<3 in this experiment), where MoE sparsity is highest, [...] The key idea is leveraging MoE sparsity: if the number of parameters accessed per token in the large MoE model (due to sparsity) is sufficiently smaller than the total parameters of the dense model, the MoE model might achieve lower per-token energy despite using the less efficient SSD, provided the SSD’s energy penalty is reduced.",
+      "score": 0.6139086,
+      "raw_content": null,
+      "id": "bf7cae-00"
+    },
+    {
+      "url": "https://www.alphaxiv.org/abs/2508.06978",
+      "title": "SSD Offloading for LLM Mixture-of-Experts Weights ...",
+      "content": "The research reveals several critical findings that challenge current approaches to LLM memory management.\n\nDramatic Energy Penalty of SSD Offloading\n\nThe most striking result is the severe energy penalty associated with storing MoE expert weights on SSDs. For DeepSeek-R1, SSD offloading consumes approximately 4.9 times more energy per token compared to keeping all weights in HBM, and 3.1 times more energy than offloading to CPU memory. [...] The analysis reveals that Flash read energy would need to improve by approximately an order of magnitude (from 102.4 pJ/b to around 10 pJ/b) for SSD offloading to become competitive with HBM storage from an energy perspective. This improvement is most beneficial at low batch sizes where MoE sparsity is maximized, highlighting the importance of exploiting the inherent sparse activation patterns of MoE architectures. [...] LLM inference. Our analysis, comparing SSD, CPU memory (DDR), and HBM storage scenarios for models like DeepSeek-R1, reveals that offloading MoE weights to current SSDs drastically increases per-token-generation energy consumption (e.g., by up to ~12x compared to the HBM baseline), dominating the total inference energy budget. Although techniques like prefetching effectively hide access latency, they cannot mitigate this fundamental energy penalty. We further explore future technological",
+      "score": 0.5315261,
+      "raw_content": null,
+      "id": "64d08f-01"
+    },
+    {
+      "url": "https://www.linkedin.com/posts/jung-ho-ahn-9876748_ssd-offloading-for-llm-mixture-of-experts-activity-7360993927228788736-6V8z",
+      "title": "\"Energy Efficiency of SSD Offloading in MoE LLMs: A Critical Analysis\" | Jung Ho Ahn posted on the topic | LinkedIn",
+      "content": "Pleased to share our recent paper published in IEEE Computer Architecture Letters (#21 @ IEEE CAL). Offloading less-frequently-used experts from Mixture-of-Experts (MoE) LLMs to SSDs is an attractive strategy for running large models on memory-constrained devices. However, our research highlights a critical consideration: energy efficiency. We found that the energy required to fetch expert weights from an SSD can become a significant bottleneck, potentially dominating the total power [...] the total power consumption during inference. Our paper, written by Kwanhee Kyung, Sungmin Yun, and Jung Ho Ahn, quantifies this energy trade-off and concludes that SSD offloading is most beneficial under specific scenarios: 1) Systems with low batch sizes, such as those found on mobile or edge devices. 2) If future SSDs achieve a >10x improvement in energy efficiency (reaching ~10 pJ/bit). Further, emerging techniques like speculative decoding can increase the 'effective' batch size even on [...] SSD Offloading for LLM Mixture-of-Experts Weights Considered Harmful in Energy Efficiency   arxiv.org\n\n98   2 Comments\n\nLike   Comment\n\nTae-Wan Kim   3mo \n\n Report this comment\n\nCongratulations! Excellent work.\n\nLike Reply  1 Reaction   2 Reactions\n\nJiajun Huang   3mo \n\n Report this comment\n\nCongratulations, Jung Ho!\n\nLike Reply  1 Reaction   2 Reactions\n\n See more comments \n\nTo view or add a comment, sign in\n\n## More Relevant Posts\n\n Lorenzo H. Gomez\n\n  + Report this post",
+      "score": 0.40260404,
+      "raw_content": null,
+      "id": "6469a9-02"
+    },
+    {
+      "url": "https://developer.nvidia.com/blog/maximize-ai-factory-energy-efficiency-through-full-stack-inference-and-training-optimizations",
+      "title": "Maximize AI Factory Energy Efficiency Through Full-Stack Inference and Training Optimizations | NVIDIA Technical Blog",
+      "content": "Model architecture is also important. Mixture-of-experts (MoE) models are typically more energy efficient per unit of intelligence compared to dense models with similar total parameters because only a subset of experts is active per token. For example, DeepSeek-R1 has a large parameter count, a fraction of which is activated for each token. It achieves higher task performance at a similar or lower per‑token compute cost than dense predecessors. In other words, the MoE design delivers more [...] NVIDIA delivers the lowest cost per token for AI inference workloads and the lowest cost to train large models. This is possible through extreme co-design with power, cooling, and system infrastructure and deep collaboration with the OEM, ODM, CSP, NCP, systems integrator, ISV, and model ecosystems partners.\n\nThis post explores the levers that an operator can use to maximize performance per watt and minimize token cost in an AI factory. [...] delivers more intelligence for the same or less energy spent producing each token.",
+      "score": 0.3337208,
+      "raw_content": null,
+      "id": "2e3d93-03"
+    },
+    {
+      "url": "https://www.johnsnowlabs.com/tokens-per-joule-how-to-quantify-and-reduce-the-energy-footprint-of-clinical-llm-inference",
+      "title": "Tokens per Joule: How to Quantify and Reduce the Energy Footprint of Clinical LLM Inference - John Snow Labs",
+      "content": "Infrastructure-level optimizations: renewable energy sourcing, efficient cooling, data‑center PUE optimization Deploying inference in energy‑efficient data centers, using renewable energy, optimizing cooling, and using efficient scheduling can reduce carbon footprint even if absolute energy consumption remains sizable. [...] To optimize energy use, you must first measure it. Recent work offers guidance and growing consensus around metrics and methodology:\n\n   A large-scale empirical study across 155 LLM architectures and 21 GPU configurations used prompt-level measurements to quantify energy consumption during inference.\n   Others empirically measured inference cost per output token. For instance, on older LLMs (e.g. a 65B‑parameter LLaMA), the energy per output token was around 3–4 Joules. [...] 1.   Instrument power consumption at GPU or server level – record watts drawn during inference workloads (ideally via data‑center power meters or GPU telemetry).\n2.   Log token counts per inference request – track number of output tokens (or input + output) for each inference.\n3.   Compute energy per token – total joules consumed ÷ number of tokens generated.",
+      "score": 0.289563,
+      "raw_content": null,
+      "id": "dbb603-04"
+    },
+    {
+      "url": "https://www.fifthrow.com/blog/beyond-the-joule-the-real-progress-problems-and-prospects-of-turning-electrons-into-llm-tokens",
+      "title": "Beyond the Joule: The Real Progress, Problems, and Prospects of Turning Electrons into LLM Tokens | FifthRow – Autonomous AI Apps for Research, Strategy, Consulting",
+      "content": "Case study evidence instead points to broader operational strategies. Dynamic workload orchestration and load shifting can yield large, time-dependent energy savings for data center operators. Continuous batch processing and GPU utilization optimization are practical levers for immediate per-token energy improvement. Mixed workloads (co-serving inference and training) and advanced queue scheduling offer improved energy proportionality. [...] Energy-efficient LLM inference optimizes how large language models convert electricity into output tokens, minimizing energy cost per token while maintaining performance. It is critical because inference represents 60–90% of the lifecycle energy usage in production LLM deployments, making efficiency gains multiply across billions of requests—directly reducing costs, carbon emissions, and system scalability needs (Tokens per Joule: How to Quantify and Reduce the Energy Footprint of Clinical LLM [...] GPUs, memory, networking, inference engines, and scheduling algorithms - energy may be lost as heat, or optimized through engineering and operational strategy.",
+      "score": 0.25409734,
+      "raw_content": null,
+      "id": "3e5266-05"
+    }
+  ],
+  "response_time": 0.89,
+  "request_id": "bee0d8fb-3310-4b79-b395-5e27c2c3e7e8"
+}

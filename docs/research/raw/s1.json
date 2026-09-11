@@ -1,0 +1,58 @@
+{
+  "query": "MoE-SpeQ speculative expert prefetch offloading arxiv",
+  "follow_up_questions": null,
+  "answer": null,
+  "images": [],
+  "results": [
+    {
+      "url": "https://arxiv.org/abs/2511.14102",
+      "title": "MoE-SpeQ: Speculative Quantized Decoding with Proactive Expert ...",
+      "content": "archive\n\n# Computer Science > Machine Learning\n\n# Title:MoE-SpeQ: Speculative Quantized Decoding with Proactive Expert Prefetching and Offloading for Mixture-of-Experts\n\n|  |  |\n --- |\n| Subjects: | Machine Learning (cs.LG); Distributed, Parallel, and Cluster Computing (cs.DC) |\n| Cite as: | arXiv:2511.14102 [cs.LG] |\n|  | (or  arXiv:2511.14102v1 [cs.LG] for this version) |\n|  |  Focus to learn more  arXiv-issued DOI via DataCite |\n\n## Submission history\n\n## Access Paper:",
+      "score": 0.8747745,
+      "raw_content": null,
+      "id": "256308-00"
+    },
+    {
+      "url": "https://www.alphaxiv.org/abs/2511.14102",
+      "title": "MoE-SpeQ: Speculative Quantized Decoding with Proactive Expert ...",
+      "content": "This work, referred to as Mixtral-Offloading, is used as a key baseline in the evaluation. It represents a state-of-the-art approach to the exact problem of MoE offloading, thus contextualizing the performance improvements achieved by MoE-SpeQ's novel co-design of speculation and prefetching.\n\nArtyom Eliseev and Denis Mazur. 2023. Fast inference of mixture-of-experts language models with offloading. arXiv preprint arXiv:2312.17238 (2023). [...] the I/O bottleneck can be overcome by trading a small amount of cheap, on-device computation to hide the immense cost of data movement. We present MoE-SpeQ, a new inference system built on a novel co-design of speculative execution and expert offloading. MoE-SpeQ employs a small, on-device draft model to predict the sequence of required experts for future tokens. This foresight enables a runtime orchestrator to prefetch these experts from host memory, effectively overlapping the expensive I/O [...] AbstractPaper\n\nSubmitted 18 Nov 2025\n\n# MoE-SpeQ: Speculative Quantized Decoding with Proactive Expert Prefetching and Offloading for Mixture-of-Experts\n\nWenfeng Wang\n\nJL\n\nJiacheng Liu\n\nXH\n\nXiaofeng Hou\n\nXX\n\nXinfeng Xia\n\nPT\n\nPeng Tang\n\nMZ\n\nMingxuan ZhangChao LiChao LiMinyi GuoMinyi Guo\n\n## Abstract",
+      "score": 0.84767824,
+      "raw_content": null,
+      "id": "370ec5-01"
+    },
+    {
+      "url": "https://fugumt.com/fugumt/paper_check/2511.14102v1_enmode",
+      "title": "Related papers: MoE-SpeQ: Speculative Quantized Decoding with Proactive Expert Prefetching and Offloading for Mixture-of-Experts",
+      "content": "arXiv  Detail & Related papers  (2026-01-23T18:19:15Z)\n ExpertFlow: Adaptive Expert Scheduling and Memory Coordination for Efficient MoE Inference [8.296993547783808]  \n  ExpertFlow is a runtime system for MoE inference that combines adaptive expert prefetching and cache-aware routing.Our evaluation demonstrates that ExpertFlow reduces model stall time to less than 0.1% of the baseline.  \n  arXiv  Detail & Related papers  (2025-10-30T17:29:27Z) [...] arXiv  Detail & Related papers  (2025-02-21T10:12:34Z)\n Mixture of Cache-Conditional Experts for Efficient Mobile Device Inference [14.57414071160821]  \n  We introduce a novel cache-aware routing strategy that leverages expert reuse during token generation to improve cache locality.We present on-device results demonstrating 2$times$ speedups on mobile devices.  \n  arXiv  Detail & Related papers  (2024-11-27T18:59:48Z) [...] Combination of experts (MoE) model is a sparse variant of large language models (LLMs)Despite its benefits, MoE is still too expensive to deploy on resource-constrained edge devices.We propose D$2$MoE, an algorithm-system co-design framework that matches diverse task requirements by dynamically allocating the most proper bit-width to each expert.  \n  arXiv  Detail & Related papers  (2025-04-17T05:37:35Z)\n A Universal Framework for Compressing Embeddings in CTR Prediction [68.27582084015044]",
+      "score": 0.7781275,
+      "raw_content": null,
+      "id": "f184d4-02"
+    },
+    {
+      "url": "https://arxiv.org/pdf/2511.14102",
+      "title": "[PDF] MoE-SpeQ: Speculative Quantized Decoding with Proactive Expert ...",
+      "content": "arXiv preprint arXiv:2402.02082 (2024).\n Artyom Eliseev and Denis Mazur. 2023.\nFast inference of mixture-of-experts language models with offloading. arXiv preprint arXiv:2312.17238 (2023). [...] Peng Tang, Jiacheng Liu, Xiaofeng Hou, Yifei Pu, Jing Wang, Pheng-Ann Heng, Chao Li, and Minyi Guo. 2024. Hobbit: A mixed preci-sion expert offloading system for fast moe inference. arXiv preprint arXiv:2411.01433 (2024).\n Jikai Wang, Yi Su, Juntao Li, Qingrong Xia, Zi Ye, Xinyu Duan, Zhe-feng Wang, and Min Zhang. 2025. Opt-tree: Speculative decoding with adaptive draft tree structure. Transactions of the Association for Computational Linguistics 13 (2025), 188–199. [...] This paper argues that the I/O bottleneck can be overcome by trading a small amount of cheap, on-device computation to hide the immense cost of data movement. We present MoE-SpeQ, a new inference system built on a novel co-design of speculative execution and expert offloading. MoE-SpeQ em-ploys a small, on-device draft model to predict the sequence of required experts for future tokens. This foresight enables a runtime orchestrator to prefetch these experts from host memory, effectively",
+      "score": 0.7325349,
+      "raw_content": null,
+      "id": "4561c1-03"
+    },
+    {
+      "url": "https://arxiv.org/html/2511.14102v1",
+      "title": "MoE-SpeQ: Speculative Quantized Decoding with Proactive Expert ...",
+      "content": "##### Report GitHub Issue\n\nContent selection saved. Describe the issue below:\n\narXiv logo\n\n# MoE-SpeQ: Speculative Quantized Decoding with Proactive Expert Prefetching and Offloading for Mixture-of-Experts\n\n###### Abstract. [...] This paper argues that the I/O bottleneck can be overcome by trading a small amount of cheap, on-device computation to hide the immense cost of data movement. We present MoE-SpeQ, a new inference system built on a novel co-design of speculative execution and expert offloading. MoE-SpeQ employs a small, on-device draft model to predict the sequence of required experts for future tokens. This foresight enables a runtime orchestrator to prefetch these experts from host memory, effectively [...] MoE-SpeQ fits into this systems literature but distinguishes itself by co-designing speculative decoding with expert offloading: it uses a lightweight, quantized draft model to predict multi-step expert usage, and then drives a lookahead-aware scheduler and adaptive governor to prefetch and manage experts so as to hide PCIe transfers behind useful computation.",
+      "score": 0.7300017,
+      "raw_content": null,
+      "id": "fed351-04"
+    },
+    {
+      "url": "https://www.emergentmind.com/topics/expert-offloading",
+      "title": "Expert Offloading for Scalable AI - Emergent Mind",
+      "content": "Expert Offloading is a strategy to dynamically allocate neural network experts across heterogeneous resources to balance performance and energy consumption.\n It leverages mechanisms such as prediction, prefetching, caching, and speculative execution to optimize latency and memory utilization in MoE and early-exit architectures. [...] 11.\n\nMoE-SpeQ: Speculative Quantized Decoding with Proactive Expert Prefetching and Offloading for Mixture-of-Experts  (2025)\n\n12.\n\nCoMoE: Collaborative Optimization of Expert Aggregation and Offloading for MoE-based LLMs at Edge  (2025)\n\n13.\n\nAccelerating Mixture-of-Experts Inference by Hiding Offloading Latency with Speculative Decoding  (2025)\n\n14.\n\nShortcut-connected Expert Parallelism for Accelerating Mixture-of-Experts  (2024)\n\n15. [...] Cache sizing: ∑e∈Ct​​Se​≤MGPU​2 suffices for most MoEs (∑e∈Ct​​Se​≤MGPU​3active experts/token) (Liang et al., 21 May 2025); diminishing returns beyond.\n Offload targets: Prefer CPU DRAM for energy efficiency over SSD; consider hierarchical caches for frequently-used (“hot”) experts (Kyung et al., 9 Aug 2025).\n Prefetch accuracy: Single-layer lookahead achieves ~84–91% prediction accuracy; speculative models reach >99% with shadow networks (OD-MoE)(Wang et al., 3 Dec 2025).",
+      "score": 0.6512002,
+      "raw_content": null,
+      "id": "3e32b9-05"
+    }
+  ],
+  "response_time": 0.88,
+  "request_id": "f2526356-f8ea-455f-84e1-75d2e120da13"
+}
