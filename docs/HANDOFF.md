@@ -12,17 +12,22 @@ approved plan and the memory of a long prior session. Then read this context bef
 anything:
 
 WHAT THIS REPO CLAIMS VS WHAT IT DOES
-- Do NOT trust README.md or DEMO_SCRIPT.md. Their headline numbers (70B at 15-19 tok/s,
-  4.80 GB RAM, 108x, 76.4% sparsity, "100% lossless") do not come from running a language
-  model. stream_engine.py and gguf_stream_engine.py simulate inference: the per-layer
-  "compute" is `hidden + 0.01*np.tanh(hidden)`, tokens are `np.random.randint`, the 121 MB
-  layer buffers stay all-zero, prefetch does no I/O, and 4.8 GB / 0.08 tok/s are hardcoded
-  constants. sparse_router.py predictors are untrained `np.random.randn`. speculative_real.py
-  is real but drafts with the FULL target model K times with no KV cache, so it is slower
-  than baseline, not 2.7x faster.
-- Genuinely real and worth keeping: core/kernels.py (correct INT4 pack/unpack + numba GEMV),
-  core/layers.py, frontier/gguf_partitioner.py, models/runner.py,
-  benchmarks/benchmark_speculative_real.py.
+- M0 (truth-in-labeling) is DONE. README.md now states plainly that the old headline
+  numbers (70B at 15-19 tok/s, 4.80 GB RAM, 108x, 76.4% sparsity, "100% lossless") were
+  not produced by running a language model. DEMO_SCRIPT.md was removed (recoverable at
+  commit a248a03). The simulated modules are renamed sim_* and each carries a
+  "SIMULATION - NOT REAL INFERENCE" header: frontier/sim_stream_engine.py,
+  frontier/sim_gguf_stream_engine.py, frontier/sim_converter.py, core/sim_engine.py.
+  The canned-text chat path is deleted; sim engines now raise RuntimeError instead of
+  printing fake answers with fake telemetry.
+- Modules with WARNING headers (real code, known defects): core/speculative_real.py
+  (drafts with the full target model, no KV cache -> slower than baseline),
+  core/speculative.py (residual subtracts a scalar, so not actually lossless),
+  core/sparse_router.py (untrained random predictor; "sparsity %" is a config constant),
+  core/self_drafter.py (untrained).
+- Genuinely real: core/kernels.py, core/layers.py, frontier/gguf_partitioner.py,
+  models/runner.py, profiler.py, benchmarks/benchmark_speculative_real.py,
+  cli/chat.py --engine local-llama.
 
 THE DECISION (do not reopen without new evidence)
 - Dense 70B on 16 GB at interactive speed is PHYSICALLY EXCLUDED: ~30 GB/token over a
@@ -47,14 +52,15 @@ HARDWARE
   hold Qwen3-30B-A3B in BF16 for routing traces.
 
 APPROVED NEXT STEP: Milestone 1 only
-Target: Qwen3-30B-A3B, Q4_K_M GGUF. Build ONLY:
-  src/llm_lab/moe/{meta,baseline,trace,oracle}.py + tests/test_moe_trace.py
+Build ONLY: src/llm_lab/moe/{meta,baseline,trace,oracle}.py + tests/test_moe_trace.py
+M1 is two phases and the order is normative (spec section 8.2):
+  M1a - validate the whole pipeline on a small MoE that fits 16 GB (OLMoE-1B-7B or
+        Qwen1.5-MoE-A2.7B). Exit: determinism proven, >=500 positions traced, test green.
+  M1b - only then download Qwen3-30B-A3B Q4_K_M (~18 GB) and run the same code paths.
 Goal: a real generation, proven determinism, an exactness oracle that compares TOKEN IDS
 (never .strip() text), and expert-routing traces. No custom streaming engine, no speedup
-claim, no PageCC code, no GPU work. Section 8 of the spec has the full design, the JSONL
-trace schema, the RunRecord shape, error handling, and the definition of done.
-Recommended: validate the pipeline on a small MoE (OLMoE-1B-7B or Qwen1.5-MoE-A2.7B) that
-fits 16 GB before the 18 GB download.
+claim, no PageCC code, no GPU work. Spec section 8 has the JSONL trace schema, the
+RunRecord shape, error handling, and the full definition of done.
 
 REPORTING RULES (non-negotiable, this repo violated all five)
 1. No number anywhere unless its command and output are saved in the repo.
@@ -70,6 +76,7 @@ TOOLING NOTES
   `--json --output file.json` and read with UTF-8 (`PYTHONIOENCODING=utf-8`,
   `io.open(path, encoding='utf-8')`) - rich crashes on the Windows legacy console and
   cp1252 breaks on paper text. `pdftotext -layout` works for PDFs.
+- Bare `python` is not on PATH; use `./.venv/Scripts/python.exe`.
 - Long-running subagents hit gateway 524 timeouts. Keep subagent tasks short and check
   docs/research/raw/ for already-saved results before re-searching anything.
 
@@ -85,6 +92,5 @@ approved.
 - `docs/research/raw/` holds the prior session's evidence: `novelty-research.md` (prior-art
   survey), `unweight.txt` and `backslash.txt` (full paper extractions), and the raw Tavily
   JSON results. Check there before re-running any search.
-- **M0 (truth-in-labeling)** is unstarted and is the cheapest credibility win: rewrite
-  `README.md` / `DEMO_SCRIPT.md` to claim only what runs, and rename the simulated engines
-  to `sim_*`. Do it before publishing anything.
+- Commits so far: `a248a03` (original, contains the fabricated claims and the deleted demo
+  script), `58d1171` (the design spec + handoff), and the M0 truth-in-labeling commit.

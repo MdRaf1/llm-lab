@@ -1,18 +1,15 @@
 """
-End-to-End Simulation and Benchmark of the Breakthrough Inference Engine.
-Configured with Llama-3.3-70B architecture parameters:
-- 80 Transformer Layers
-- d_model = 8192
-- d_intermediate = 28672
-- num_kv_heads = 8, head_dim = 128
-- 4-bit / dynamic quantized KV cache + weights
-- Speculative verification + Dynamic Sparsity
+Plumbing check for the SIMULATED engine sketch (llm_lab.core.sim_engine).
+
+This exercises wiring only. No model is loaded: hidden states are `np.random.randn`
+and tokens are `np.random.randint`, so the tok/s and sparsity values it prints are
+properties of numpy, not of any language model. Do not quote them.
 """
 
-from llm_lab.core.engine import BreakthroughEngine
+from llm_lab.core.sim_engine import BreakthroughEngine
 
-def test_breakthrough_engine_pipeline():
-    print("Initializing Breakthrough Engine for Llama-3.3-70B architecture...")
+def test_sim_engine_pipeline_runs():
+    print("Initializing SIMULATED engine sketch (Llama-3.3-70B shape, no weights)...")
     
     engine = BreakthroughEngine(
         model_name="Llama-3.3-70B-Breakthrough",
@@ -35,16 +32,16 @@ def test_breakthrough_engine_pipeline():
     print(f"Model: {results['model_name']}")
     print(f"Total Tokens Generated: {results['total_tokens_generated']}")
     print(f"Elapsed Time: {results['elapsed_seconds']:.3f} s")
-    print(f"Simulation Tok/s: {results['effective_tokens_per_second']:.1f} tok/s")
+    print(f"[SIMULATED - numpy speed only] {results['effective_tokens_per_second']:.1f} tok/s")
     print(f"Mean Accepted Tokens / Pass: {results['avg_accepted_tokens_per_pass']:.2f}")
-    print(f"Dynamic Neuron Skip Ratio: {results['avg_sparsity_skipped_pct']:.1f}%")
+    print(f"[CONFIG CONSTANT - not measured] skip ratio {results['avg_sparsity_skipped_pct']:.1f}%")
     print(f"KV Cache Footprint: {results['kv_cache_footprint_mb']:.2f} MB")
     print(f"RAM Bounded Guarantee (<2GB): {results['ram_bounded_guarantee']}")
     print("="*50 + "\n")
     
     assert results['total_tokens_generated'] > 0
     assert results['ram_bounded_guarantee'] is True
-    print("End-to-End Engine Validation Passed!")
+    print("Simulated engine plumbing OK (no model was loaded)")
 
 if __name__ == "__main__":
-    test_breakthrough_engine_pipeline()
+    test_sim_engine_pipeline_runs()

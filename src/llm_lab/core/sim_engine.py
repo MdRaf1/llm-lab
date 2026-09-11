@@ -1,10 +1,11 @@
 """
-Unified Breakthrough Inference Engine.
-Combines:
-1. Speculative Batched Verification (compute-intensity multiplier)
-2. Predictable Dynamic Activation Sparsity (75% memory traffic reduction)
-3. Compact Bounded KV-Cache (sub-1.5GB RAM usage at any context length)
-4. Double-Buffered Asynchronous Streaming (latency hiding)
+SIMULATION — NOT REAL INFERENCE. DO NOT QUOTE ITS NUMBERS.
+
+No model is loaded. Each "step" feeds `np.random.randn` as the hidden state, draws
+`np.random.randint` tokens, and bumps the target logit of the token already chosen so
+that drafts are accepted. Its tok/s is the speed of numpy on random arrays.
+
+Superseded by docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md.
 """
 
 import time

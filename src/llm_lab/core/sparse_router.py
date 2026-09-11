@@ -1,5 +1,16 @@
 """
 Dynamic Activation Sparsity Predictor & Neuron Router.
+
+WARNING — THE PREDICTOR IS UNTRAINED. `predictor_weight` / `predictor_proj` are
+`np.random.randn(...) * 0.02` and no training code exists, so
+`predict_active_neurons()` selects top-k over noise. Its returned `sparsity_ratio` is
+`1 - (hot + top_k)/d_intermediate` — a fixed function of the configuration, not a
+measurement of anything. Do not report it as observed sparsity.
+
+Also note: thresholded activation sparsity on SwiGLU/SiLU models is LOSSY. SiLU
+outputs are essentially never exactly zero, so skipping "inactive" neurons changes the
+output. Only ReLU-family models admit exactly-lossless neuron skipping.
+
 Implements:
 1. Hot/Cold neuron frequency tracking and classification.
 2. Low-rank activation prediction (predicting which cold neurons fire ahead of time).

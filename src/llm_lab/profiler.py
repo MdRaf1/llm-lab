@@ -159,6 +159,9 @@ def calculate_theoretical_frontiers(ram_bw_gb_s, disk_bw_gb_s):
         disk_q4_tok_s = disk_bw_gb_s / active_q4_gb if active_q4_gb > 0 else 0
         
         # 3. Breakthrough: Combined Speculative (3.2x acceptance) + Dynamic Sparsity (30% active stream) + Sub-2bit
+        # 3. PROJECTED speed under three UNVALIDATED assumptions, two of them lossy:
+        #    2-bit weights (lossy), 70% activation sparsity (lossy on SwiGLU/SiLU), and a
+        #    3.2x speculative multiplier (never measured here). Not a claim about this repo.
         active_sparse_q2_gb = active_q2_gb * 0.30
         combined_breakthrough_tok_s = (ram_bw_gb_s / active_sparse_q2_gb) * 3.2
         
@@ -214,14 +217,14 @@ def run_profiler():
     
     frontier_data = calculate_theoretical_frontiers(effective_ram_bw, effective_disk_bw)
     
-    frontier_table = Table(title="Inference Speed Projections: Naive vs. Breakthrough Engine", show_header=True, header_style="bold red")
+    frontier_table = Table(title="PROJECTED Inference Speed (naive vs. an unbuilt engine) — NOT MEASURED", show_header=True, header_style="bold red")
     frontier_table.add_column("Model Architecture", style="bold white")
     frontier_table.add_column("Active Params", style="dim")
     frontier_table.add_column("Q4 Weight Footprint", style="cyan")
     frontier_table.add_column("Fits 16GB RAM?", style="yellow")
     frontier_table.add_column("Naive RAM Tok/s", style="red")
     frontier_table.add_column("Naive Disk Offload Tok/s", style="red")
-    frontier_table.add_column("Breakthrough Engine Tok/s", style="bold green")
+    frontier_table.add_column("PROJECTED Tok/s", style="bold green")
     
     for row in frontier_data:
         frontier_table.add_row(
@@ -236,13 +239,20 @@ def run_profiler():
     console.print(frontier_table)
     
     console.print(Panel("""
-[bold green]Key Takeaways for our Breakthrough Engine Design:[/bold green]
-1. [bold white]The Naive Failure Mode:[/bold white] Running a 70B model naively with disk offload results in [bold red]~0.05 to 0.1 tokens/sec[/bold red] (unusable).
-2. [bold white]The Capacity Barrier:[/bold white] 70B models in Q4 (35 GB) exceed this machine's 11.85 GB available RAM by [bold yellow]3x[/bold yellow].
-3. [bold white]The Breakthrough Solution Path:[/bold white]
-   - Sub-2bit dynamic weight representation shrinks 70B to ~14-17 GB.
-   - Dynamic sparsity (PowerInfer concept) ensures only ~4-5 GB of active weights need to be resident in RAM.
-   - Speculative tree verification flips memory-bound decoding to compute-bound, achieving [bold green]interactive generation speeds (10-25+ tok/s)[/bold green] with zero quality loss!
+[bold green]Measured above:[/bold green] the RAM and NVMe bandwidth rows. Those are real.
+
+[bold red]The "PROJECTED Tok/s" column is not.[/bold red] It multiplies the measured RAM bandwidth by
+three unvalidated assumptions: 2-bit weights (0.25 B/param), 70% activation sparsity, and a
+3.2x speculative multiplier. Two of those are also LOSSY (2-bit quantization; thresholded
+sparsity on SwiGLU/SiLU models), so the column does not describe lossless inference.
+
+[bold white]What the measurements do establish:[/bold white]
+1. Naive 70B disk offload lands around [bold red]0.05-0.1 tok/s[/bold red] on this machine - unusable, and
+   consistent with the arithmetic in the design spec.
+2. A 70B Q4 model (~35 GB) exceeds this machine's available RAM by roughly 3x. That capacity
+   barrier is why the project targets MoE, where only a few experts are active per token.
+
+See docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md for the measured plan.
 """))
 
 if __name__ == "__main__":

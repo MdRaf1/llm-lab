@@ -1,16 +1,18 @@
 """
-Unit tests for Frontier Model Partitioner and Calibration Pipeline.
-Validates:
-1. Power-law activation skew profiling across transformer layers.
-2. Binary partition stream generation (model_hot.bin, model_cold.bin).
-3. Manifest generation and index alignment.
+Plumbing check for the SIMULATED partitioner (llm_lab.frontier.sim_converter).
+
+The "activation skew profiling" it exercises is `np.random.zipf`, not a model run, so
+the hot/cold split it produces is arbitrary. This test only confirms that the binary
+streams and manifest are written and internally consistent.
+
+For real partitioning of an actual GGUF file, see frontier/gguf_partitioner.py.
 """
 
 import os
 import json
 import shutil
 import tempfile
-from llm_lab.frontier.converter import ModelPartitioner
+from llm_lab.frontier.sim_converter import ModelPartitioner
 
 def test_model_partitioner():
     temp_dir = tempfile.mkdtemp()

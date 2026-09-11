@@ -1,10 +1,18 @@
 """
-Frontier 70B Streaming & Execution Engine.
-Enables running 70B+ frontier models on sub-16GB consumer PCs by combining:
-1. Double-buffered asynchronous layer streaming (overlapping NVMe I/O with AVX2 CPU compute).
-2. Dynamic activation sparsity (streaming only the active 20-30% cold neurons per token).
-3. Bounded 4-bit KV Cache (<1.5 GB memory limit even at 64k+ context).
-4. Batched speculative tree verification (multiplying arithmetic intensity by 3x).
+SIMULATION — NOT REAL INFERENCE. DO NOT QUOTE ITS NUMBERS.
+
+This module does not load, read, or multiply by any model weight:
+  * layer buffers are allocated zero-filled and never populated
+  * `async_prefetch_slice()` performs no I/O; it computes a byte count and returns
+  * the per-layer "compute" is `hidden + 0.01*tanh(hidden)` — no matmul
+  * output tokens are `np.random.randint`; draft acceptance is forced by adding +10
+    to the logit of the token already chosen
+  * `active_weights_gb = 4.8` and `naive_tok_s = 0.08` are hardcoded constants, so the
+    reported "speedup" is arithmetic on invented inputs
+
+Its tok/s figure measures how fast numpy evaluates tanh on an 8192-vector 80 times.
+Kept only as an architectural sketch. Superseded by the plan in
+docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md.
 """
 
 import os

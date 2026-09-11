@@ -1,8 +1,17 @@
 """
 Speculative Batched Verification Engine.
+
+KNOWN DEVIATION — `verify_lossless_rejection()` is NOT the standard algorithm and is
+not currently lossless. The residual distribution is computed as
+`max(0, target_probs[i] - p_draft)`, subtracting the draft's *scalar* probability for
+the chosen token from the entire target vector. The correct form subtracts the draft
+*distribution* elementwise: `max(0, p(x) - q(x))`, which requires the drafter's full
+distribution, not one scalar. Until that is fixed, do not describe this function's
+output as distribution-identical to the target model.
+
 Implements:
 1. Candidate token drafting and tree expansion.
-2. Lossless rejection sampling verification in a single batched forward pass.
+2. Rejection-sampling verification in a single batched pass.
 3. Flips memory-bound decoding to compute-bound batch verification.
 """
 

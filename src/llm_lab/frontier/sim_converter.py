@@ -1,9 +1,12 @@
 """
-Frontier Model Partitioning and Calibration Pipeline.
-Profiles neuron activation skew on calibration tokens and partitions weights into:
-1. model_hot.bin  (~4.5 GB): Attention + Embeddings + 20% Hot Neurons (Resident in RAM)
-2. model_cold.bin (~12 GB):  80% Cold MLP Neurons (Chunked on NVMe for Async Streaming)
-3. manifest.json: Index maps, dimensions, quantization scales, and checksums.
+SIMULATION — the calibration is synthetic. DO NOT QUOTE ITS NUMBERS.
+
+`profile_activation_frequencies()` does not run a model on the calibration prompts; it
+draws `np.random.zipf` to fabricate an activation-frequency distribution. The resulting
+hot/cold neuron partition is therefore arbitrary, not measured.
+
+For real weight partitioning use `gguf_partitioner.py`, which parses an actual GGUF.
+Superseded by docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md.
 """
 
 import os

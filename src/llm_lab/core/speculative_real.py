@@ -1,7 +1,15 @@
 """
 Speculative Real-Model Decoding Engine.
-Integrates PyTorch Transformer models with candidate tree drafting and batched verification,
-achieving 2x-3x speedup on real token generation with 100% mathematical output identity.
+
+WARNING — THIS IS SLOWER THAN PLAIN DECODING, BY CONSTRUCTION.
+`generate()` drafts K tokens by calling the FULL target model K times, then calls it
+once more to verify — more forward passes than autoregressive decoding. It also never
+passes `past_key_values`, so every call re-encodes the whole sequence (O(n^2)).
+Verification is greedy argmax matching, not rejection sampling, so the "100% output
+identity" claim only holds for greedy decoding and says nothing about sampling.
+
+A real speedup needs a small draft model (or n-gram/prompt-lookup drafter) plus a KV
+cache. See docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md.
 """
 
 import time

@@ -24,12 +24,13 @@ Two claims we are allowed to chase:
 
 ## 2. What the existing repo actually does (audit, 2026-09-10)
 
-**This must not be forgotten.** The README's headline numbers do not come from running a
-language model. Do not trust `README.md` or `DEMO_SCRIPT.md` until M0 rewrites them.
+**This must not be forgotten.** M0 has since relabelled these modules `sim_*`, rewritten
+`README.md` to state the problem plainly, and removed `DEMO_SCRIPT.md` (recoverable at
+commit `a248a03`). The audit below is why.
 
-### Simulated (produces the README's flagship numbers)
+### Simulated (produced the original README's flagship numbers)
 
-- **`src/llm_lab/frontier/stream_engine.py`** (`Frontier70BEngine`, the "70B @ 15–19 tok/s, 108×" table)
+- **`src/llm_lab/frontier/sim_stream_engine.py`** (`Frontier70BEngine`, the "70B @ 15–19 tok/s, 108×" table)
   - 80 layer buffers are 121 MB of zeros and stay zeros — verified: `buffer is all zeros? True`.
   - `async_prefetch_slice()` does **no I/O**; its worker computes a byte count and immediately
     sets the ready event. Its own comment says `# Simulate high-speed NVMe/RAM block transfer`.
@@ -39,7 +40,7 @@ language model. Do not trust `README.md` or `DEMO_SCRIPT.md` until M0 rewrites t
     to the logit of the token already chosen.
   - `active_weights_gb = 4.8` is a hardcoded constant. `naive_tok_s = 0.08` is hardcoded, and
     "108×" is `measured / 0.08`.
-- **`src/llm_lab/frontier/gguf_stream_engine.py`** ("real partitioned GGUF, 19.6 tok/s, 988 MB RSS")
+- **`src/llm_lab/frontier/sim_gguf_stream_engine.py`** ("real partitioned GGUF, 19.6 tok/s, 988 MB RSS")
   - Does genuinely mmap the real 1.4 GB hot / 3.2 GB cold files — the partitioner works.
   - But inference reads a **1024-byte slice and discards it** (`q_slice = self.mmap_hot[...:...+1024]`),
     then runs `curr_hidden + 0.005*np.tanh(...)` and `np.random.randint` tokens. It never multiplies
@@ -47,7 +48,7 @@ language model. Do not trust `README.md` or `DEMO_SCRIPT.md` until M0 rewrites t
 - **`src/llm_lab/core/sparse_router.py`** ("trained predictors", "76.4% skipped")
   - Predictors are `np.random.randn(...)*0.02` — random, never trained; `total_tokens_observed: 0`.
   - The "sparsity %" is `1 - (hot + top_k)/d_intermediate`: a fixed function of config, not a measurement.
-- **`src/llm_lab/frontier/converter.py`** — calibration "profiling" is `np.random.zipf`.
+- **`src/llm_lab/frontier/sim_converter.py`** — calibration "profiling" is `np.random.zipf`.
 
 ### Real, but broken by design
 
@@ -224,8 +225,8 @@ Each milestone has a gate. We stop or escalate on the measured result, not on en
 
 | # | Milestone | Output | Gate to proceed |
 |---|---|---|---|
-| **M0** | **Truth-in-labeling** | README/DEMO_SCRIPT rewritten to claim only what runs; simulated engines renamed/quarantined as `sim_*` or deleted | No public artifact contains an unmeasured number |
-| **M1** | **Reference baseline + exactness oracle + traces** *(approved, designed below)* | Real generation on Qwen3-30B-A3B Q4_K_M; determinism proven; expert-routing + timing traces | Two identical-config runs give identical token IDs; ≥2000 tokens traced across ≥3 domains |
+| **M0** | **Truth-in-labeling** | README rewritten to claim only what runs; simulated engines renamed `sim_*` with explanatory headers; `DEMO_SCRIPT.md` removed; canned-text chat path deleted | **DONE 2026-09-11.** No public artifact contains an unmeasured number |
+| **M1** | **Reference baseline + exactness oracle + traces** *(approved, designed below)* | Two phases: M1a on a small MoE, then M1b on Qwen3-30B-A3B Q4_K_M | M1a exit criteria met before the 18 GB download; see §8.11 |
 | **M2** | **Trace analysis → decision gate** | Cache-hit curves, union growth vs window, reuse distance, co-activation, predicted tok/s per tier | See numeric gate below |
 | **M3** | **Expert-contiguous repack** | Aligned, contiguous `(layer, expert)` blobs + manifest; layout-only, output-exact | Measured read throughput improves vs stock GGUF access; token IDs unchanged |
 | **M4** | **Tiered exact async loader** | VRAM/RAM/NVMe cache, real async I/O at QD≥16 (IOCP/io_uring), demand-load on miss | Output identical at *every* cache size; beats llama.cpp `--n-cpu-moe` baseline on the same box |
@@ -249,11 +250,23 @@ Each milestone has a gate. We stop or escalate on the measured result, not on en
 In scope: measure the truth about one real MoE checkpoint.
 Out of scope: any custom streaming engine, any speedup claim, any PageCC code, any GPU work.
 
-### 8.2 Recommended sequencing (de-risk before the big download)
+### 8.2 Required phase order — M1a before M1b
 
-Build and validate the whole pipeline on a **small** MoE that fits the 16 GB box
-(e.g. OLMoE-1B-7B or Qwen1.5-MoE-A2.7B), then run the *same code* on Qwen3-30B-A3B Q4_K_M.
-This is cheaper than debugging a 18 GB download.
+M1 is **two phases, in this order**. This is normative, not a suggestion.
+
+**M1a — pipeline shakedown on a small MoE.** Build and validate all four modules, the
+oracle, and the trace schema against an MoE that fits the 16 GB box — OLMoE-1B-7B or
+Qwen1.5-MoE-A2.7B. Exit criteria: determinism proven, ≥500 positions traced, and
+`tests/test_moe_trace.py` green.
+
+**M1b — the approved target.** Only after M1a's exit criteria are met, download
+Qwen3-30B-A3B Q4_K_M (~18 GB) and run the *same code paths* against it.
+
+Rationale: debugging a trace-schema or determinism bug against an 18 GB checkpoint on a
+16 GB machine costs hours per iteration. Nothing in M1a is throwaway — it is the same code
+M1b runs. If a small-MoE constraint turns out to make M1a impossible (e.g. no suitable
+small MoE exposes router logits), say so and go straight to M1b rather than inventing a
+workaround.
 
 ### 8.3 Components (4 modules, 1 test — keep it small)
 
@@ -356,11 +369,20 @@ checkpoint ──► meta.py ──► architecture facts + expert byte sizes
 
 ### 8.11 M1 definition of done
 
-1. A real generation runs on Qwen3-30B-A3B Q4_K_M and emits a RunRecord with measured tok/s and RSS.
-2. Two identical-config runs produce **identical token IDs** (or nondeterminism is documented as a finding).
-3. ≥2000 generated positions traced across ≥3 prompt domains (prose, code, factual recall).
-4. `meta.py` output confirms or corrects the architecture numbers assumed in §3.
-5. Every number in the M1 report traces to a command and its saved output in the repo.
+**M1a (small MoE, must pass first):**
+
+1. All four modules plus `tests/test_moe_trace.py` exist and the test is green.
+2. Two identical-config runs produce **identical token IDs** (or nondeterminism is
+   documented as a finding, with its cause).
+3. ≥500 generated positions traced, schema round-trips.
+
+**M1b (Qwen3-30B-A3B Q4_K_M):**
+
+4. A real generation runs and emits a RunRecord with measured tok/s and RSS.
+5. Determinism re-verified on this checkpoint.
+6. ≥2000 generated positions traced across ≥3 prompt domains (prose, code, factual recall).
+7. `meta.py` output confirms or corrects the architecture numbers assumed in §3.
+8. Every number in the M1 report traces to a command and its saved output in the repo.
 
 ---
 

@@ -1,7 +1,17 @@
 """
-Real GGUF Streaming Engine for Partitioned Weights.
-Executes inference on real partitioned GGUF models (e.g. LLaMA-3 8B / 70B)
-by streaming cold FFN weights on-demand while keeping hot attention in RAM.
+SIMULATION — NOT REAL INFERENCE. DO NOT QUOTE ITS NUMBERS.
+
+This module *does* mmap the real partitioned hot/cold files produced by
+`gguf_partitioner.py`, but it never computes with them:
+  * it reads a 1024-byte slice per layer and discards it
+  * the prefetch worker reads `length * ratio` bytes and discards them
+  * the per-layer "compute" is `hidden + 0.005*tanh(hidden)` — the hidden state is
+    never multiplied by any weight
+  * output tokens are `np.random.randint`; acceptance is forced with a +12 logit bump
+
+The low RSS it reports is a consequence of doing no real work, not of efficient
+streaming. Kept as the reference for how to mmap the partition format.
+Superseded by docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md.
 """
 
 import os

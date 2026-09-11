@@ -1,8 +1,12 @@
 """
 Lightweight Self-Drafting Hidden-State Engine (EAGLE-Style).
+
+WARNING — UNTRAINED. `w_fuse` is `np.random.randn(...) * 0.02` and no training code
+exists, so `draft_sequence()` returns tokens drawn from an untrained projection. Any
+acceptance rate measured against it is meaningless.
+
 Eliminates the need for an external draft model by predicting candidate tokens
 directly from the target model's top hidden state using a single-layer projection.
-Memory overhead: <50 MB (vs 2-3 GB for an external draft model).
 """
 
 from typing import List, Tuple, Dict

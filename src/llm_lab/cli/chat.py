@@ -1,45 +1,47 @@
 """
-Interactive Live Terminal Chat Interface for LLM-LAB.
-Connects the user to the Frontier 70B Engine with real-time token streaming
-and live performance telemetry (tok/s, RAM consumption, sparsity %, draft acceptance %).
+Interactive terminal chat for LLM-LAB.
+
+Only `--engine local-llama` generates real text (llama.cpp + a real GGUF file). The
+`sim-*` engines are simulations with no model attached and refuse to generate; see
+docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md section 2.
 """
 
 import sys
 import time
 import psutil
-import numpy as np
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
-from rich.live import Live
-from rich.markdown import Markdown
 
 import argparse
-from typing import Dict, List, Optional, Any
-from llm_lab.frontier.stream_engine import Frontier70BEngine
-from llm_lab.frontier.gguf_stream_engine import PartitionedGGUFStreamEngine
+from typing import Optional
+from llm_lab.frontier.sim_stream_engine import Frontier70BEngine
+from llm_lab.frontier.sim_gguf_stream_engine import PartitionedGGUFStreamEngine
 
 console = Console()
 
 class InteractiveChatSession:
     """
-    Manages an interactive multi-turn conversation session with either:
-    1. Frontier 70B Engine (80-layer streaming architecture simulation)
-    2. Real Partitioned GGUF Engine (real local 8B weights partitioned to RAM+NVMe)
-    3. Real Local LLaMA with Speculative Decoding (real end-to-end token generation)
+    Interactive chat session. Only one mode generates real text:
+
+    1. local-llama        — REAL. Runs a GGUF model via llama.cpp.
+    2. sim-frontier-70b   — SIMULATION. No model; refuses to generate. See
+                            frontier/sim_stream_engine.py.
+    3. sim-partitioned    — SIMULATION. Mmaps real partition files but never computes
+                            with them. See frontier/sim_gguf_stream_engine.py.
     """
-    def __init__(self, mode: str = "frontier-70b", partition_dir: str = "models/llama-8b-real-partition", model_name: Optional[str] = None):
+    def __init__(self, mode: str = "local-llama", partition_dir: str = "models/llama-8b-real-partition", model_name: Optional[str] = None):
         self.mode = mode
         self.max_tokens = 50
         self.conversation_history = []
         self.total_tokens_session = 0
         self.llm_real = None
-        
-        if self.mode == "real-partitioned":
-            self.model_name = "LLaMA-3-8B-Partitioned"
+
+        if self.mode == "sim-partitioned":
+            self.model_name = "SIMULATION (partitioned GGUF, no compute)"
             self.engine = PartitionedGGUFStreamEngine(partition_dir=partition_dir)
         elif self.mode == "local-llama":
-            self.model_name = "LLaMA-3-8B-Speculative-Real"
+            self.model_name = "LLaMA-3-8B (llama.cpp, prompt-lookup draft)"
             self.engine = None
             from llama_cpp import Llama
             from llama_cpp.llama_speculative import LlamaPromptLookupDecoding
@@ -51,36 +53,42 @@ class InteractiveChatSession:
                 n_threads=6,
                 verbose=False
             )
+        elif self.mode == "sim-frontier-70b":
+            self.model_name = "SIMULATION (no model attached)"
+            self.engine = Frontier70BEngine(model_name=model_name or "sim-70b")
         else:
-            self.model_name = model_name or "Llama-3.3-70B-Frontier"
-            self.engine = Frontier70BEngine(model_name=self.model_name)
+            raise ValueError(
+                f"Unknown engine mode {self.mode!r}. "
+                "Choose local-llama (real), sim-frontier-70b, or sim-partitioned."
+            )
 
     def print_welcome_banner(self):
         mem = psutil.virtual_memory()
         free_ram_gb = mem.available / (1024**3)
         total_ram_gb = mem.total / (1024**3)
-        
-        banner = f"""[bold cyan]LLM-LAB INTERACTIVE FRONTIER TERMINAL[/bold cyan]
-[dim]Model: {self.model_name} (80 Layers, 70B Parameters)[/dim]
+
+        sim_note = "" if self.mode == "local-llama" else \
+            "\n[bold red]SIMULATION MODE — no model is attached; generation will refuse.[/bold red]"
+        banner = f"""[bold cyan]LLM-LAB INTERACTIVE TERMINAL[/bold cyan]
+[dim]Engine: {self.mode} | Model: {self.model_name}[/dim]
 [dim]System RAM: {total_ram_gb:.1f} GB Total | [bold green]{free_ram_gb:.1f} GB Available[/bold green][/dim]
-[dim]Type [bold white]/help[/bold white] for commands or [bold white]/exit[/bold white] to quit.[/dim]"""
+[dim]Type [bold white]/help[/bold white] for commands or [bold white]/exit[/bold white] to quit.[/dim]{sim_note}"""
         console.print(Panel(banner, border_style="cyan"))
 
     def show_system_stats(self):
         mem = psutil.virtual_memory()
         proc = psutil.Process()
         proc_mem_gb = proc.memory_info().rss / (1024**3)
-        
-        table = Table(title="Hardware Telemetry Status", header_style="bold magenta")
+
+        table = Table(title="Measured Process/System Memory", header_style="bold magenta")
         table.add_column("Resource", style="cyan")
-        table.add_column("Value", style="green")
-        table.add_column("Safety Envelope", style="yellow")
-        
-        table.add_row("Engine Process RAM", f"{proc_mem_gb:.2f} GB", "Strictly Bounded (< 6.0 GB)")
-        table.add_row("System Total Free RAM", f"{mem.available / (1024**3):.2f} GB", "Safe Headroom (> 3.0 GB)")
-        table.add_row("Overall RAM Utilization", f"{mem.percent}%", "Zero Windows Swap Thrashing")
+        table.add_column("Measured Value", style="green")
+
+        table.add_row("Engine Process RSS", f"{proc_mem_gb:.2f} GB")
+        table.add_row("System Free RAM", f"{mem.available / (1024**3):.2f} GB")
+        table.add_row("System RAM Utilization", f"{mem.percent}%")
         if self.engine and hasattr(self.engine, "kv_cache"):
-            table.add_row("KV Cache Footprint", f"{self.engine.kv_cache.get_memory_bytes() / (1024**2):.2f} MB", "Bounded 4-Bit SnapKV")
+            table.add_row("KV Cache Footprint", f"{self.engine.kv_cache.get_memory_bytes() / (1024**2):.2f} MB")
         console.print(table)
 
     def generate_response_stream(self, user_prompt: str):
@@ -116,86 +124,14 @@ class InteractiveChatSession:
             self.total_tokens_session += tokens_generated
             return
             
-        # For frontier-70b and real-partitioned engines
-        step_stats = {}
-        if self.mode == "real-partitioned" and hasattr(self.engine, "execute_stream_step"):
-            dummy_hidden = np.random.randn(self.engine.d_model).astype(np.float32)
-            _, step_stats = self.engine.execute_stream_step(dummy_hidden)
-            
-        sparsity_ratios = []
-        draft_acceptances = []
-        
-        prompt_lower = user_prompt.lower()
-        if "binary search" in prompt_lower or "code" in prompt_lower or "python" in prompt_lower:
-            simulated_text = (
-                "Here is an optimized binary search implementation in Python:\n\n"
-                "```python\n"
-                "def binary_search(arr, target):\n"
-                "    left, right = 0, len(arr) - 1\n"
-                "    while left <= right:\n"
-                "        mid = (left + right) // 2\n"
-                "        if arr[mid] == target:\n"
-                "            return mid\n"
-                "        elif arr[mid] < target:\n"
-                "            left = mid + 1\n"
-                "        else:\n"
-                "            right = mid - 1\n"
-                "    return -1\n"
-                "```\n\n"
-                "**Complexity**: O(log n) time and O(1) auxiliary space."
-            )
-        elif "quantum" in prompt_lower:
-            simulated_text = (
-                "Quantum computers utilize quantum mechanical phenomena like superposition and entanglement "
-                "to perform complex calculations exponentially faster than classical supercomputers for specific algorithmic domains."
-            )
-        elif "explain" in prompt_lower or "how" in prompt_lower:
-            simulated_text = (
-                "The LLM-LAB streaming architecture overcomes memory bandwidth saturation by partitioning weights into "
-                "static hot Attention layers in RAM and dynamic cold MLP layers streamed from NVMe. "
-                "Coupled with 4-bit SnapKV attention sinks and speculative tree verification, frontier-scale models "
-                "run within commodity memory budgets without swap thrashing."
-            )
-        else:
-            simulated_text = (
-                f"Processing query via {self.model_name} streaming architecture...\n"
-                f"Execution verified across transformer layers with dynamic cold-neuron streaming.\n"
-                f"The system operates within the bounded memory budget of this PC while maintaining full model depth."
-            )
-
-        words = simulated_text.split(" ")
-        console.print(f"[bold green]Assistant ({self.model_name}):[/bold green] ", end="")
-        
-        # Interactive streaming cadence
-        for i, word in enumerate(words):
-            sys.stdout.write(word + " ")
-            sys.stdout.flush()
-            time.sleep(0.065) # ~15.4 tok/s cadence
-            tokens_generated += 1
-            
-            sparsity_val = step_stats.get("overall_sparsity_skipped_pct", 78.0) / 100.0
-            sparsity_ratios.append(sparsity_val + np.random.uniform(-0.02, 0.02))
-            draft_acceptances.append(0.84 + np.random.uniform(-0.04, 0.04))
-            
-        sys.stdout.write("\n")
-        elapsed = time.perf_counter() - start_time
-        effective_tok_s = tokens_generated / max(elapsed, 1e-5)
-        
-        mean_sparsity = np.mean(sparsity_ratios) * 100.0
-        mean_accept = np.mean(draft_acceptances) * 100.0
-        proc_ram = psutil.Process().memory_info().rss / (1024**3)
-        
-        telemetry_text = (
-            f"[dim]Speed: [bold green]{effective_tok_s:.1f} tok/s[/bold green] | "
-            f"Latency: [bold cyan]{elapsed:.2f}s[/bold cyan] ({tokens_generated} toks) | "
-            f"RAM: [bold magenta]{proc_ram:.2f} GB[/bold magenta] (Bounded) | "
-            f"Sparsity: [bold yellow]{mean_sparsity:.1f}% skipped[/bold yellow] | "
-            f"Draft Accepted: [bold blue]{mean_accept:.1f}%[/bold blue][/dim]"
+        # Simulated engines have no real inference path. Previously this branch printed
+        # hardcoded canned answers with a time.sleep(0.065) cadence and fabricated
+        # "sparsity"/"draft accepted" telemetry, which read as real model output.
+        raise RuntimeError(
+            f"--engine {self.mode} cannot generate text: it is a simulation with no "
+            "model attached (see the SIMULATION warning in its module docstring). "
+            "Use --engine local-llama, which runs a real GGUF model via llama.cpp."
         )
-        console.print(Panel(telemetry_text, border_style="dim"))
-        
-        self.conversation_history.append({"role": "assistant", "content": simulated_text})
-        self.total_tokens_session += tokens_generated
 
     def run_repl(self):
         self.print_welcome_banner()
@@ -242,7 +178,7 @@ class InteractiveChatSession:
 
 def start_chat():
     parser = argparse.ArgumentParser(description="LLM-LAB Interactive Terminal")
-    parser.add_argument("--engine", choices=["frontier-70b", "real-partitioned", "local-llama"], default="frontier-70b", help="Engine backend to run")
+    parser.add_argument("--engine", choices=["local-llama", "sim-frontier-70b", "sim-partitioned"], default="local-llama", help="Engine backend. Only local-llama runs a real model.")
     parser.add_argument("--partition-dir", default="models/llama-8b-real-partition", help="Directory for partitioned GGUF weights")
     args, unknown = parser.parse_known_args()
     
