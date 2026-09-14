@@ -1,9 +1,11 @@
 """
-Immutable run records and stable configuration fingerprints.
+Run records and stable configuration fingerprints.
 Guarantees:
-1. A run is described only by measured values; anything unmeasured stays None.
-2. Two runs are comparable only when their config fingerprints are identical.
-3. Records are written atomically, so an interrupted run leaves no partial record.
+1. Record fields cannot be rebound after construction. Fields are not deep-frozen: the `host`
+   dict a caller passes in stays mutable through its own reference.
+2. A run is described only by measured values; anything unmeasured stays None.
+3. Two runs are comparable only when their config fingerprints are identical.
+4. Records are written atomically, so an interrupted run leaves no partial record.
 """
 
 from __future__ import annotations
@@ -11,9 +13,9 @@ from __future__ import annotations
 import hashlib
 import json
 import platform
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Sequence
 
 import psutil
 
@@ -134,6 +136,9 @@ class RunRecord:
     host: dict[str, object]
 
     def __post_init__(self) -> None:
+        # Normalize before validating: callers hand us whatever their backend produced (HF lists,
+        # numpy/torch scalars), and a stored record must always round-trip as a tuple of ints.
+        object.__setattr__(self, "token_ids", tuple(int(t) for t in self.token_ids))
         _check_sha("config_fingerprint", self.config_fingerprint)
         _check_non_negative("n_prompt", self.n_prompt)
         _check_non_negative("n_generated", self.n_generated)

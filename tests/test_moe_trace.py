@@ -1,8 +1,10 @@
 """
 Unit Tests for the MoE reference pipeline (M1).
 Validates:
-1. Immutable RunRecord JSON round-trip and stable config fingerprints.
-2. The exactness oracle: identity, first divergence, and fingerprint refusal.
+1. RunRecord JSON round-trip and stable config fingerprints.
+2. Record/config validation: every rejection path is a loud ValueError.
+3. Canonical hashing of token IDs and files.
+4. The exactness oracle: identity, first divergence, and fingerprint refusal.
 """
 
 from pathlib import Path
@@ -10,6 +12,9 @@ import tempfile
 
 from llm_lab.moe.baseline import RunConfig, RunRecord, fingerprint_config
 from llm_lab.moe.oracle import compare_runs
+
+from dataclasses import replace
+from llm_lab.moe.baseline import sha256_bytes, sha256_file, sha256_token_ids
 
 
 def sample_config() -> RunConfig:
@@ -64,8 +69,59 @@ def test_oracle_refuses_different_fingerprints():
         raise AssertionError("oracle compared incompatible runs")
 
 
+def assert_rejects(build, field: str) -> None:
+    """A rejected construction must raise ValueError naming the offending field."""
+    try:
+        build()
+    except ValueError as exc:
+        assert field in str(exc), f"error for {field} did not name it: {exc}"
+    else:
+        raise AssertionError(f"accepted invalid {field}")
+
+
+def test_run_config_rejects_invalid_values():
+    assert_rejects(lambda: replace(sample_config(), decode="sampling"), "decode")
+    assert_rejects(lambda: replace(sample_config(), seed=-1), "seed")
+    assert_rejects(lambda: replace(sample_config(), threads=-1), "threads")
+    assert_rejects(lambda: replace(sample_config(), prompt_sha="a" * 63), "prompt_sha")
+    assert_rejects(lambda: replace(sample_config(), prompt_sha=None), "prompt_sha")
+    assert_rejects(lambda: replace(sample_config(), tokenizer_sha="short"), "tokenizer_sha")
+
+
+def test_run_record_rejects_invalid_values():
+    assert_rejects(
+        lambda: replace(sample_record(), config_fingerprint="b" * 63), "config_fingerprint"
+    )
+    assert_rejects(lambda: replace(sample_record(), n_prompt=-1), "n_prompt")
+    assert_rejects(lambda: replace(sample_record(), n_generated=-1), "n_generated")
+    assert_rejects(lambda: replace(sample_record(), n_generated=None), "n_generated")
+    assert_rejects(lambda: replace(sample_record(), wall_s=-0.5), "wall_s")
+    assert_rejects(lambda: replace(sample_record(), tok_per_s=-1.0), "tok_per_s")
+    assert_rejects(lambda: replace(sample_record(), peak_rss_bytes=-1), "peak_rss_bytes")
+
+
+def test_run_record_normalizes_token_ids_to_tuple():
+    record = sample_record([7, 8, 9])
+    assert record.token_ids == (7, 8, 9)
+    assert record == sample_record((7, 8, 9))
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "run.json"
+        record.write(path)
+        assert RunRecord.read(path) == record
+
+
+def test_token_id_and_file_hashes_are_canonical():
+    assert sha256_token_ids([7, 8, 9]) == sha256_bytes(b"[7,8,9]")
+    assert sha256_token_ids((7, 8, 9)) == sha256_token_ids([7, 8, 9])
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "blob.bin"
+        path.write_bytes(b"abc")
+        assert sha256_file(path) == sha256_bytes(b"abc")
+
+
 if __name__ == "__main__":
-    test_run_record_round_trip_and_stable_fingerprint()
-    test_oracle_reports_identity_and_first_divergence()
-    test_oracle_refuses_different_fingerprints()
+    # Auto-discovery, so a test appended by a later task can never be silently skipped.
+    for name, fn in sorted(globals().items()):
+        if name.startswith("test_"):
+            fn()
     print("All MoE Trace Tests Passed!")
