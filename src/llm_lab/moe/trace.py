@@ -31,6 +31,7 @@ import torch
 from llm_lab.moe.baseline import (
     RunConfig,
     RunRecord,
+    _as_input_ids,
     _check_non_negative,
     _check_sha,
     _oom_as_runtime_error,
@@ -292,6 +293,10 @@ class TraceCapture:
     run_record: RunRecord
     trace_sha256: str
     logits_sha256: str
+    # The decode setting the loop actually ran under. The §8.5 header keeps decode="greedy"
+    # (fingerprint/schema depend on it), so the capture is the source of truth for whether EOS
+    # could stop the trace early. Task 6's CLI builds its summary from the capture.
+    stop_at_eos: bool = True
 
     def __post_init__(self) -> None:
         _check_sha("trace_sha256", self.trace_sha256)
@@ -302,6 +307,7 @@ class TraceCapture:
             "run_record": self.run_record.to_dict(),
             "trace_sha256": self.trace_sha256,
             "logits_sha256": self.logits_sha256,
+            "stop_at_eos": self.stop_at_eos,
         }
 
 
@@ -339,10 +345,7 @@ def trace_hf(
     """
     seed_everything(header.seed, header.threads)
     model.eval()
-    if isinstance(input_ids, torch.Tensor):
-        ids = input_ids.to(torch.long)
-    else:
-        ids = torch.tensor(input_ids, dtype=torch.long)
+    ids = _as_input_ids(input_ids)
     n_prompt = int(ids.shape[-1])
     eos_id = getattr(model.config, "eos_token_id", None)
 
@@ -410,4 +413,4 @@ def trace_hf(
         peak_rss_bytes=peak_rss_bytes(),
         host=host_info(),
     )
-    return TraceCapture(record, trace_sha256, logits_sha256)
+    return TraceCapture(record, trace_sha256, logits_sha256, stop_at_eos=stop_at_eos)

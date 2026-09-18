@@ -28,8 +28,14 @@ name = "pytorch-cpu"
 url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
+[[tool.uv.index]]
+name = "llama-cpp-cpu"
+url = "https://abetlen.github.io/llama-cpp-python/whl/cpu"
+explicit = true
+
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
+llama-cpp-python = { index = "llama-cpp-cpu" }
 
 [project.scripts]
 llm-lab = "llm_lab:main"

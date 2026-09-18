@@ -590,6 +590,9 @@ def test_trace_hf_records_processed_tokens_and_stable_logits():
         )
         assert capture_a.logits_sha256 == capture_b.logits_sha256
         assert capture_a.trace_sha256 == capture_b.trace_sha256
+        # The default capture records the decode setting it ran under.
+        assert capture_a.stop_at_eos is True
+        assert capture_a.to_dict()["stop_at_eos"] is True
 
 
 def test_trace_hf_fixed_length_ignores_eos():
@@ -604,6 +607,10 @@ def test_trace_hf_fixed_length_ignores_eos():
         _, steps = read_trace(Path(tmp) / "t.jsonl")
         assert len(steps) == 3
         assert capture.run_record.n_generated == 3
+        # The setting must be recorded, not just implied by length: a fixed-length capture is
+        # distinguishable after the fact from a greedy-with-EOS one.
+        assert capture.stop_at_eos is False
+        assert capture.to_dict()["stop_at_eos"] is False
 
 
 def test_incremental_kv_decode_is_bit_repeatable():
