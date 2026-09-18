@@ -363,6 +363,133 @@ def test_model_meta_rejects_impossible_counts():
     assert_rejects(lambda: replace(meta, total_expert_bytes=-1), "total_expert_bytes")
 
 
+from llm_lab.moe.trace import (
+    TraceHeader,
+    TraceStep,
+    read_trace,
+    replay_cache,
+    window_unions,
+    write_trace,
+)
+
+
+def sample_header(**overrides) -> TraceHeader:
+    fields = dict(
+        kind="header",
+        model="olmoe",
+        path="local-random",
+        quant="float32",
+        n_layer=2,
+        n_expert=8,
+        n_expert_used=2,
+        expert_bytes=96,
+        total_expert_bytes=1536,
+        tokenizer_sha=None,
+        prompt_sha="a" * 64,
+        seed=0,
+        decode="greedy",
+        backend="transformers",
+        threads=1,
+        host={"os": "test"},
+    )
+    fields.update(overrides)
+    return TraceHeader(**fields)
+
+
+def sample_steps() -> list:
+    # The brief's exact hand-built trace. Every union answer below is derived from these three.
+    return [
+        TraceStep("step", 0, 10, ((1, 2), (3, 4))),
+        TraceStep("step", 1, 11, ((2, 5), (3, 6))),
+        TraceStep("step", 2, 12, ((1, 5), (4, 6))),
+    ]
+
+
+def test_trace_round_trips_header_and_steps_exactly():
+    header, steps = sample_header(), sample_steps()
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "trace.jsonl"
+        write_trace(path, header, steps)
+        got_header, got_steps = read_trace(path)
+        assert got_header == header
+        assert got_steps == steps
+        # First line is the header, every other line is a step; nullable fields stay present.
+        lines = path.read_text(encoding="utf-8").splitlines()
+        assert json.loads(lines[0])["kind"] == "header"
+        assert json.loads(lines[0])["tokenizer_sha"] is None
+        assert [json.loads(line)["kind"] for line in lines[1:]] == ["step", "step", "step"]
+
+
+def test_window_unions_are_layer_encoded_and_exact():
+    steps = sample_steps()
+    expected = ((0, 1), (0, 2), (0, 5), (1, 3), (1, 4), (1, 6))
+
+    pairwise = window_unions(steps, 2)
+    assert pairwise == [expected, expected]
+
+    full = window_unions(steps, 3)
+    assert full == [expected]
+    assert len(full[0]) == 6
+
+    def per_layer_counts(union):
+        return tuple(
+            sum(1 for layer, _ in union if layer == which) for which in (0, 1)
+        )
+
+    assert per_layer_counts(pairwise[0]) == (3, 3)
+    assert per_layer_counts(pairwise[1]) == (3, 3)
+    assert per_layer_counts(full[0]) == (3, 3)
+
+
+def test_replay_cache_capacity_changes_hits_never_the_logits():
+    steps = sample_steps()
+    logits_sha = "c" * 64
+    small = replay_cache(steps, 2, logits_sha)
+    large = replay_cache(steps, 12, logits_sha)
+
+    # Cache capacity moves hits/misses but never the trace, the logits, or the tokens.
+    assert small["token_ids"] == [10, 11, 12]
+    assert large["token_ids"] == [10, 11, 12]
+    assert small["trace_sha256"] == large["trace_sha256"]
+    assert small["logits_sha256"] == large["logits_sha256"] == logits_sha
+    assert small["requests"] == large["requests"] == 12
+    assert (small["hits"], small["misses"]) == (0, 12)
+    assert (large["hits"], large["misses"]) == (6, 6)
+    assert small["hits"] != large["hits"]
+
+    # Capacity 0 is a real cache that holds nothing: every request misses.
+    empty = replay_cache(steps, 0, logits_sha)
+    assert (empty["hits"], empty["misses"]) == (0, 12)
+
+
+def test_trace_rejects_malformed_steps():
+    header = sample_header()
+
+    def write(steps):
+        with tempfile.TemporaryDirectory() as tmp:
+            write_trace(Path(tmp) / "bad.jsonl", header, steps)
+
+    # Non-contiguous / duplicate pos.
+    assert_rejects(
+        lambda: write([TraceStep("step", 0, 10, ((1, 2), (3, 4))),
+                       TraceStep("step", 2, 11, ((2, 5), (3, 6)))]),
+        "pos",
+    )
+    assert_rejects(
+        lambda: write([TraceStep("step", 0, 10, ((1, 2), (3, 4))),
+                       TraceStep("step", 0, 11, ((2, 5), (3, 6)))]),
+        "pos",
+    )
+    # Wrong layer count (header says 2 layers).
+    assert_rejects(lambda: write([TraceStep("step", 0, 10, ((1, 2),))]), "layer")
+    # Wrong top-k length (header says 2 experts per layer).
+    assert_rejects(lambda: write([TraceStep("step", 0, 10, ((1, 2, 3), (3, 4)))]), "top-k")
+    # Duplicate expert IDs within one layer.
+    assert_rejects(lambda: write([TraceStep("step", 0, 10, ((1, 1), (3, 4)))]), "duplicate expert")
+    # Expert ID outside [0, n_expert).
+    assert_rejects(lambda: write([TraceStep("step", 0, 10, ((1, 8), (3, 4)))]), "outside")
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 
