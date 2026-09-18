@@ -37,6 +37,7 @@ def _add_moe_subparsers(subparsers) -> None:
     meta_p.add_argument("--backend", choices=["hf", "llama-cpp"], required=True)
     meta_p.add_argument("--model-path", required=True)
     meta_p.add_argument("--output", required=True)
+    meta_p.add_argument("--force", action="store_true")
 
     run_p = moe_sub.add_parser("run", help="Greedy decode to a run record")
     run_p.add_argument("--backend", choices=["tiny", "hf-int8", "llama-cpp"], required=True)
@@ -50,6 +51,7 @@ def _add_moe_subparsers(subparsers) -> None:
     run_p.add_argument("--max-new-tokens", type=int, default=16)
     run_p.add_argument("--n-ctx", type=int, default=None)
     run_p.add_argument("--output", required=True)
+    run_p.add_argument("--force", action="store_true")
 
     trace_p = moe_sub.add_parser("trace", help="Greedy decode recording per-token expert routing")
     trace_p.add_argument("--backend", choices=["tiny", "hf-int8", "hf-bf16"], required=True)
@@ -65,22 +67,41 @@ def _add_moe_subparsers(subparsers) -> None:
     trace_p.add_argument("--logits", required=True)
     trace_p.add_argument("--run-record", required=True)
     trace_p.add_argument("--summary", required=True)
+    trace_p.add_argument("--force", action="store_true")
 
     compare_p = moe_sub.add_parser("compare", help="Compare two run records by token ID")
     compare_p.add_argument("run_a")
     compare_p.add_argument("run_b")
     compare_p.add_argument("--output", required=True)
+    compare_p.add_argument("--force", action="store_true")
 
     replay_p = moe_sub.add_parser("replay-cache", help="Replay expert-cache hits over a trace")
     replay_p.add_argument("trace")
     replay_p.add_argument("--logits", required=True)
     replay_p.add_argument("--capacity-experts", type=int, required=True)
     replay_p.add_argument("--output", required=True)
+    replay_p.add_argument("--force", action="store_true")
 
 
 def _reject(parser, message: str) -> None:
     """Argparse-style rejection: usage + message on stderr, SystemExit(2)."""
     parser.error(message)
+
+
+def _moe_output_paths(args) -> list[str]:
+    """Every path a validated `moe` subcommand will write. trace writes four; the rest one."""
+    if args.moe_command == "trace":
+        return [args.trace, args.logits, args.run_record, args.summary]
+    return [args.output]
+
+
+def _guard_outputs(parser, args) -> None:
+    """Refuse to clobber existing measurements. --force is the explicit, transcript-visible override."""
+    if getattr(args, "force", False):
+        return
+    for path in _moe_output_paths(args):
+        if Path(path).exists():
+            _reject(parser, f"output path exists: {path} (use --force to overwrite)")
 
 
 def _validate_moe_args(parser, args) -> None:
@@ -136,6 +157,7 @@ def _validate_moe_args(parser, args) -> None:
 def _run_moe(parser, args) -> None:
     """Dispatch a validated `moe` subcommand. Heavy imports stay local to the branch that needs them."""
     _validate_moe_args(parser, args)
+    _guard_outputs(parser, args)
 
     if args.moe_command == "meta":
         from llm_lab.moe.meta import read_meta

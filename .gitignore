@@ -13,3 +13,7 @@ wheels/
 models/**/*.bin
 *.bin
 *.gguf
+
+# M1 local checkpoints and large raw evidence
+/models/m1/
+/artifacts/m1/raw/

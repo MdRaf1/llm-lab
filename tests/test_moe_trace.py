@@ -905,6 +905,54 @@ def test_cli_moe_argument_matrix_rejections():
               "--revision", "short", "--trace", "t", "--logits", "l", "--run-record", "r", "--summary", "s"])
 
 
+import subprocess
+
+
+def test_gitignore_isolates_raw_from_committed_evidence():
+    """Raw traces/logits are gitignored; the evidence directory stays tracked."""
+    repo = Path(__file__).resolve().parent.parent
+    lines = (repo / ".gitignore").read_text(encoding="utf-8").splitlines()
+    assert "/models/m1/" in lines, "missing /models/m1/ ignore rule"
+    assert "/artifacts/m1/raw/" in lines, "missing /artifacts/m1/raw/ ignore rule"
+    assert "/artifacts/m1/evidence/" not in lines, "evidence must not be ignored"
+
+    def ignored(rel: str) -> bool:
+        # git check-ignore exits 0 when the path is ignored, 1 when it is tracked.
+        return subprocess.run(
+            ["git", "check-ignore", "-q", rel], cwd=repo
+        ).returncode == 0
+
+    assert ignored("artifacts/m1/raw/m1a-trace.jsonl"), "raw trace not ignored"
+    assert ignored("models/m1/olmoe.gguf"), "model checkpoint not ignored"
+    assert not ignored("artifacts/m1/evidence/m1a-commands.ps1"), "evidence wrongly ignored"
+
+
+def test_cli_refuses_to_overwrite_output_without_force():
+    """An output-writing command rejects an existing path unless --force is passed."""
+    with tempfile.TemporaryDirectory() as tmp:
+        a = Path(tmp) / "a.json"
+        b = Path(tmp) / "b.json"
+        out = Path(tmp) / "cmp.json"
+        sample_record((7, 8, 9)).write(a)
+        sample_record((7, 8, 9)).write(b)
+        out.write_text("do-not-clobber", encoding="utf-8")
+
+        try:
+            with contextlib.redirect_stderr(io.StringIO()):
+                main(["moe", "compare", str(a), str(b), "--output", str(out)])
+        except SystemExit as exc:
+            assert exc.code != 0
+        else:
+            raise AssertionError("overwrote an existing output without --force")
+        assert out.read_text(encoding="utf-8") == "do-not-clobber", "clobbered without --force"
+
+        # --force is the explicit override.
+        main(["moe", "compare", str(a), str(b), "--output", str(out), "--force"])
+        assert json.loads(out.read_text(encoding="utf-8")) == compare_runs(
+            sample_record((7, 8, 9)), sample_record((7, 8, 9))
+        )
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 
