@@ -20,12 +20,26 @@ from __future__ import annotations
 
 import hashlib
 import json
+import time
 from collections import OrderedDict
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from llm_lab.moe.baseline import _check_non_negative, _check_sha
+import torch
+
+from llm_lab.moe.baseline import (
+    RunConfig,
+    RunRecord,
+    _check_non_negative,
+    _check_sha,
+    _oom_as_runtime_error,
+    fingerprint_config,
+    host_info,
+    peak_rss_bytes,
+    seed_everything,
+    sha256_file,
+)
 from llm_lab.moe.meta import _check_positive
 
 
@@ -269,3 +283,131 @@ def replay_cache(
         "logits_sha256": logits_sha256,
         "token_ids": [step.tok_id for step in steps],
     }
+
+
+@dataclass(frozen=True)
+class TraceCapture:
+    """What one traced run produced: its record, plus the hashes that pin trace and logits."""
+
+    run_record: RunRecord
+    trace_sha256: str
+    logits_sha256: str
+
+    def __post_init__(self) -> None:
+        _check_sha("trace_sha256", self.trace_sha256)
+        _check_sha("logits_sha256", self.logits_sha256)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "run_record": self.run_record.to_dict(),
+            "trace_sha256": self.trace_sha256,
+            "logits_sha256": self.logits_sha256,
+        }
+
+
+def _config_from_header(header: TraceHeader, decode: str) -> RunConfig:
+    """The RunConfig implied by a trace header, so record and trace share one fingerprint."""
+    return RunConfig(
+        model=header.model,
+        path=header.path,
+        quant=header.quant,
+        seed=header.seed,
+        decode=decode,
+        threads=header.threads,
+        backend=header.backend,
+        prompt_sha=header.prompt_sha,
+        tokenizer_sha=header.tokenizer_sha,
+    )
+
+
+def trace_hf(
+    model,
+    input_ids,
+    header: TraceHeader,
+    max_new_tokens: int,
+    trace_path: Path,
+    logits_path: Path,
+    stop_at_eos: bool = True,
+) -> TraceCapture:
+    """Deterministic greedy decode that records, per position, the PROCESSED token's routing.
+
+    The alignment that the whole trace format exists to capture: we prime the KV cache on the full
+    prompt, then feed each generated token back with `past_key_values`. The router logits produced
+    on that follow-up pass belong to the fed (processed) token, so `tok_id` is that fed token, not
+    the next-token prediction its logits imply. Raw next-token logits are stacked and hashed as
+    proof of the numeric path; the trace file is hashed as proof of the routing path.
+    """
+    seed_everything(header.seed, header.threads)
+    model.eval()
+    if isinstance(input_ids, torch.Tensor):
+        ids = input_ids.to(torch.long)
+    else:
+        ids = torch.tensor(input_ids, dtype=torch.long)
+    n_prompt = int(ids.shape[-1])
+    eos_id = getattr(model.config, "eos_token_id", None)
+
+    steps: list[TraceStep] = []
+    step_logits: list[torch.Tensor] = []
+    start = time.perf_counter()
+    with torch.no_grad(), _oom_as_runtime_error(header.model):
+        # Prime the cache on the prompt; its router logits belong to prompt tokens, so skip them.
+        primed = model(ids, use_cache=True, output_router_logits=False)
+        past = primed.past_key_values
+        next_token = int(primed.logits[:, -1, :].argmax(-1).item())
+
+        for pos in range(max_new_tokens):
+            fed = next_token
+            out = model(
+                torch.tensor([[fed]], dtype=torch.long),
+                past_key_values=past,
+                use_cache=True,
+                output_router_logits=True,
+            )
+            past = out.past_key_values
+            # topk on raw router logits: softmax is monotonic, so the indices match the model's
+            # own expert selection. sorted=True gives a stable, deterministic ordering.
+            layer_experts = tuple(
+                tuple(
+                    int(e)
+                    for e in torch.topk(
+                        layer_logits.reshape(-1, layer_logits.shape[-1])[-1],
+                        header.n_expert_used,
+                        sorted=True,
+                    ).indices.tolist()
+                )
+                for layer_logits in out.router_logits
+            )
+            steps.append(TraceStep("step", pos, fed, layer_experts))
+            step_logits.append(out.logits[:, -1, :].reshape(-1).clone())
+            next_token = int(out.logits[:, -1, :].argmax(-1).item())
+            if stop_at_eos and eos_id is not None and fed == eos_id:
+                break
+    wall_s = time.perf_counter() - start
+
+    # safetensors, not torch.save: the requirement is a byte-stable hash across identical runs, and
+    # every torch.save mode is nondeterministic (the zip container embeds timestamps; the legacy
+    # pickle embeds storage memory addresses). safetensors writes a canonical tensor file that
+    # hashes identically run-to-run and still round-trips to the same tensor.
+    from safetensors.torch import save_file
+
+    logits_tensor = torch.stack(step_logits).contiguous()
+    logits_path = Path(logits_path)
+    save_file({"logits": logits_tensor}, str(logits_path))
+    logits_sha256 = sha256_file(logits_path)
+
+    write_trace(trace_path, header, steps)
+    trace_sha256 = sha256_file(Path(trace_path))
+
+    n_generated = len(steps)
+    config = _config_from_header(header, "greedy")
+    record = RunRecord(
+        config_fingerprint=fingerprint_config(config),
+        token_ids=tuple(step.tok_id for step in steps),
+        n_prompt=n_prompt,
+        n_generated=n_generated,
+        wall_s=wall_s,
+        tok_per_s=(n_generated / wall_s) if wall_s > 0 and n_generated else None,
+        peak_rss_bytes=peak_rss_bytes(),
+        host=host_info(),
+    )
+    return TraceCapture(record, trace_sha256, logits_sha256)

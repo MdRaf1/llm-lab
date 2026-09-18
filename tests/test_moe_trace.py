@@ -490,6 +490,161 @@ def test_trace_rejects_malformed_steps():
     assert_rejects(lambda: write([TraceStep("step", 0, 10, ((1, 8), (3, 4)))]), "outside")
 
 
+import torch
+from transformers import OlmoeConfig
+
+from llm_lab.moe.baseline import (
+    RunConfig,
+    build_tiny_olmoe,
+    run_hf,
+    seed_everything,
+)
+from llm_lab.moe.trace import TraceCapture, trace_hf
+
+TINY_PROMPT = [[1, 3, 4]]
+TINY_SEED = 0
+TINY_THREADS = 1
+TINY_NEW_TOKENS = 3
+
+
+def tiny_run_config() -> RunConfig:
+    return RunConfig(
+        model="tiny-olmoe",
+        path="local-random",
+        quant="float32",
+        seed=TINY_SEED,
+        decode="greedy",
+        threads=TINY_THREADS,
+        backend="transformers",
+        prompt_sha=sha256_token_ids(TINY_PROMPT[0]),
+        tokenizer_sha=None,
+    )
+
+
+def tiny_trace_header(**overrides) -> TraceHeader:
+    # The header must describe the tiny fixture exactly, or _validate_steps rejects the trace.
+    return sample_header(
+        model="tiny-olmoe",
+        n_layer=2,
+        n_expert=8,
+        n_expert_used=2,
+        expert_bytes=None,
+        total_expert_bytes=None,
+        prompt_sha=sha256_token_ids(TINY_PROMPT[0]),
+        seed=TINY_SEED,
+        threads=TINY_THREADS,
+        **overrides,
+    )
+
+
+def test_tiny_olmoe_two_builds_generate_identically():
+    # Oracle identity: same seed, two fresh models, byte-identical token IDs.
+    config = tiny_run_config()
+    record_a = run_hf(build_tiny_olmoe(TINY_SEED), TINY_PROMPT, config, TINY_NEW_TOKENS)
+    record_b = run_hf(build_tiny_olmoe(TINY_SEED), TINY_PROMPT, config, TINY_NEW_TOKENS)
+    assert record_a.n_prompt == 3
+    assert record_a.n_generated == 3
+    assert compare_runs(record_a, record_b) == {
+        "identical": True,
+        "first_divergence": None,
+        "n_compared": 3,
+        "fingerprints_match": True,
+    }
+
+
+def test_trace_hf_records_processed_tokens_and_stable_logits():
+    header = tiny_trace_header()
+    with tempfile.TemporaryDirectory() as tmp:
+        trace_path = Path(tmp) / "trace.jsonl"
+        logits_a = Path(tmp) / "logits_a.pt"
+        logits_b = Path(tmp) / "logits_b.pt"
+
+        capture_a = trace_hf(
+            build_tiny_olmoe(TINY_SEED), TINY_PROMPT, header,
+            TINY_NEW_TOKENS, trace_path, logits_a,
+        )
+        header_out, steps = read_trace(trace_path)
+        assert header_out == header
+        assert len(steps) == 3
+        # Each step: two layers, two experts per layer (matches the header shape).
+        for step in steps:
+            assert len(step.layer_experts) == 2
+            assert all(len(layer) == 2 for layer in step.layer_experts)
+
+        # tok_id is the PROCESSED token: it must equal the token generated at that position
+        # by an independent greedy decode, not the next-token prediction.
+        traced_tokens = [step.tok_id for step in steps]
+        model = build_tiny_olmoe(TINY_SEED).eval()
+        with torch.no_grad():
+            generated = model.generate(
+                torch.tensor(TINY_PROMPT, dtype=torch.long),
+                max_new_tokens=3, min_new_tokens=3, do_sample=False, use_cache=True,
+            )
+        assert traced_tokens == generated[0, 3:].tolist()
+        assert capture_a.run_record.token_ids == tuple(traced_tokens)
+
+        # Logits hash is stable across a second identical capture.
+        capture_b = trace_hf(
+            build_tiny_olmoe(TINY_SEED), TINY_PROMPT, header,
+            TINY_NEW_TOKENS, Path(tmp) / "trace_b.jsonl", logits_b,
+        )
+        assert capture_a.logits_sha256 == capture_b.logits_sha256
+        assert capture_a.trace_sha256 == capture_b.trace_sha256
+
+
+def test_trace_hf_fixed_length_ignores_eos():
+    # stop_at_eos=False must always yield the full requested length and record the setting.
+    header = tiny_trace_header()
+    with tempfile.TemporaryDirectory() as tmp:
+        capture = trace_hf(
+            build_tiny_olmoe(TINY_SEED), TINY_PROMPT, header,
+            TINY_NEW_TOKENS, Path(tmp) / "t.jsonl", Path(tmp) / "l.pt",
+            stop_at_eos=False,
+        )
+        _, steps = read_trace(Path(tmp) / "t.jsonl")
+        assert len(steps) == 3
+        assert capture.run_record.n_generated == 3
+
+
+def test_incremental_kv_decode_is_bit_repeatable():
+    # Determinism: the SAME incremental KV-cached decode over one position, run twice, must be
+    # bit-identical. This is where torch.equal belongs and holds -- a repeated identical path is
+    # exactly reproducible or the oracle is meaningless. "Not a tolerance" is literal here.
+    prompt = torch.tensor(TINY_PROMPT, dtype=torch.long)
+
+    def decode_one():
+        seed_everything(TINY_SEED, TINY_THREADS)
+        model = build_tiny_olmoe(TINY_SEED).eval()
+        with torch.no_grad():
+            primed = model(prompt, use_cache=True)
+            first = primed.logits[:, -1, :].argmax(-1, keepdim=True)
+            step = model(first, past_key_values=primed.past_key_values, use_cache=True)
+        return step.logits[:, -1, :]
+
+    assert torch.equal(decode_one(), decode_one())
+
+
+def test_kv_cache_on_vs_off_agree_within_float_tolerance():
+    # Decoder correctness: incremental cached decode (1 query row) vs full use_cache=False recompute
+    # (N query rows) over the same generated position. argmax must match exactly; raw logits agree
+    # only within float tolerance. Bit-identity across these two paths is IMPOSSIBLE in float32:
+    # a 1-row cached step and an N-row full recompute order the matmul reductions differently. That
+    # is mathematical equivalence (identical argmax), NOT nondeterminism -- each path is on its own
+    # bit-repeatable (see test_incremental_kv_decode_is_bit_repeatable). Observed max-abs-diff on
+    # this fixture is ~1.49e-7 (~2x float32 eps), comfortably under atol=1e-6.
+    seed_everything(TINY_SEED, TINY_THREADS)
+    model = build_tiny_olmoe(TINY_SEED).eval()
+    prompt = torch.tensor(TINY_PROMPT, dtype=torch.long)
+    with torch.no_grad():
+        primed = model(prompt, use_cache=True)
+        first_tok = primed.logits[:, -1, :].argmax(-1, keepdim=True)
+        cached = model(first_tok, past_key_values=primed.past_key_values, use_cache=True)
+        full = model(torch.cat([prompt, first_tok], dim=1), use_cache=False)
+    a, b = cached.logits[:, -1, :], full.logits[:, -1, :]
+    assert a.argmax(-1).item() == b.argmax(-1).item()
+    assert torch.allclose(a, b, atol=1e-6, rtol=1e-5)
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 

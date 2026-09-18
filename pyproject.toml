@@ -19,6 +19,8 @@ dependencies = [
     "transformers>=5.16.1",
     "gguf>=0.19.0",
     "llama-cpp-python>=0.3.35",
+    "bitsandbytes==0.50.2",
+    "accelerate==1.15.0",
 ]
 
 [[tool.uv.index]]
