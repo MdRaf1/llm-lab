@@ -16,11 +16,16 @@ import json
 import platform
 import time
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import psutil
 import torch
+
+# Module scope so a test can monkeypatch `baseline.Llama` with a fake and `run_llama_cpp` picks it
+# up by name. Only imported here (not by the simulation CLI), so the native lib loads solely when
+# the MoE pipeline runs.
+from llama_cpp import Llama
 
 
 def sha256_bytes(data: bytes) -> str:
@@ -332,3 +337,64 @@ def sha256_tokenizer(tokenizer) -> str:
     for path in paths:
         digest.update(Path(path).read_bytes())
     return digest.hexdigest()
+
+
+def run_llama_cpp(
+    model_path: Path,
+    prompt: str,
+    config: RunConfig,
+    max_new_tokens: int,
+    n_ctx: int,
+) -> RunRecord:
+    """Deterministic greedy decode on a GGUF via llama.cpp; stores the exact IDs `generate` yields.
+
+    The prompt is tokenized once and the fingerprint's `prompt_sha` is recomputed from those exact
+    IDs (the caller cannot predict llama.cpp's tokenization), so the record's config is the truth
+    of what ran. Only the autoregressive decode is timed; prompt tokens do not count toward
+    `tok_per_s`. Stops at EOS or `max_new_tokens`, whichever comes first.
+    """
+    llm = Llama(
+        model_path=str(model_path),
+        n_gpu_layers=0,
+        seed=config.seed,
+        n_threads=config.threads,
+        n_ctx=n_ctx,
+        verbose=False,
+    )
+    prompt_ids = list(llm.tokenize(prompt.encode("utf-8")))
+    n_prompt = len(prompt_ids)
+    eos_id = llm.token_eos()
+
+    generated: list[int] = []
+    start = time.perf_counter()
+    with _oom_as_runtime_error(config.model):
+        for token_id in llm.generate(
+            prompt_ids,
+            temp=0.0,
+            top_k=1,
+            top_p=1.0,
+            min_p=0.0,
+            typical_p=1.0,
+            repeat_penalty=1.0,
+            frequency_penalty=0.0,
+            presence_penalty=0.0,
+        ):
+            if token_id == eos_id or len(generated) >= max_new_tokens:
+                break
+            # Store the exact integer ID the generator yielded, never an ID recovered by
+            # re-tokenizing decoded text: that round-trip is the bug the oracle exists to catch.
+            generated.append(int(token_id))
+    wall_s = time.perf_counter() - start
+
+    n_generated = len(generated)
+    config = replace(config, prompt_sha=sha256_token_ids(prompt_ids))
+    return RunRecord(
+        config_fingerprint=fingerprint_config(config),
+        token_ids=tuple(generated),
+        n_prompt=n_prompt,
+        n_generated=n_generated,
+        wall_s=wall_s,
+        tok_per_s=(n_generated / wall_s) if wall_s > 0 and n_generated else None,
+        peak_rss_bytes=peak_rss_bytes(),
+        host=host_info(),
+    )

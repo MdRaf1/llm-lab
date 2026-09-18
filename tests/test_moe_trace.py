@@ -652,6 +652,259 @@ def test_kv_cache_on_vs_off_agree_within_float_tolerance():
     assert torch.allclose(a, b, atol=1e-6, rtol=1e-5)
 
 
+import io
+import contextlib
+
+import llm_lab.moe.baseline as baseline
+from llm_lab import main
+
+
+class _FakeLlama:
+    """A no-download stand-in for llama_cpp.Llama.
+
+    Records its constructor and generate kwargs so a test can assert the exact CPU/greedy contract,
+    and yields token IDs whose detokenized bytes tokenize back to DIFFERENT IDs, so an implementation
+    that stored re-tokenized text instead of the yielded IDs would be caught red-handed.
+    """
+
+    last_init = None
+    last_generate = None
+
+    # generate yields these; EOS(999) stops the loop; [5, 6, 7] is what re-tokenizing "zzz" gives.
+    YIELD = [100, 200, 300, 400, 999, 500]
+    EOS = 999
+    RETOKENIZE = [5, 6, 7]
+
+    def __init__(self, **kwargs):
+        _FakeLlama.last_init = kwargs
+
+    def tokenize(self, data: bytes):
+        # Prompt "hi" -> [1, 2]; the sentinel "zzz" (what detokenize returns) -> [5, 6, 7].
+        return list(_FakeLlama.RETOKENIZE) if data == b"zzz" else [1, 2]
+
+    def token_eos(self):
+        return _FakeLlama.EOS
+
+    def detokenize(self, ids) -> bytes:
+        return b"zzz"
+
+    def generate(self, prompt_ids, **kwargs):
+        _FakeLlama.last_generate = {"prompt_ids": list(prompt_ids), **kwargs}
+        yield from _FakeLlama.YIELD
+
+
+def llama_cpp_config(prompt_ids) -> RunConfig:
+    return RunConfig(
+        model="olmoe", path="fake.gguf", quant="Q4_K_M", seed=0, decode="greedy",
+        threads=1, backend="llama-cpp", prompt_sha=sha256_token_ids(prompt_ids), tokenizer_sha=None,
+    )
+
+
+def test_run_llama_cpp_uses_cpu_greedy_params_and_stores_exact_ids():
+    real = baseline.Llama
+    baseline.Llama = _FakeLlama
+    try:
+        config = llama_cpp_config([1, 2])
+        record = baseline.run_llama_cpp(Path("fake.gguf"), "hi", config, max_new_tokens=3, n_ctx=256)
+    finally:
+        baseline.Llama = real
+
+    # CPU-only construction, exact seed/threads/ctx, no verbosity.
+    assert _FakeLlama.last_init == {
+        "model_path": "fake.gguf", "n_gpu_layers": 0, "seed": 0,
+        "n_threads": 1, "n_ctx": 256, "verbose": False,
+    }
+    # Exact greedy generator parameters: temperature zero, sampling filters off, penalties neutral.
+    gen = _FakeLlama.last_generate
+    assert gen["prompt_ids"] == [1, 2]
+    assert gen["temp"] == 0.0
+    assert (gen["top_k"], gen["top_p"], gen["min_p"], gen["typical_p"]) == (1, 1.0, 0.0, 1.0)
+    assert (gen["repeat_penalty"], gen["frequency_penalty"], gen["presence_penalty"]) == (1.0, 0.0, 0.0)
+
+    # Stores the exact integer IDs yielded (capped at max_new_tokens), NOT re-tokenized text.
+    assert record.token_ids == (100, 200, 300)
+    assert record.token_ids != tuple(_FakeLlama.RETOKENIZE), "stored re-tokenized text, not yielded IDs"
+    assert record.n_prompt == 2
+    assert record.n_generated == 3
+    assert record.config_fingerprint == fingerprint_config(llama_cpp_config([1, 2]))
+
+
+def test_run_llama_cpp_stops_at_eos_without_storing_it():
+    real = baseline.Llama
+    baseline.Llama = _FakeLlama
+    try:
+        record = baseline.run_llama_cpp(
+            Path("fake.gguf"), "hi", llama_cpp_config([1, 2]), max_new_tokens=10, n_ctx=256
+        )
+    finally:
+        baseline.Llama = real
+    # generate yields 100,200,300,400,EOS,... -> stop at EOS, EOS never stored.
+    assert record.token_ids == (100, 200, 300, 400)
+    assert _FakeLlama.EOS not in record.token_ids
+
+
+def test_cli_compare_matches_library_call():
+    with tempfile.TemporaryDirectory() as tmp:
+        a = Path(tmp) / "a.json"
+        b = Path(tmp) / "b.json"
+        out = Path(tmp) / "cmp.json"
+        sample_record((7, 8, 9)).write(a)
+        sample_record((7, 5, 9)).write(b)
+        main(["moe", "compare", str(a), str(b), "--output", str(out)])
+        assert json.loads(out.read_text(encoding="utf-8")) == compare_runs(
+            sample_record((7, 8, 9)), sample_record((7, 5, 9))
+        )
+
+
+def test_cli_replay_cache_reads_trace_and_hashes_logits():
+    header, steps = sample_header(), sample_steps()
+    with tempfile.TemporaryDirectory() as tmp:
+        trace_path = Path(tmp) / "trace.jsonl"
+        logits_path = Path(tmp) / "logits.pt"
+        out = Path(tmp) / "replay.json"
+        write_trace(trace_path, header, steps)
+        logits_path.write_bytes(b"raw-logits-bytes")
+        main(["moe", "replay-cache", str(trace_path), "--logits", str(logits_path),
+              "--capacity-experts", "12", "--output", str(out)])
+        # Ruling A: the CLI hashed the logits FILE and passed that digest to replay_cache.
+        expected = replay_cache(steps, 12, sha256_file(logits_path))
+        assert json.loads(out.read_text(encoding="utf-8")) == expected
+        assert expected["hits"] == 6 and expected["misses"] == 6
+
+
+def test_cli_replay_cache_rejects_malformed_trace_before_replay():
+    # Ruling B: a trace that would fail _validate_steps must be rejected by read_trace, never replayed.
+    header = sample_header()
+    with tempfile.TemporaryDirectory() as tmp:
+        bad = Path(tmp) / "bad.jsonl"
+        logits_path = Path(tmp) / "l.pt"
+        out = Path(tmp) / "replay.json"
+        logits_path.write_bytes(b"x")
+        # A step with the wrong layer count (header says 2) hand-written past write_trace's guard.
+        lines = [
+            json.dumps(header.to_dict(), sort_keys=True, separators=(",", ":")),
+            json.dumps(TraceStep("step", 0, 10, ((1, 2),)).to_dict(), sort_keys=True, separators=(",", ":")),
+        ]
+        bad.write_text("\n".join(lines) + "\n", encoding="utf-8")
+        try:
+            main(["moe", "replay-cache", str(bad), "--logits", str(logits_path),
+                  "--capacity-experts", "4", "--output", str(out)])
+        except SystemExit as exc:
+            assert exc.code != 0
+        else:
+            raise AssertionError("replayed a malformed trace")
+        assert not out.exists(), "wrote replay output for a malformed trace"
+
+
+def test_cli_run_missing_llama_cpp_model_names_the_path():
+    with tempfile.TemporaryDirectory() as tmp:
+        missing = str(Path(tmp) / "absent.gguf")
+        out = Path(tmp) / "run.json"
+        err = io.StringIO()
+        try:
+            with contextlib.redirect_stderr(err):
+                main(["moe", "run", "--backend", "llama-cpp", "--model-path", missing,
+                      "--prompt", "hi", "--output", str(out)])
+        except SystemExit as exc:
+            assert exc.code != 0
+        else:
+            raise AssertionError("accepted a missing model path")
+        assert missing in err.getvalue(), f"stderr did not name the missing path: {err.getvalue()!r}"
+
+
+def test_cli_run_tiny_is_deterministic_without_download():
+    with tempfile.TemporaryDirectory() as tmp:
+        out = Path(tmp) / "run.json"
+        main(["moe", "run", "--backend", "tiny", "--prompt-token-ids", "1,3,4",
+              "--seed", "0", "--max-new-tokens", "3", "--output", str(out)])
+        record = RunRecord.read(out)
+        assert record.n_prompt == 3
+        assert record.n_generated == 3
+        expected_cfg = replace(
+            tiny_run_config(), backend="tiny", prompt_sha=sha256_token_ids([1, 3, 4])
+        )
+        assert record.config_fingerprint == fingerprint_config(expected_cfg)
+
+
+def test_cli_trace_tiny_writes_the_fixed_summary_schema():
+    with tempfile.TemporaryDirectory() as tmp:
+        trace_p = Path(tmp) / "trace.jsonl"
+        logits_p = Path(tmp) / "logits.pt"
+        record_p = Path(tmp) / "run.json"
+        summary_p = Path(tmp) / "summary.json"
+        main(["moe", "trace", "--backend", "tiny", "--prompt-token-ids", "1,3,4",
+              "--seed", "0", "--max-new-tokens", "3", "--trace", str(trace_p),
+              "--logits", str(logits_p), "--run-record", str(record_p), "--summary", str(summary_p)])
+
+        summary = json.loads(summary_p.read_text(encoding="utf-8"))
+        assert set(summary) == {
+            "model", "path", "quant", "backend", "precision", "n_layer", "n_expert",
+            "n_expert_used", "n_prompt", "n_generated", "n_steps", "stop_at_eos", "seed",
+            "decode", "threads", "prompt_sha", "tokenizer_sha", "trace_sha256", "logits_sha256",
+            "trace_path", "logits_path", "host",
+        }
+        assert summary["backend"] == "tiny"
+        assert summary["precision"] == "FP32"
+        assert summary["decode"] == "greedy"
+        assert summary["stop_at_eos"] is True
+        assert summary["n_steps"] == summary["n_generated"] == 3
+        assert (summary["n_layer"], summary["n_expert"], summary["n_expert_used"]) == (2, 8, 2)
+        assert summary["prompt_sha"] == sha256_token_ids([1, 3, 4])
+        assert summary["tokenizer_sha"] is None
+        # Hashes match what was actually written.
+        _, steps = read_trace(trace_p)
+        assert len(steps) == 3
+        assert summary["logits_sha256"] == sha256_file(logits_p)
+        assert RunRecord.read(record_p).n_generated == 3
+
+
+def test_cli_trace_continue_after_eos_flips_stop_at_eos():
+    with tempfile.TemporaryDirectory() as tmp:
+        summary_p = Path(tmp) / "summary.json"
+        main(["moe", "trace", "--backend", "tiny", "--prompt-token-ids", "1,3,4",
+              "--seed", "0", "--max-new-tokens", "3", "--continue-after-eos",
+              "--trace", str(Path(tmp) / "t.jsonl"), "--logits", str(Path(tmp) / "l.pt"),
+              "--run-record", str(Path(tmp) / "r.json"), "--summary", str(summary_p)])
+        assert json.loads(summary_p.read_text(encoding="utf-8"))["stop_at_eos"] is False
+
+
+def test_cli_moe_argument_matrix_rejections():
+    """Every backend's forbidden/required argument is a SystemExit, before any model work."""
+    def rejected(argv):
+        try:
+            with contextlib.redirect_stderr(io.StringIO()):
+                main(argv)
+        except SystemExit as exc:
+            assert exc.code != 0
+        else:
+            raise AssertionError(f"accepted invalid argv: {argv}")
+
+    # tiny run requires token IDs, rejects text/model/n-ctx.
+    rejected(["moe", "run", "--backend", "tiny", "--output", "o.json"])
+    rejected(["moe", "run", "--backend", "tiny", "--prompt-token-ids", "1", "--prompt", "hi", "--output", "o.json"])
+    rejected(["moe", "run", "--backend", "tiny", "--prompt-token-ids", "1", "--n-ctx", "8", "--output", "o.json"])
+    # hf-int8 run requires prompt + model-id + 40-char revision, rejects token IDs and n-ctx.
+    rejected(["moe", "run", "--backend", "hf-int8", "--prompt", "hi", "--output", "o.json"])
+    rejected(["moe", "run", "--backend", "hf-int8", "--prompt", "hi", "--model-id", "m",
+              "--revision", "short", "--output", "o.json"])
+    rejected(["moe", "run", "--backend", "hf-int8", "--prompt", "hi", "--model-id", "m",
+              "--revision", "a" * 40, "--prompt-token-ids", "1", "--output", "o.json"])
+    rejected(["moe", "run", "--backend", "hf-int8", "--prompt", "hi", "--model-id", "m",
+              "--revision", "a" * 40, "--n-ctx", "8", "--output", "o.json"])
+    # llama-cpp run rejects token IDs / model-id.
+    rejected(["moe", "run", "--backend", "llama-cpp", "--model-path", "m.gguf",
+              "--prompt-token-ids", "1", "--output", "o.json"])
+    rejected(["moe", "run", "--backend", "llama-cpp", "--prompt", "hi", "--model-id", "m",
+              "--model-path", "m.gguf", "--output", "o.json"])
+    # trace: n-ctx is not even a trace argument (argparse rejects it); tiny rejects prompt.
+    rejected(["moe", "trace", "--backend", "tiny", "--prompt-token-ids", "1", "--n-ctx", "8",
+              "--trace", "t", "--logits", "l", "--run-record", "r", "--summary", "s"])
+    rejected(["moe", "trace", "--backend", "tiny", "--prompt-token-ids", "1", "--prompt", "hi",
+              "--trace", "t", "--logits", "l", "--run-record", "r", "--summary", "s"])
+    rejected(["moe", "trace", "--backend", "hf-bf16", "--prompt", "hi", "--model-id", "m",
+              "--revision", "short", "--trace", "t", "--logits", "l", "--run-record", "r", "--summary", "s"])
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 
