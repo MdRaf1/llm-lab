@@ -119,8 +119,253 @@ def test_token_id_and_file_hashes_are_canonical():
         assert sha256_file(path) == sha256_bytes(b"abc")
 
 
+import json
+
+import gguf
+import numpy as np
+
+from llm_lab.moe.meta import ModelMeta, read_gguf_meta, read_hf_meta, read_meta
+
+# The brief's local OLMoE-shaped config; every number below is derived from these.
+HF_CONFIG = {
+    "model_type": "olmoe",
+    "hidden_size": 64,
+    "intermediate_size": 32,
+    "num_hidden_layers": 2,
+    "num_experts": 8,
+    "num_experts_per_tok": 2,
+    "torch_dtype": "float32",
+}
+
+# Matching GGUF metadata. Keys without a dot get the architecture prefix when written.
+GGUF_KV = {
+    "block_count": 2,
+    "expert_count": 8,
+    "expert_used_count": 2,
+    "expert_feed_forward_length": 32,
+    "general.file_type": int(gguf.LlamaFileType.ALL_F32),
+}
+
+
+def write_hf_config(directory, **overrides) -> Path:
+    """Write a local config.json. An override of None drops that key, to test strictness."""
+    config = {**HF_CONFIG, **overrides}
+    path = Path(directory) / "config.json"
+    payload = {k: v for k, v in config.items() if v is not None}
+    path.write_text(json.dumps(payload), encoding="utf-8")
+    return path
+
+
+def expert_tensors(n_layer: int, n_expert: int, hidden: int, ffn: int) -> dict:
+    """float32 gate/up/down expert stacks per layer, shaped as llama.cpp exports them."""
+    shapes = {"gate": (ffn, hidden), "up": (ffn, hidden), "down": (hidden, ffn)}
+    return {
+        f"blk.{layer}.ffn_{part}_exps.weight": np.zeros((n_expert, *shape), dtype=np.float32)
+        for layer in range(n_layer)
+        for part, shape in shapes.items()
+    }
+
+
+def write_gguf(path: Path, kv: dict, tensors: dict, *, arch="olmoe", raw_dtype=None) -> Path:
+    """Write a GGUF holding exactly the given scalars and tensors, so omissions are testable."""
+    writer = gguf.GGUFWriter(path, arch=arch)
+    for key, value in kv.items():
+        writer.add_uint32(key if "." in key else f"{arch}.{key}", value)
+    for name, array in tensors.items():
+        writer.add_tensor(name, array, raw_dtype=raw_dtype)
+    writer.write_header_to_file()
+    writer.write_kv_data_to_file()
+    writer.write_tensors_to_file()
+    writer.close()
+    return path
+
+
+def assert_missing_path(build, path) -> None:
+    """A missing checkpoint must raise FileNotFoundError naming the exact path."""
+    try:
+        build()
+    except FileNotFoundError as exc:
+        assert str(path) in str(exc), f"error did not name {path}: {exc}"
+    else:
+        raise AssertionError(f"accepted missing path {path}")
+
+
+def test_hf_meta_reads_only_config_facts():
+    with tempfile.TemporaryDirectory() as tmp:
+        config_path = write_hf_config(tmp)
+        meta = read_hf_meta(config_path)
+        assert meta.model == "olmoe"
+        assert meta.path == str(config_path)
+        assert meta.quant == "float32"
+        assert (meta.n_layer, meta.n_expert, meta.n_expert_used) == (2, 8, 2)
+        assert meta.expert_bytes == 3 * 64 * 32 * 4
+        assert meta.total_expert_bytes == 2 * 8 * meta.expert_bytes
+        # Unmeasurable fields must survive as JSON null, so the trace header stays serializable.
+        assert json.loads(json.dumps(meta.to_dict())) == meta.to_dict()
+
+
+def test_hf_meta_prefers_the_moe_expert_width():
+    # Qwen3-MoE carries both keys and only moe_intermediate_size sizes an expert.
+    with tempfile.TemporaryDirectory() as tmp:
+        meta = read_hf_meta(
+            write_hf_config(tmp, model_type="qwen3_moe", moe_intermediate_size=16)
+        )
+        assert meta.model == "qwen3_moe"
+        assert meta.expert_bytes == 3 * 64 * 16 * 4
+
+
+def test_hf_meta_sizes_experts_only_from_a_known_dtype():
+    with tempfile.TemporaryDirectory() as tmp:
+        assert read_hf_meta(write_hf_config(tmp, torch_dtype="bfloat16")).expert_bytes == (
+            3 * 64 * 32 * 2
+        )
+        assert read_hf_meta(write_hf_config(tmp, torch_dtype="float16")).expert_bytes == (
+            3 * 64 * 32 * 2
+        )
+        for dtype in (None, "float8_e4m3fn"):
+            meta = read_hf_meta(write_hf_config(tmp, torch_dtype=dtype))
+            assert meta.expert_bytes is None, f"invented expert_bytes for dtype {dtype!r}"
+            assert meta.total_expert_bytes is None
+            assert meta.quant == dtype
+            # Counts still come straight from the file; only the byte formula goes silent.
+            assert (meta.n_layer, meta.n_expert, meta.n_expert_used) == (2, 8, 2)
+
+
+def test_hf_meta_rejects_missing_keys_and_paths():
+    with tempfile.TemporaryDirectory() as tmp:
+        for key in (
+            "model_type",
+            "hidden_size",
+            "intermediate_size",
+            "num_hidden_layers",
+            "num_experts",
+            "num_experts_per_tok",
+        ):
+            assert_rejects(
+                lambda k=key: read_hf_meta(write_hf_config(tmp, **{k: None})), key
+            )
+        missing = Path(tmp) / "absent" / "config.json"
+        assert_missing_path(lambda: read_hf_meta(missing), missing)
+
+
+def test_gguf_meta_measures_expert_bytes_from_real_tensor_sizes():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = write_gguf(Path(tmp) / "olmoe.gguf", GGUF_KV, expert_tensors(2, 8, 64, 32))
+        meta = read_gguf_meta(path)
+        assert meta.model == "olmoe"
+        assert meta.path == str(path)
+        assert meta.quant == "ALL_F32"
+        assert (meta.n_layer, meta.n_expert, meta.n_expert_used) == (2, 8, 2)
+        # Three tensors of 8*32*64*4 bytes, each holding all 8 experts.
+        assert meta.expert_bytes == 3 * (8 * 32 * 64 * 4 // 8)
+        assert meta.total_expert_bytes == 2 * 8 * meta.expert_bytes
+        assert json.loads(json.dumps(meta.to_dict())) == meta.to_dict()
+
+
+def test_gguf_meta_ignores_nominal_bits_per_weight():
+    # Q8_0 packs 32 weights into a 34-byte block, so an 8-bit-per-weight estimate under-counts.
+    n_expert, rows, block_bytes, block_weights = 4, 2, 34, 32
+    kv = {
+        "block_count": 1,
+        "expert_count": n_expert,
+        "expert_used_count": 2,
+        "expert_feed_forward_length": 32,
+        "general.file_type": int(gguf.LlamaFileType.MOSTLY_Q8_0),
+    }
+    tensors = {
+        f"blk.0.ffn_{part}_exps.weight": np.zeros(
+            (n_expert, rows, block_bytes), dtype=np.uint8
+        )
+        for part in ("gate", "up", "down")
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        path = write_gguf(
+            Path(tmp) / "q8.gguf", kv, tensors, raw_dtype=gguf.GGMLQuantizationType.Q8_0
+        )
+        meta = read_gguf_meta(path)
+        assert meta.quant == "Q8_0"
+        measured = 3 * (n_expert * rows * block_bytes // n_expert)
+        nominal = 3 * (n_expert * rows * block_weights // n_expert)
+        assert measured != nominal, "fixture cannot tell measured bytes from a bpw estimate"
+        assert meta.expert_bytes == measured
+        assert meta.total_expert_bytes == 1 * n_expert * measured
+
+
+def test_gguf_meta_rejects_missing_keys_bad_layout_and_paths():
+    with tempfile.TemporaryDirectory() as tmp:
+        experts = expert_tensors(2, 8, 64, 32)
+        for key in (
+            "block_count",
+            "expert_count",
+            "expert_used_count",
+            "expert_feed_forward_length",
+        ):
+            partial = {k: v for k, v in GGUF_KV.items() if k != key}
+            assert_rejects(
+                lambda kv=partial, k=key: read_gguf_meta(
+                    write_gguf(Path(tmp) / f"no_{k}.gguf", kv, experts)
+                ),
+                key,
+            )
+
+        truncated = {n: a for n, a in experts.items() if n != "blk.1.ffn_down_exps.weight"}
+        assert_rejects(
+            lambda: read_gguf_meta(write_gguf(Path(tmp) / "short.gguf", GGUF_KV, truncated)),
+            "blk.1.ffn_down_exps.weight",
+        )
+
+        lopsided = {
+            **expert_tensors(1, 8, 64, 32),
+            **{
+                name.replace("blk.0.", "blk.1."): array
+                for name, array in expert_tensors(1, 8, 64, 16).items()
+            },
+        }
+        assert_rejects(
+            lambda: read_gguf_meta(write_gguf(Path(tmp) / "lopsided.gguf", GGUF_KV, lopsided)),
+            "differ across layers",
+        )
+
+        indivisible = {
+            f"blk.0.ffn_{part}_exps.weight": np.zeros((2, 2, 2), dtype=np.float32)
+            for part in ("gate", "up", "down")
+        }
+        assert_rejects(
+            lambda: read_gguf_meta(
+                write_gguf(
+                    Path(tmp) / "indivisible.gguf",
+                    {**GGUF_KV, "block_count": 1, "expert_count": 3},
+                    indivisible,
+                )
+            ),
+            "not divisible",
+        )
+
+        missing = Path(tmp) / "absent.gguf"
+        assert_missing_path(lambda: read_gguf_meta(missing), missing)
+
+
+def test_read_meta_dispatches_on_backend():
+    with tempfile.TemporaryDirectory() as tmp:
+        config_path = write_hf_config(tmp)
+        model_path = write_gguf(Path(tmp) / "olmoe.gguf", GGUF_KV, expert_tensors(2, 8, 64, 32))
+        assert read_meta(config_path, "hf") == read_hf_meta(config_path)
+        assert read_meta(model_path, "llama-cpp") == read_gguf_meta(model_path)
+        assert_rejects(lambda: read_meta(config_path, "vllm"), "backend")
+
+
+def test_model_meta_rejects_impossible_counts():
+    meta = ModelMeta("olmoe", "x.gguf", None, 2, 8, 2, 96, 1536)
+    assert_rejects(lambda: replace(meta, n_layer=0), "n_layer")
+    assert_rejects(lambda: replace(meta, n_expert=0), "n_expert")
+    assert_rejects(lambda: replace(meta, n_expert_used=-1), "n_expert_used")
+    assert_rejects(lambda: replace(meta, expert_bytes=-1), "expert_bytes")
+    assert_rejects(lambda: replace(meta, total_expert_bytes=-1), "total_expert_bytes")
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
+
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
             fn()
