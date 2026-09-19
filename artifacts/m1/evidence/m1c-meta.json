@@ -1,0 +1,10 @@
+{
+  "expert_bytes": null,
+  "model": "qwen3moe",
+  "n_expert": 128,
+  "n_expert_used": 8,
+  "n_layer": 48,
+  "path": "models\\m1\\qwen3-gguf\\Qwen3-30B-A3B-Q4_K_M.gguf",
+  "quant": "Q4_K_M",
+  "total_expert_bytes": 17553162240
+}

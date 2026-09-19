@@ -1,0 +1,14 @@
+{
+  "local_generation_real": true,
+  "q4_deterministic": true,
+  "measured_metadata": true,
+  "metadata_values": {
+    "n_layer": 48,
+    "n_expert": 128,
+    "n_expert_used": 8
+  },
+  "total_expert_bytes": 17553162240,
+  "expert_bytes": null,
+  "n_generated": 256,
+  "passed_local": true
+}

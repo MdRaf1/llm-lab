@@ -1,0 +1,50 @@
+﻿=== Get-PSDrive ===
+
+Name           Used (GB)     Free (GB) Provider      Root                                               CurrentLocation
+----           ---------     --------- --------      ----                                               ---------------
+Alias                                  Alias                                                                           
+C                 449.12         15.66 FileSystem    C:\                                          Rafi\Projects\llm-lab
+Cert                                   Certificate   \                                                                 
+Env                                    Environment                                                                     
+Function                               Function                                                                        
+HKCU                                   Registry      HKEY_CURRENT_USER                                                 
+HKLM                                   Registry      HKEY_LOCAL_MACHINE                                                
+Variable                               Variable                                                                        
+WSMan                                  WSMan                                                                           
+
+
+=== local preflight (m1b gate + disk + host facts) ===
+=== host facts ===
+{
+  "cpu": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "virtual_memory": {
+    "total": 16886743040,
+    "available": 12001075200
+  },
+  "free_disk_bytes": 16810512384,
+  "packages": {
+    "huggingface_hub": "1.30.0",
+    "transformers": "5.16.1",
+    "llama_cpp_python": "0.3.35",
+    "torch": "2.14.0+cpu",
+    "psutil": "7.2.2"
+  },
+  "m1b_gate_passed": true
+}
+=== disk preflight ===
+{
+  "gguf_official_bytes": 18556685824,
+  "already_present_bytes": 18556685824,
+  "to_download_bytes": 0,
+  "headroom_bytes": 10737418240,
+  "required_bytes": 10737418240,
+  "available_free_bytes": 16810512384
+}
+required=10737418240 available=16810512384
+PREFLIGHT_OK
+=== downloaded Q4 file identity ===
+path=models/m1/qwen3-gguf/Qwen3-30B-A3B-Q4_K_M.gguf
+expected_bytes=18556685824
+actual_bytes=18556685824
+sha256=0d003f6662faee786ed5da3e31b29c978de5ae5d275c8794c606a7f3c01aa8f5
