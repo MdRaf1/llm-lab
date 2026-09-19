@@ -1,0 +1,44 @@
+{
+  "total_steps": 500,
+  "trace_count": 5,
+  "steps_per_trace": {
+    "prose-a": 100,
+    "prose-b": 100,
+    "code-a": 100,
+    "code-b": 100,
+    "factual": 100
+  },
+  "all_traces_100_steps": true,
+  "sources": [
+    {
+      "name": "prose-a",
+      "summary": "artifacts/m1/evidence/m1b-trace-prose-a-summary.json",
+      "sha256": "792d6b86abecfa11dd0b8a7e46b67887794bdb29d4fff087eeeef8333913f1cd",
+      "n_steps": 100
+    },
+    {
+      "name": "prose-b",
+      "summary": "artifacts/m1/evidence/m1b-trace-prose-b-summary.json",
+      "sha256": "1bca13e6cef28be1160ed1cf7c1ebfd5ddc56b39e8d930907b62792453961396",
+      "n_steps": 100
+    },
+    {
+      "name": "code-a",
+      "summary": "artifacts/m1/evidence/m1b-trace-code-a-summary.json",
+      "sha256": "eda99809b6cdbec0cd8f6cd30dc68fa1a08cbe943d053cee7c982e88f2ef0bfe",
+      "n_steps": 100
+    },
+    {
+      "name": "code-b",
+      "summary": "artifacts/m1/evidence/m1b-trace-code-b-summary.json",
+      "sha256": "a52324a843b50d1ff7b671015f0aadc0371fc702648e9c8400aaecc8c9f7d672",
+      "n_steps": 100
+    },
+    {
+      "name": "factual",
+      "summary": "artifacts/m1/evidence/m1b-trace-factual-summary.json",
+      "sha256": "a4c5f79cf1bcab76fe805c8a54ed8e8b4474cfb029b9a6e6d2d9cc3165ab8f99",
+      "n_steps": 100
+    }
+  ]
+}

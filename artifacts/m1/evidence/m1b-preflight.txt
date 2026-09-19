@@ -1,0 +1,165 @@
+﻿=== Get-PSDrive ===
+
+Name           Used (GB)     Free (GB) Provider      Root                                               CurrentLocation
+----           ---------     --------- --------      ----                                               ---------------
+Alias                                  Alias                                                                           
+C                 431.87         32.91 FileSystem    C:\                                          Rafi\Projects\llm-lab
+Cert                                   Certificate   \                                                                 
+Env                                    Environment                                                                     
+Function                               Function                                                                        
+HKCU                                   Registry      HKEY_CURRENT_USER                                                 
+HKLM                                   Registry      HKEY_LOCAL_MACHINE                                                
+Variable                               Variable                                                                        
+WSMan                                  WSMan                                                                           
+
+
+=== hf download --dry-run --json (GGUF) ===
+[{"file": "olmoe-1b-7b-0924-q4_k_m.gguf", "size": "-"}]
+=== hf download --dry-run --json (HF repo) ===
+./.venv/Scripts/hf.exe : Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to 
+enable higher rate limits and faster downloads.
+At C:\Rafi\Projects\llm-lab\artifacts\m1\evidence\m1b-commands.ps1:186 char:1
++ ./.venv/Scripts/hf.exe download $HfRepo `
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Warning: You ar...ster downloads.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[{"file": ".gitattributes", "size": "2.1K"}, {"file": "README.md", "size": "7.3K"}, {"file": "config.json", "size": "-"}, {"file": "generation_config.json", "size": "-"}, {"file": "model-00001-of-00003.safetensors", "size": "-"}, {"file": "model-00002-of-00003.safetensors", "size": "-"}, {"file": "model-00003-of-00003.safetensors", "size": "-"}, {"file": "model.safetensors.index.json", "size": "-"}, {"file": "olmoe-logo.png", "size": "23.8K"}, {"file": "special_tokens_map.json", "size": "-"}, {"file": "tokenizer.json", "size": "-"}, {"file": "tokenizer_config.json", "size": "-"}]
+=== exact-byte preflight (HF dry_run API) ===
+=== host facts ===
+{
+  "cpu": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+  "platform": "Windows-10-10.0.26200-SP0",
+  "virtual_memory": {
+    "total": 16886743040,
+    "available": 9890914304
+  },
+  "free_disk_bytes": 35337433088,
+  "packages": {
+    "huggingface_hub": "1.30.0",
+    "transformers": "5.16.1",
+    "bitsandbytes": "0.50.2",
+    "torch": "2.14.0+cpu",
+    "llama_cpp_python": "0.3.35",
+    "accelerate": "1.15.0",
+    "psutil": "7.2.2"
+  }
+}
+./.venv/Scripts/python.exe : 
+At C:\Rafi\Projects\llm-lab\artifacts\m1\evidence\m1b-commands.ps1:191 char:8
++ $pre = ./.venv/Scripts/python.exe artifacts/m1/raw/m1b_preflight.py 2 ...
++        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[dry-run] Fetching 12 files:   0%|          | 0/12 [00:00<?, ?it/s]Warning: You are sending unauthenticated requests 
+to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+
+[dry-run] Fetching 12 files:  83%|████████▎ | 10/12 [00:00<00:00, 21.11it/s]
+[dry-run] Fetching 12 files: 100%|██████████| 12/12 [00:00<00:00, 21.31it/s]
+=== dry-run exact byte math ===
+{
+  "gguf": {
+    "repo": "allenai/OLMoE-1B-7B-0924-GGUF",
+    "revision": "70df85ed7132bf21b5acbcb33817f58e7d3cb949",
+    "files": [
+      {
+        "filename": "olmoe-1b-7b-0924-q4_k_m.gguf",
+        "file_size": 4213511776,
+        "will_download": false,
+        "is_cached": true
+      }
+    ],
+    "remote_bytes": 4213511776,
+    "already_present_bytes": 4213511776,
+    "to_download_bytes": 0
+  },
+  "hf": {
+    "repo": "allenai/OLMoE-1B-7B-0924",
+    "revision": "6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+    "files": [
+      {
+        "filename": "config.json",
+        "file_size": 759,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "generation_config.json",
+        "file_size": 120,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "model-00001-of-00003.safetensors",
+        "file_size": 4997744872,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "model-00002-of-00003.safetensors",
+        "file_size": 4997235176,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "model-00003-of-00003.safetensors",
+        "file_size": 3843741912,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "model.safetensors.index.json",
+        "file_size": 287214,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "special_tokens_map.json",
+        "file_size": 65,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "tokenizer.json",
+        "file_size": 2115417,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "tokenizer_config.json",
+        "file_size": 5372,
+        "will_download": false,
+        "is_cached": true
+      },
+      {
+        "filename": "olmoe-logo.png",
+        "file_size": 23827,
+        "will_download": true,
+        "is_cached": false
+      },
+      {
+        "filename": ".gitattributes",
+        "file_size": 2140,
+        "will_download": true,
+        "is_cached": false
+      },
+      {
+        "filename": "README.md",
+        "file_size": 7270,
+        "will_download": true,
+        "is_cached": false
+      }
+    ],
+    "remote_bytes": 13841164144,
+    "already_present_bytes": 13841130907,
+    "to_download_bytes": 33237
+  },
+  "remote_total_bytes": 18054675920,
+  "already_present_total_bytes": 18054642683,
+  "headroom_bytes": 4294967296,
+  "required_bytes": 4295000533,
+  "available_free_bytes": 35338162176
+}
+required=4295000533 available=35338162176
+PREFLIGHT_OK

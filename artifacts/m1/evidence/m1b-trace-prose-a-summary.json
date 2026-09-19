@@ -1,0 +1,28 @@
+{
+  "backend": "hf-int8",
+  "decode": "greedy",
+  "host": {
+    "platform": "Windows-10-10.0.26200-SP0",
+    "processor": "AMD64 Family 25 Model 80 Stepping 0, AuthenticAMD",
+    "total_ram_bytes": 16886743040
+  },
+  "logits_path": "artifacts/m1/raw/m1b-logits-prose-a.pt",
+  "logits_sha256": "626606ea12a38005b778d0c8955f0d0a96123571cde53fde456a58346e4cb317",
+  "model": "allenai/OLMoE-1B-7B-0924",
+  "n_expert": 64,
+  "n_expert_used": 8,
+  "n_generated": 100,
+  "n_layer": 16,
+  "n_prompt": 16,
+  "n_steps": 100,
+  "path": "allenai/OLMoE-1B-7B-0924@6d84c48581ece794365f2b8e9cfb043c68ade9c5",
+  "precision": "INT8_BITSANDBYTES",
+  "prompt_sha": "09cbce2758d05932a48edcc0f1d3a999b324e7ea0c87662a62b62756ad0cad68",
+  "quant": "torch.bfloat16",
+  "seed": 0,
+  "stop_at_eos": false,
+  "threads": 6,
+  "tokenizer_sha": "046a54ef4112fc9a86ee36e99c2187425b12f45776a522132c94adc14319b73d",
+  "trace_path": "artifacts/m1/raw/m1b-trace-prose-a.jsonl",
+  "trace_sha256": "24f7ad9f1b08be2ff8b6f6f8cbfa4d55325ef011ceb88ddcc13f01113c14ad73"
+}

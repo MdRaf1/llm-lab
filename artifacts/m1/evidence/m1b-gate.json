@@ -1,0 +1,8 @@
+{
+  "gguf_deterministic": true,
+  "hf_int8_deterministic": true,
+  "positions_at_least_500": true,
+  "cache_observational_only": true,
+  "raw_hashes_present": true,
+  "passed": true
+}

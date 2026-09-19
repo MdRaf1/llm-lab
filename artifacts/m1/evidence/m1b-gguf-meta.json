@@ -1,0 +1,10 @@
+{
+  "expert_bytes": null,
+  "model": "olmoe",
+  "n_expert": 64,
+  "n_expert_used": 8,
+  "n_layer": 16,
+  "path": "models\\m1\\olmoe-gguf\\olmoe-1b-7b-0924-q4_k_m.gguf",
+  "quant": "Q4_K_M",
+  "total_expert_bytes": 3900702720
+}

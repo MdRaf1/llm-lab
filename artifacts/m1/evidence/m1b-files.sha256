@@ -1,0 +1,15 @@
+﻿
+Algorithm Hash                                                             Path                                                             
+--------- ----                                                             ----                                                             
+SHA256    24F7AD9F1B08BE2FF8B6F6F8CBFA4D55325EF011CEB88DDCC13F01113C14AD73 C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-trace-prose-a.jsonl
+SHA256    626606EA12A38005B778D0C8955F0D0A96123571CDE53FDE456A58346E4CB317 C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-logits-prose-a.pt  
+SHA256    8718005344B8E5113408626D3FA328965755D87D5AB91E073CF93684CA6275A0 C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-trace-prose-b.jsonl
+SHA256    06559539BBC574E94E00112DB840D6A4B3063EE609D65F8A35C2DF520925968D C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-logits-prose-b.pt  
+SHA256    49CA196B6D389E4D554215F588F6B09A6E0048C38819F6E280FF955F9EAD5506 C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-trace-code-a.jsonl 
+SHA256    BDB03F6F00D5F3B2C418AF26A9C1F59505D7142EE0BDDAA62C6B493C836D939E C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-logits-code-a.pt   
+SHA256    21A6881252B61A59EAC1641DEEDFB204D517C372580E788CAFB8589AE1863582 C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-trace-code-b.jsonl 
+SHA256    0561ECD9558130B51FDDC871BAFB58DDF2A141DADDB1692E17E82B6A718221EB C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-logits-code-b.pt   
+SHA256    DF9C3E092CAA69AA7258030CC64F2F8BD7272C62EE2D8B6E63BCB47377838ED1 C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-trace-factual.jsonl
+SHA256    4D7D4EE8AE90A00544A86093DD14B0850E3F76EDB3449D6E369D4F708E743B50 C:\Rafi\Projects\llm-lab\artifacts\m1\raw\m1b-logits-factual.pt  
+
+
