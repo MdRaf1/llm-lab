@@ -157,9 +157,6 @@ def read_gguf_meta(model_path: Path) -> ModelMeta:
     n_layer = _gguf_int(reader, f"{arch}.block_count", model_path)
     n_expert = _gguf_int(reader, f"{arch}.expert_count", model_path)
     n_expert_used = _gguf_int(reader, f"{arch}.expert_used_count", model_path)
-    # Required for the file to describe an MoE at all, though expert bytes come from the tensors:
-    # a quantized expert's stored size is not recoverable from its feed-forward width.
-    _gguf_int(reader, f"{arch}.expert_feed_forward_length", model_path)
 
     # Validate before dividing by these, so a bogus header is a named error not a ZeroDivisionError.
     _check_positive("n_layer", n_layer)

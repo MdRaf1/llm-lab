@@ -262,6 +262,17 @@ def test_gguf_meta_measures_expert_bytes_from_real_tensor_sizes():
         assert json.loads(json.dumps(meta.to_dict())) == meta.to_dict()
 
 
+def test_gguf_meta_reads_without_expert_feed_forward_length():
+    # The real OLMoE Q4_K_M GGUF omits expert_feed_forward_length; expert bytes come from tensors.
+    kv = {k: v for k, v in GGUF_KV.items() if k != "expert_feed_forward_length"}
+    with tempfile.TemporaryDirectory() as tmp:
+        path = write_gguf(Path(tmp) / "no_ffn.gguf", kv, expert_tensors(2, 8, 64, 32))
+        meta = read_gguf_meta(path)
+        assert (meta.n_layer, meta.n_expert, meta.n_expert_used) == (2, 8, 2)
+        assert meta.expert_bytes == 3 * (8 * 32 * 64 * 4 // 8)
+        assert meta.total_expert_bytes == 2 * 8 * meta.expert_bytes
+
+
 def test_gguf_meta_ignores_nominal_bits_per_weight():
     # Q8_0 packs 32 weights into a 34-byte block, so an 8-bit-per-weight estimate under-counts.
     n_expert, rows, block_bytes, block_weights = 4, 2, 34, 32
@@ -298,7 +309,6 @@ def test_gguf_meta_rejects_missing_keys_bad_layout_and_paths():
             "block_count",
             "expert_count",
             "expert_used_count",
-            "expert_feed_forward_length",
         ):
             partial = {k: v for k, v in GGUF_KV.items() if k != key}
             assert_rejects(
