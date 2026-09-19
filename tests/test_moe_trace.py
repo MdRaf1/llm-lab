@@ -324,18 +324,6 @@ def test_gguf_meta_rejects_missing_keys_bad_layout_and_paths():
             "blk.1.ffn_down_exps.weight",
         )
 
-        lopsided = {
-            **expert_tensors(1, 8, 64, 32),
-            **{
-                name.replace("blk.0.", "blk.1."): array
-                for name, array in expert_tensors(1, 8, 64, 16).items()
-            },
-        }
-        assert_rejects(
-            lambda: read_gguf_meta(write_gguf(Path(tmp) / "lopsided.gguf", GGUF_KV, lopsided)),
-            "differ across layers",
-        )
-
         indivisible = {
             f"blk.0.ffn_{part}_exps.weight": np.zeros((2, 2, 2), dtype=np.float32)
             for part in ("gate", "up", "down")
@@ -998,6 +986,38 @@ def test_sha256_tokenizer_hashes_local_files_deterministically():
 
 def test_sha256_tokenizer_refuses_when_no_artifact():
     assert_rejects(lambda: sha256_tokenizer(object()), "artifact")
+
+
+def mixed_quant_expert_tensors(hidden: int, ffn: int) -> dict:
+    """Two-layer OLMoE experts where layer 1 uses a wider ffn, so its per-expert bytes differ.
+
+    A real Q4_K_M GGUF gets differing layer sizes from mixing quant types; a plain byte-size
+    difference exercises the same code path without needing two quant encoders in a fixture.
+    """
+    return {
+        **expert_tensors(1, 8, hidden, ffn),
+        **{
+            name.replace("blk.0.", "blk.1."): arr
+            for name, arr in expert_tensors(1, 8, hidden, ffn * 2).items()
+        },
+    }
+
+
+def test_gguf_meta_allows_mixed_quant_per_layer_sizes():
+    # Real Q4_K_M mixes quant types across layers, so per-expert bytes differ layer to layer.
+    with tempfile.TemporaryDirectory() as tmp:
+        tensors = mixed_quant_expert_tensors(64, 32)
+        path = write_gguf(Path(tmp) / "mixed.gguf", GGUF_KV, tensors)
+        meta = read_gguf_meta(path)
+        assert meta.expert_bytes is None, "no single per-expert value under mixed sizes"
+        expected = sum(int(np.asarray(a).nbytes) for a in tensors.values())
+        assert meta.total_expert_bytes == expected, "total must be the measured sum over all layers"
+
+        # A uniform-size checkpoint still yields a non-null per-expert value.
+        uniform = read_gguf_meta(
+            write_gguf(Path(tmp) / "uniform.gguf", GGUF_KV, expert_tensors(2, 8, 64, 32))
+        )
+        assert uniform.expert_bytes == 3 * (8 * 32 * 64 * 4 // 8)
 
 
 if __name__ == "__main__":

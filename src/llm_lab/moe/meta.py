@@ -165,6 +165,7 @@ def read_gguf_meta(model_path: Path) -> ModelMeta:
 
     tensors = {tensor.name: tensor for tensor in reader.tensors}
     per_layer_bytes = []
+    total_expert_bytes = 0
     for layer in range(n_layer):
         layer_bytes = 0
         for part in _EXPERT_TENSOR_PARTS:
@@ -178,13 +179,13 @@ def read_gguf_meta(model_path: Path) -> ModelMeta:
                     f"not divisible by expert_count {n_expert}"
                 )
             layer_bytes += tensor.n_bytes // n_expert
+            total_expert_bytes += tensor.n_bytes
         per_layer_bytes.append(layer_bytes)
 
-    if len(set(per_layer_bytes)) != 1:
-        raise ValueError(
-            f"{model_path}: per-expert bytes differ across layers: {per_layer_bytes}"
-        )
-    expert_bytes = int(per_layer_bytes[0])
+    # Q4_K_M mixes quant types across layers, so per-expert bytes legitimately differ layer to
+    # layer. A single expert_bytes is reported only when it is uniform across all layers; otherwise
+    # it is not one measured integer and stays None. total_expert_bytes is always the measured sum.
+    expert_bytes = int(per_layer_bytes[0]) if len(set(per_layer_bytes)) == 1 else None
 
     return ModelMeta(
         model=str(arch),
@@ -194,7 +195,7 @@ def read_gguf_meta(model_path: Path) -> ModelMeta:
         n_expert=n_expert,
         n_expert_used=n_expert_used,
         expert_bytes=expert_bytes,
-        total_expert_bytes=n_layer * n_expert * expert_bytes,
+        total_expert_bytes=total_expert_bytes,
     )
 
 
