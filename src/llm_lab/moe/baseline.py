@@ -14,6 +14,7 @@ import contextlib
 import hashlib
 import json
 import platform
+import tempfile
 import time
 from collections.abc import Sequence
 from dataclasses import dataclass, replace
@@ -322,21 +323,25 @@ def load_hf_bf16(model_id: str, revision: str):
 def sha256_tokenizer(tokenizer) -> str:
     """Hash the tokenizer's on-disk files in sorted path order.
 
-    A tokenizer's identity is its files, not its in-memory object. `init_kwargs` records the paths
-    the tokenizer was loaded from; we hash the ones that actually exist. If none can be identified
-    (e.g. a tokenizer built in memory with no artifact), we refuse rather than invent a digest.
+    A tokenizer's identity is its files, not its in-memory object or where it was loaded from. A
+    fast (`tokenizer.json`) tokenizer loaded from the HF cache records no file paths in
+    `init_kwargs` (`vocab_file`/`merges_file` are None, `name_or_path` is the repo id), so we
+    re-serialize it to a scratch dir and hash the emitted bytes in sorted path order. That output
+    is deterministic and machine-independent (no absolute paths or timestamps baked in), so the
+    same tokenizer hashes identically across loads and hosts. An object that cannot serialize its
+    files has no local artifact, and we refuse rather than invent a digest.
     """
-    paths = sorted(
-        str(value)
-        for value in getattr(tokenizer, "init_kwargs", {}).values()
-        if isinstance(value, (str, Path)) and Path(value).is_file()
-    )
-    if not paths:
-        raise ValueError("no local tokenizer artifact found to hash from init_kwargs")
-    digest = hashlib.sha256()
-    for path in paths:
-        digest.update(Path(path).read_bytes())
-    return digest.hexdigest()
+    if not hasattr(tokenizer, "save_pretrained"):
+        raise ValueError("no local tokenizer artifact found to hash: object is not serializable")
+    with tempfile.TemporaryDirectory() as scratch:
+        tokenizer.save_pretrained(scratch)
+        paths = sorted(p for p in Path(scratch).iterdir() if p.is_file())
+        if not paths:
+            raise ValueError("no local tokenizer artifact found to hash")
+        digest = hashlib.sha256()
+        for path in paths:
+            digest.update(path.read_bytes())
+        return digest.hexdigest()
 
 
 def run_llama_cpp(

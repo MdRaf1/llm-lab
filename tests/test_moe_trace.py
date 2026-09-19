@@ -963,6 +963,43 @@ def test_cli_refuses_to_overwrite_output_without_force():
         )
 
 
+from tokenizers import Tokenizer
+from tokenizers.models import WordLevel
+from tokenizers.pre_tokenizers import Whitespace
+from transformers import PreTrainedTokenizerFast
+
+from llm_lab.moe.baseline import sha256_tokenizer
+
+
+def _write_fast_tokenizer(directory, vocab) -> "PreTrainedTokenizerFast":
+    """A tiny local fast (tokenizer.json) tokenizer, built offline from an explicit vocab."""
+    tok = Tokenizer(WordLevel(vocab=vocab, unk_token="[UNK]"))
+    tok.pre_tokenizer = Whitespace()
+    tok.save(str(Path(directory) / "tokenizer.json"))
+    return PreTrainedTokenizerFast(tokenizer_file=str(Path(directory) / "tokenizer.json"))
+
+
+def test_sha256_tokenizer_hashes_local_files_deterministically():
+    # A fast tokenizer records no file paths in init_kwargs, so the digest must come from its
+    # serialized files. Same files -> same sha across independent loads; changed bytes -> changed.
+    vocab = {"[UNK]": 0, "a": 1, "b": 2}
+    with tempfile.TemporaryDirectory() as tmp:
+        one, two, other = Path(tmp) / "one", Path(tmp) / "two", Path(tmp) / "other"
+        for d in (one, two, other):
+            d.mkdir()
+        sha_one = sha256_tokenizer(_write_fast_tokenizer(one, vocab))
+        sha_two = sha256_tokenizer(_write_fast_tokenizer(two, vocab))
+        sha_other = sha256_tokenizer(_write_fast_tokenizer(other, {**vocab, "c": 3}))
+
+        assert len(sha_one) == 64
+        assert sha_one == sha_two, "same tokenizer files must hash identically across loads"
+        assert sha_one != sha_other, "different tokenizer bytes must change the digest"
+
+
+def test_sha256_tokenizer_refuses_when_no_artifact():
+    assert_rejects(lambda: sha256_tokenizer(object()), "artifact")
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 
