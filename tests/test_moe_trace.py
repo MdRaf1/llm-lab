@@ -1107,6 +1107,23 @@ def test_coactivation_counts_within_layer_unordered_pairs():
     assert coactivation_to_json(pairs)["0"]["0,1"] == 2
 
 
+from llm_lab.moe.analysis import hit_rate_curve
+
+
+def test_hit_rate_curve_invariants_f0_f1_and_monotonic():
+    # 3 positions, 1 layer, top-1, experts 0,1,2,0 -> working set of 3 distinct blobs.
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])
+    curve = hit_rate_curve(steps, [0.0, 1/3, 2/3, 1.0], n_expert_total=3, logits_sha256="x")
+    by_f = {round(row["fraction"], 4): row for row in curve}
+    # f=0 -> capacity 0 -> every request misses.
+    assert by_f[0.0]["hit_rate"] == 0.0 and by_f[0.0]["misses"] == 4
+    # f=1 -> capacity 3 >= working set -> only the 3 cold misses, the final 0 is a hit.
+    assert by_f[1.0]["misses"] == 3 and by_f[1.0]["hits"] == 1
+    # Monotonic non-decreasing hit_rate in f.
+    rates = [row["hit_rate"] for row in curve]
+    assert rates == sorted(rates)
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 

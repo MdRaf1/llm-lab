@@ -5,7 +5,7 @@ from collections import OrderedDict
 from itertools import combinations
 from typing import Sequence
 
-from llm_lab.moe.trace import TraceStep
+from llm_lab.moe.trace import TraceStep, replay_cache
 
 
 def _requests(steps: Sequence[TraceStep]) -> list[tuple[int, int]]:
@@ -62,3 +62,25 @@ def coactivation_to_json(pairs: dict[int, dict[tuple[int, int], int]]) -> dict:
         str(layer): {f"{lo},{hi}": c for (lo, hi), c in counts.items()}
         for layer, counts in pairs.items()
     }
+
+
+def hit_rate_curve(steps, fractions, n_expert_total, logits_sha256) -> list[dict]:
+    """Hit-rate vs working-set fraction f; capacity = round(f * n_expert_total)."""
+    if n_expert_total <= 0:
+        raise ValueError(f"n_expert_total must be positive, got {n_expert_total}")
+    rows = []
+    for f in sorted(set(fractions)):
+        capacity = round(f * n_expert_total)
+        r = replay_cache(steps, capacity, logits_sha256)
+        requests = r["requests"]
+        hit_rate = r["hits"] / requests if requests else 0.0
+        rows.append({
+            "fraction": f,
+            "capacity_experts": capacity,
+            "hits": r["hits"],
+            "misses": r["misses"],
+            "requests": requests,
+            "hit_rate": hit_rate,
+            "miss_rate": 1.0 - hit_rate if requests else 0.0,
+        })
+    return rows
