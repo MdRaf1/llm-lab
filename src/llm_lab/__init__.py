@@ -124,6 +124,8 @@ def _validate_moe_args(parser, args) -> None:
                 _reject(parser, "hf-int8 requires --model-id")
             if not args.revision or len(args.revision) != 40:
                 _reject(parser, "hf-int8 requires a 40-character --revision")
+            if args.model_path is not None:
+                _reject(parser, "hf-int8 rejects --model-path")
             if args.n_ctx is not None:
                 _reject(parser, "--n-ctx is llama-cpp-only")
         elif args.backend == "llama-cpp":
@@ -228,7 +230,6 @@ def _run_moe_run(args) -> None:
             Path(args.model_path), args.prompt, config, args.max_new_tokens,
             args.n_ctx if args.n_ctx is not None else 512,
         )
-    record.write(Path(args.output))
     _emit(record.to_dict(), args.output)
 
 

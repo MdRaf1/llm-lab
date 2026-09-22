@@ -246,6 +246,16 @@ def test_hf_meta_rejects_missing_keys_and_paths():
             )
         missing = Path(tmp) / "absent" / "config.json"
         assert_missing_path(lambda: read_hf_meta(missing), missing)
+        # A JSON `true` must not pass as 1 for a count field (bool is an int subclass).
+        for key in ("num_hidden_layers", "num_experts", "num_experts_per_tok"):
+            assert_rejects(
+                lambda k=key: read_hf_meta(write_hf_config(tmp, **{k: True})), key
+            )
+        # The error names the alias that actually held the bad value, not just the last key.
+        assert_rejects(
+            lambda: read_hf_meta(write_hf_config(tmp, moe_intermediate_size="x")),
+            "moe_intermediate_size",
+        )
 
 
 def test_gguf_meta_measures_expert_bytes_from_real_tensor_sizes():
@@ -889,6 +899,8 @@ def test_cli_moe_argument_matrix_rejections():
               "--revision", "a" * 40, "--prompt-token-ids", "1", "--output", "o.json"])
     rejected(["moe", "run", "--backend", "hf-int8", "--prompt", "hi", "--model-id", "m",
               "--revision", "a" * 40, "--n-ctx", "8", "--output", "o.json"])
+    rejected(["moe", "run", "--backend", "hf-int8", "--prompt", "hi", "--model-id", "m",
+              "--revision", "a" * 40, "--model-path", "m.gguf", "--output", "o.json"])
     # llama-cpp run rejects token IDs / model-id.
     rejected(["moe", "run", "--backend", "llama-cpp", "--model-path", "m.gguf",
               "--prompt-token-ids", "1", "--output", "o.json"])

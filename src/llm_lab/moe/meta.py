@@ -86,8 +86,10 @@ def _config_value(config: dict, keys: tuple[str, ...], path: Path) -> object:
 
 def _config_int(config: dict, keys: tuple[str, ...], path: Path) -> int:
     value = _config_value(config, keys, path)
-    if not isinstance(value, int):
-        raise ValueError(f"{path}: {keys[-1]} must be an integer, got {value!r}")
+    # bool is an int subclass; a JSON `true` must not pass as 1. Name the key that held it.
+    present = next(key for key in keys if key in config)
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise ValueError(f"{path}: {present} must be an integer, got {value!r}")
     return value
 
 
