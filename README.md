@@ -4,11 +4,12 @@ Research toward running **Mixture-of-Experts models that do not fit in your fast
 (RAM or VRAM), with output **bit-identical to the same quantized checkpoint run fully
 resident**, at the cost of some extra time.
 
-> **Status: pre-measurement.** Nothing in this repository currently performs verified
-> low-memory inference. The plan is
-> [`docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md`](docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md).
-> Milestone 1 — a real baseline, a determinism proof, and expert-routing traces — is not
-> yet implemented.
+> **Status: M1 measured.** Milestone 1 — a real baseline, a determinism proof, and
+> expert-routing traces — is done and recorded from committed evidence. The plan is
+> [`docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md`](docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md);
+> the M1 results and every cited number live in
+> [`artifacts/m1/evidence/M1-REPORT.md`](artifacts/m1/evidence/M1-REPORT.md). The low-memory
+> loader (M3+) is still not implemented.
 
 ---
 
@@ -79,7 +80,7 @@ deterministic, so fetching just the selected experts and demand-loading on a mis
 | Milestone | Goal |
 |---|---|
 | M0 | Truth-in-labeling. **Done** — this README and the `sim_*` renames. |
-| M1 | Real baseline on Qwen3-30B-A3B Q4_K_M + determinism proof + expert-routing traces. **Next.** |
+| M1 | Real baseline on Qwen3-30B-A3B Q4_K_M + determinism proof + expert-routing traces. **Done** — see the M1 section below. |
 | M2 | Trace analysis: cache-hit curves, union growth, reuse distance → go/no-go gate. |
 | M3 | Expert-contiguous repack (layout only, output-exact). |
 | M4 | Tiered async exact loader (VRAM/RAM/NVMe) with real queued I/O. |
@@ -107,6 +108,82 @@ Adopted because the first iteration violated all five:
    form is *"bit-identical to `Qwen3-30B-A3B-Q4_K_M` under greedy decoding with seed S"*.
 
 ---
+
+## Milestone 1 — measured
+
+M1 is a deterministic MoE reference pipeline: a real baseline, a determinism proof, and
+expert-routing traces. Full results with every number cited to its committed artifact are in
+[`artifacts/m1/evidence/M1-REPORT.md`](artifacts/m1/evidence/M1-REPORT.md). Highlights:
+
+- **M1a** (tiny OLMoE, FP32, no download): two builds identical over 32 tokens
+  (`artifacts/m1/evidence/m1a-oracle.json`).
+- **M1b** (`OLMoE-1B-7B-0924`, both paths): each path deterministic over 64 tokens; GGUF
+  Q4_K_M ≈36 tok/s vs HF int8 ≈2 tok/s — genuinely different executions
+  (`artifacts/m1/evidence/m1b-gguf-run-a.json`, `m1b-hf-run-a.json`).
+- **M1c** (`Qwen3-30B-A3B`): local Q4_K_M deterministic over 256 tokens at ≈6 tok/s
+  (`artifacts/m1/evidence/m1c-run-a.json`, `m1c-oracle.json`); 2000 BF16 routing positions
+  across three domains (`artifacts/m1/evidence/m1c-trace-summary.json`). Measured metadata:
+  48 layers, 128 experts, 8 used (`artifacts/m1/evidence/m1c-meta.json`).
+
+**Phases gate in order:** M1a → M1b → M1c; each phase runs only after the previous gate file
+reports `passed: true` (`m1b-gate.json`, `m1c-gate.json`).
+
+**Two numeric paths, never asserted equal.** The GGUF Q4_K_M path (via `llama-cpp-python`)
+gives speed/RSS/determinism/token IDs; the HF `transformers` path (with
+`output_router_logits=True`) gives exact per-layer expert IDs for the routing trace. These are
+different numeric paths — M1 does **not** claim Q4 decoding and BF16 routing select the same
+experts or emit the same tokens. Whether Q4 routing matches BF16 routing is an open M2
+question.
+
+**Exactness phrasing.** For the local target, exactness means precisely: *bit-identical to
+`Qwen3-30B-A3B-Q4_K_M` under llama.cpp greedy decoding, seed 0, 6 threads, on the recorded
+host*. It always names checkpoint + quant + decode + seed + host, and never claims identity to
+full precision or BF16.
+
+**Hosts (disclosed).** M1a, M1b, and M1c-local ran on Windows (Ryzen 5 5600G, ~16 GB); the
+M1c BF16 routing run ran on a rented Linux host (Ubuntu 22.04, ~135 GB RAM).
+
+**Trace semantics.** `tok_id` is the *processed* token — the one whose hidden state selected
+the recorded experts — at generated positions only. Cache replay is **observational**: it
+reads one immutable trace plus one content-addressed logits digest and computes hits/misses at
+a chosen capacity; it never re-runs the model.
+
+**Oracle refuses mismatched fingerprints.** `moe compare` reports identity as token-ID
+equality and raises rather than comparing two runs whose config fingerprints differ, so an
+"identical" verdict is only ever reported for runs of the same measured configuration.
+
+**Energy caveat.** Any public performance discussion of the eventual low-memory design must
+carry it: SSD expert offloading costs roughly 4.9× the per-token energy of HBM and 3.1× versus
+CPU DRAM (arXiv 2508.06978). The M1 tok/s figures are baselines to beat, not an energy
+endorsement.
+
+**Artifact policy.** Raw traces, logits, and checkpoints are gitignored
+(`/artifacts/m1/raw/`, `/models/m1/`). Only compact evidence is committed under
+`artifacts/m1/evidence/`: JSON summaries, oracle/gate verdicts, command transcripts, and
+`*.sha256` manifests binding each summary to the raw file it describes.
+
+### The `moe` commands
+
+```bash
+# Architecture facts from a checkpoint (HF config or GGUF), to JSON
+llm-lab moe meta --backend llama-cpp --model-path models/m1/qwen3-gguf/Qwen3-30B-A3B-Q4_K_M.gguf --output meta.json
+
+# Deterministic greedy decode to a run record (tiny needs no download)
+llm-lab moe run --backend tiny --prompt-token-ids 1,3,4 --seed 0 --max-new-tokens 3 --output run.json
+
+# Greedy decode recording per-token expert routing (HF path, needs a 40-char revision)
+llm-lab moe trace --backend hf-bf16 --model-id Qwen/Qwen3-30B-A3B --revision <40-char-sha> \
+  --prompt "..." --trace t.jsonl --logits l.pt --run-record r.json --summary s.json
+
+# Compare two run records by token ID (raises if config fingerprints differ)
+llm-lab moe compare run_a.json run_b.json --output oracle.json
+
+# Replay expert-cache hits over one trace at a chosen capacity (observational)
+llm-lab moe replay-cache trace.jsonl --logits l.pt --capacity-experts 512 --output cache.json
+```
+
+Output-writing commands refuse to overwrite an existing path unless `--force` is passed, so a
+measurement is never silently clobbered.
 
 ## Setup
 

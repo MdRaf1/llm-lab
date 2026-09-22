@@ -1020,6 +1020,28 @@ def test_gguf_meta_allows_mixed_quant_per_layer_sizes():
         assert uniform.expert_bytes == 3 * (8 * 32 * 64 * 4 // 8)
 
 
+def test_moe_help_names_five_commands_and_no_marketing():
+    """The public `moe --help` names exactly the five reference commands and stays claim-free.
+
+    This is the documentation scope boundary: help text is the one place a user reads before
+    running anything, so it must inventory the commands and never leak speed/marketing wording.
+    """
+    out = io.StringIO()
+    try:
+        with contextlib.redirect_stdout(out):
+            main(["moe", "--help"])
+    except SystemExit as exc:
+        assert exc.code == 0, f"moe --help exited nonzero: {exc.code}"
+    else:
+        raise AssertionError("moe --help did not exit")
+
+    text = out.getvalue()
+    for command in ("meta", "run", "trace", "compare", "replay-cache"):
+        assert command in text, f"moe --help omits the {command!r} command"
+    for forbidden in ("speedup", "PageCC", "GPU", "lossless to BF16"):
+        assert forbidden not in text, f"moe --help leaked forbidden wording: {forbidden!r}"
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 
