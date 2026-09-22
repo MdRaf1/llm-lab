@@ -1,0 +1,28 @@
+{
+  "backend": "hf-bf16",
+  "decode": "greedy",
+  "host": {
+    "platform": "Linux-5.15.0-191-generic-x86_64-with-glibc2.35",
+    "processor": "x86_64",
+    "total_ram_bytes": 135059517440
+  },
+  "logits_path": "artifacts/m1/raw/m1c-logits-prose-a.pt",
+  "logits_sha256": "ec2686ec11f85b71fe60d1d155a6691f963bbf4a0e070b8cac8554db555a5696",
+  "model": "Qwen/Qwen3-30B-A3B",
+  "n_expert": 128,
+  "n_expert_used": 8,
+  "n_generated": 500,
+  "n_layer": 48,
+  "n_prompt": 16,
+  "n_steps": 500,
+  "path": "Qwen/Qwen3-30B-A3B@ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+  "precision": "BF16",
+  "prompt_sha": "e3844931d5b5446b21d7bf9e8d7bc747f2c1c2cbb3b9268c2d94db52a531fa52",
+  "quant": "torch.bfloat16",
+  "seed": 0,
+  "stop_at_eos": false,
+  "threads": 6,
+  "tokenizer_sha": "c6f138899bd8b2ea32574a3d2ec40c8c516d455eaa49860993f0d2357f6eb1cc",
+  "trace_path": "artifacts/m1/raw/m1c-trace-prose-a.jsonl",
+  "trace_sha256": "b54457c90b9d58ec86e0c1f705e219264d37277b721addc22c295a7063190e2b"
+}

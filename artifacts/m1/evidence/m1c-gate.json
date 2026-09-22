@@ -1,0 +1,16 @@
+{
+  "local_generation_real": true,
+  "q4_deterministic": true,
+  "positions_2000": true,
+  "three_domains": true,
+  "bf16_precision": true,
+  "measured_metadata": true,
+  "evidence_hashes_complete": true,
+  "total_trace_steps": 2000,
+  "domains": [
+    "code",
+    "factual",
+    "prose"
+  ],
+  "passed": true
+}

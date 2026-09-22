@@ -1,0 +1,44 @@
+{
+  "total_steps": 2000,
+  "trace_count": 4,
+  "all_traces_500_steps": true,
+  "domains": [
+    "code",
+    "factual",
+    "prose"
+  ],
+  "sources": [
+    {
+      "name": "prose-a",
+      "domain": "prose",
+      "summary": "m1c-trace-prose-a-summary.json",
+      "sha256": "133af63bbb933e9b4bee1648de7eacf20a742a859e704840ba46a7fd16cedcc2",
+      "n_steps": 500,
+      "precision": "BF16"
+    },
+    {
+      "name": "prose-b",
+      "domain": "prose",
+      "summary": "m1c-trace-prose-b-summary.json",
+      "sha256": "569d27ea32d87f19abde80dd606f8168c6ad70f2738d2e35af05f87d74f6e66c",
+      "n_steps": 500,
+      "precision": "BF16"
+    },
+    {
+      "name": "code",
+      "domain": "code",
+      "summary": "m1c-trace-code-summary.json",
+      "sha256": "442df0cf2faeff26713f0fa98766cf4aa7bdbfaaf8149ed57a1806aa96640740",
+      "n_steps": 500,
+      "precision": "BF16"
+    },
+    {
+      "name": "factual",
+      "domain": "factual",
+      "summary": "m1c-trace-factual-summary.json",
+      "sha256": "090619ded5c8e069763302a29b4460fe436043b8d28395191c08f02a4ba2e5f0",
+      "n_steps": 500,
+      "precision": "BF16"
+    }
+  ]
+}

@@ -1,0 +1,338 @@
+Checked 47 packages in 0.49ms
+imports-ok 2.14.0+cpu
+=== hf download --dry-run --json (BF16 repo) ===
+[{"file": ".gitattributes", "size": "1.6K"}, {"file": "LICENSE", "size": "11.3K"}, {"file": "README.md", "size": "16.8K"}, {"file": "config.json", "size": "963.0"}, {"file": "generation_config.json", "size": "239.0"}, {"file": "merges.txt", "size": "1.7M"}, {"file": "model-00001-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00002-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00003-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00004-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00005-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00006-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00007-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00008-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00009-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00010-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00011-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00012-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00013-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00014-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00015-of-00016.safetensors", "size": "4.0G"}, {"file": "model-00016-of-00016.safetensors", "size": "1.1G"}, {"file": "model.safetensors.index.json", "size": "1.7M"}, {"file": "tokenizer.json", "size": "11.4M"}, {"file": "tokenizer_config.json", "size": "9.7K"}, {"file": "vocab.json", "size": "2.8M"}]
+=== exact-byte preflight (HF dry_run API) + disk/RAM gate ===
+=== host facts ===
+{
+  "cpu": "x86_64",
+  "platform": "Linux-5.15.0-191-generic-x86_64-with-glibc2.35",
+  "virtual_memory": {
+    "total": 135059517440,
+    "available": 133459517440
+  },
+  "free_disk_bytes": 139035693056,
+  "packages": {
+    "huggingface_hub": "1.30.0",
+    "transformers": "5.16.1",
+    "torch": "2.14.0+cpu",
+    "accelerate": "1.15.0",
+    "psutil": "7.2.2"
+  }
+}
+[dry-run] Fetching 26 files:   0%|          | 0/26 [00:00<?, ?it/s][dry-run] Fetching 26 files:   4%|▍         | 1/26 [00:00<00:05,  4.53it/s][dry-run] Fetching 26 files:  35%|███▍      | 9/26 [00:00<00:00, 25.31it/s][dry-run] Fetching 26 files:  65%|██████▌   | 17/26 [00:00<00:00, 32.60it/s][dry-run] Fetching 26 files:  96%|█████████▌| 25/26 [00:00<00:00, 35.12it/s][dry-run] Fetching 26 files: 100%|██████████| 26/26 [00:00<00:00, 32.16it/s]
+=== dry-run exact byte math ===
+{
+  "repo": "Qwen/Qwen3-30B-A3B",
+  "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+  "files": [
+    {
+      "filename": "model-00001-of-00016.safetensors",
+      "file_size": 3999417504,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": ".gitattributes",
+      "file_size": 1570,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "config.json",
+      "file_size": 963,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "README.md",
+      "file_size": 16798,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "merges.txt",
+      "file_size": 1671853,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "generation_config.json",
+      "file_size": 239,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00002-of-00016.safetensors",
+      "file_size": 3999974192,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "LICENSE",
+      "file_size": 11343,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00003-of-00016.safetensors",
+      "file_size": 3997360832,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00004-of-00016.safetensors",
+      "file_size": 3999975056,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00007-of-00016.safetensors",
+      "file_size": 3999975472,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00006-of-00016.safetensors",
+      "file_size": 3999975400,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00005-of-00016.safetensors",
+      "file_size": 3999975400,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00009-of-00016.safetensors",
+      "file_size": 3999975408,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00008-of-00016.safetensors",
+      "file_size": 3997362064,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00010-of-00016.safetensors",
+      "file_size": 3999975400,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00012-of-00016.safetensors",
+      "file_size": 3987400496,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00013-of-00016.safetensors",
+      "file_size": 3997353632,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00011-of-00016.safetensors",
+      "file_size": 3999975408,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00014-of-00016.safetensors",
+      "file_size": 3999975400,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00016-of-00016.safetensors",
+      "file_size": 1087928584,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model-00015-of-00016.safetensors",
+      "file_size": 3999975400,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "tokenizer.json",
+      "file_size": 11422654,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "model.safetensors.index.json",
+      "file_size": 1699758,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "vocab.json",
+      "file_size": 2776833,
+      "will_download": true,
+      "is_cached": false
+    },
+    {
+      "filename": "tokenizer_config.json",
+      "file_size": 9732,
+      "will_download": true,
+      "is_cached": false
+    }
+  ],
+  "remote_bytes": 61084187391,
+  "already_present_bytes": 0,
+  "to_download_bytes": 61084187391,
+  "disk_headroom_bytes": 17179869184,
+  "required_disk_bytes": 78264056575,
+  "available_free_disk_bytes": 139035693056,
+  "required_ram_bytes": 85899345920,
+  "available_ram_bytes": 133457526784
+}
+required_disk=78264056575 available_disk=139035693056 required_ram=85899345920 available_ram=133457526784
+PREFLIGHT_OK
+Fetching 26 files:   0%|          | 0/26 [00:00<?, ?it/s]Fetching 26 files:   4%|▍         | 1/26 [00:00<00:09,  2.68it/s]Fetching 26 files:  23%|██▎       | 6/26 [00:00<00:01, 15.50it/s]Fetching 26 files:  23%|██▎       | 6/26 [00:20<00:01, 15.50it/s]Fetching 26 files:  27%|██▋       | 7/26 [01:01<03:52, 12.24s/it]Fetching 26 files:  31%|███       | 8/26 [01:01<02:52,  9.60s/it]Fetching 26 files:  38%|███▊      | 10/26 [01:03<01:38,  6.13s/it]Fetching 26 files:  46%|████▌     | 12/26 [01:07<01:06,  4.76s/it]Fetching 26 files:  50%|█████     | 13/26 [01:08<00:51,  3.94s/it]Fetching 26 files:  54%|█████▍    | 14/26 [01:09<00:38,  3.21s/it]Fetching 26 files:  58%|█████▊    | 15/26 [01:25<01:11,  6.46s/it]Fetching 26 files:  62%|██████▏   | 16/26 [01:26<00:49,  4.91s/it]Fetching 26 files:  65%|██████▌   | 17/26 [01:29<00:40,  4.50s/it]Fetching 26 files:  69%|██████▉   | 18/26 [01:29<00:26,  3.36s/it]Fetching 26 files:  73%|███████▎  | 19/26 [01:30<00:17,  2.55s/it]Fetching 26 files:  77%|███████▋  | 20/26 [01:46<00:38,  6.36s/it]Fetching 26 files:  81%|████████  | 21/26 [01:47<00:25,  5.05s/it]Fetching 26 files:  85%|████████▍ | 22/26 [01:49<00:15,  3.99s/it]Fetching 26 files:  88%|████████▊ | 23/26 [01:50<00:09,  3.20s/it]Fetching 26 files:  92%|█████████▏| 24/26 [01:55<00:07,  3.76s/it]Fetching 26 files:  96%|█████████▌| 25/26 [01:56<00:02,  2.92s/it]Fetching 26 files: 100%|██████████| 26/26 [01:56<00:00,  2.12s/it]Fetching 26 files: 100%|██████████| 26/26 [01:56<00:00,  4.50s/it]
+[32m✓ Downloaded[0m
+  path: /root/.cache/huggingface/hub/models--Qwen--Qwen3-30B-A3B/snapshots/ad44e777bcd18fa416d9da3bd8f70d33ebb85d39
+Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Loading weights:   1%|          | 5/531 [00:00<00:20, 25.99it/s]Loading weights:   3%|▎         | 16/531 [00:00<00:11, 45.73it/s]Loading weights:   5%|▌         | 27/531 [00:00<00:09, 52.99it/s]Loading weights:   7%|▋         | 38/531 [00:00<00:08, 57.57it/s]Loading weights:   9%|▉         | 49/531 [00:00<00:08, 59.52it/s]Loading weights:  11%|█▏        | 60/531 [00:01<00:07, 61.08it/s]Loading weights:  13%|█▎        | 71/531 [00:01<00:07, 62.21it/s]Loading weights:  15%|█▌        | 82/531 [00:01<00:06, 69.69it/s]Loading weights:  18%|█▊        | 93/531 [00:01<00:05, 77.20it/s]Loading weights:  20%|█▉        | 104/531 [00:01<00:05, 83.35it/s]Loading weights:  22%|██▏       | 115/531 [00:01<00:04, 88.13it/s]Loading weights:  24%|██▎       | 126/531 [00:01<00:04, 91.68it/s]Loading weights:  26%|██▌       | 137/531 [00:01<00:04, 94.52it/s]Loading weights:  28%|██▊       | 148/531 [00:02<00:03, 96.40it/s]Loading weights:  30%|██▉       | 159/531 [00:02<00:03, 97.84it/s]Loading weights:  32%|███▏      | 170/531 [00:02<00:03, 99.04it/s]Loading weights:  34%|███▍      | 181/531 [00:02<00:03, 99.57it/s]Loading weights:  36%|███▌      | 192/531 [00:02<00:03, 100.03it/s]Loading weights:  38%|███▊      | 203/531 [00:02<00:03, 100.35it/s]Loading weights:  40%|████      | 214/531 [00:02<00:03, 100.33it/s]Loading weights:  42%|████▏     | 225/531 [00:02<00:03, 100.39it/s]Loading weights:  44%|████▍     | 236/531 [00:02<00:02, 100.89it/s]Loading weights:  47%|████▋     | 247/531 [00:02<00:02, 100.65it/s]Loading weights:  49%|████▊     | 258/531 [00:03<00:02, 100.82it/s]Loading weights:  51%|█████     | 269/531 [00:03<00:02, 101.13it/s]Loading weights:  53%|█████▎    | 280/531 [00:03<00:02, 100.95it/s]Loading weights:  55%|█████▍    | 291/531 [00:03<00:02, 101.32it/s]Loading weights:  57%|█████▋    | 302/531 [00:03<00:02, 101.56it/s]Loading weights:  59%|█████▉    | 313/531 [00:03<00:02, 101.54it/s]Loading weights:  61%|██████    | 324/531 [00:03<00:02, 101.69it/s]Loading weights:  63%|██████▎   | 335/531 [00:03<00:01, 101.79it/s]Loading weights:  65%|██████▌   | 346/531 [00:03<00:01, 101.89it/s]Loading weights:  67%|██████▋   | 357/531 [00:04<00:01, 102.09it/s]Loading weights:  69%|██████▉   | 368/531 [00:04<00:01, 102.09it/s]Loading weights:  71%|███████▏  | 379/531 [00:04<00:01, 102.10it/s]Loading weights:  73%|███████▎  | 390/531 [00:04<00:01, 101.65it/s]Loading weights:  76%|███████▌  | 401/531 [00:04<00:01, 101.64it/s]Loading weights:  78%|███████▊  | 412/531 [00:04<00:01, 101.92it/s]Loading weights:  80%|███████▉  | 423/531 [00:04<00:01, 101.95it/s]Loading weights:  82%|████████▏ | 434/531 [00:04<00:00, 101.56it/s]Loading weights:  84%|████████▍ | 445/531 [00:04<00:00, 100.99it/s]Loading weights:  86%|████████▌ | 456/531 [00:05<00:00, 101.38it/s]Loading weights:  88%|████████▊ | 467/531 [00:05<00:00, 101.52it/s]Loading weights:  90%|█████████ | 478/531 [00:05<00:00, 101.71it/s]Loading weights:  92%|█████████▏| 489/531 [00:05<00:00, 98.43it/s] Loading weights:  94%|█████████▍| 500/531 [00:05<00:00, 99.35it/s]Loading weights:  96%|█████████▌| 511/531 [00:05<00:00, 100.02it/s]Loading weights:  98%|█████████▊| 522/531 [00:05<00:00, 100.31it/s]Loading weights: 100%|██████████| 531/531 [00:05<00:00, 93.07it/s] 
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+{
+  "backend": "hf-bf16",
+  "decode": "greedy",
+  "host": {
+    "platform": "Linux-5.15.0-191-generic-x86_64-with-glibc2.35",
+    "processor": "x86_64",
+    "total_ram_bytes": 135059517440
+  },
+  "logits_path": "artifacts/m1/raw/m1c-logits-prose-a.pt",
+  "logits_sha256": "ec2686ec11f85b71fe60d1d155a6691f963bbf4a0e070b8cac8554db555a5696",
+  "model": "Qwen/Qwen3-30B-A3B",
+  "n_expert": 128,
+  "n_expert_used": 8,
+  "n_generated": 500,
+  "n_layer": 48,
+  "n_prompt": 16,
+  "n_steps": 500,
+  "path": "Qwen/Qwen3-30B-A3B@ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+  "precision": "BF16",
+  "prompt_sha": "e3844931d5b5446b21d7bf9e8d7bc747f2c1c2cbb3b9268c2d94db52a531fa52",
+  "quant": "torch.bfloat16",
+  "seed": 0,
+  "stop_at_eos": false,
+  "threads": 6,
+  "tokenizer_sha": "c6f138899bd8b2ea32574a3d2ec40c8c516d455eaa49860993f0d2357f6eb1cc",
+  "trace_path": "artifacts/m1/raw/m1c-trace-prose-a.jsonl",
+  "trace_sha256": "b54457c90b9d58ec86e0c1f705e219264d37277b721addc22c295a7063190e2b"
+}
+Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Loading weights:   1%|          | 5/531 [00:00<00:20, 25.17it/s]Loading weights:   3%|▎         | 16/531 [00:00<00:11, 45.31it/s]Loading weights:   5%|▌         | 27/531 [00:00<00:09, 53.73it/s]Loading weights:   7%|▋         | 38/531 [00:00<00:08, 57.91it/s]Loading weights:   9%|▉         | 49/531 [00:00<00:08, 59.60it/s]Loading weights:  11%|█▏        | 60/531 [00:01<00:07, 59.92it/s]Loading weights:  13%|█▎        | 71/531 [00:01<00:07, 60.28it/s]Loading weights:  15%|█▌        | 82/531 [00:01<00:06, 65.68it/s]Loading weights:  18%|█▊        | 93/531 [00:01<00:05, 73.84it/s]Loading weights:  20%|█▉        | 104/531 [00:01<00:05, 80.71it/s]Loading weights:  22%|██▏       | 115/531 [00:01<00:04, 86.08it/s]Loading weights:  24%|██▎       | 126/531 [00:01<00:04, 90.19it/s]Loading weights:  26%|██▌       | 137/531 [00:01<00:04, 93.42it/s]Loading weights:  28%|██▊       | 148/531 [00:02<00:04, 95.64it/s]Loading weights:  30%|██▉       | 159/531 [00:02<00:03, 97.30it/s]Loading weights:  32%|███▏      | 170/531 [00:02<00:03, 98.60it/s]Loading weights:  34%|███▍      | 181/531 [00:02<00:03, 99.42it/s]Loading weights:  36%|███▌      | 192/531 [00:02<00:03, 99.94it/s]Loading weights:  38%|███▊      | 203/531 [00:02<00:03, 100.55it/s]Loading weights:  40%|████      | 214/531 [00:02<00:03, 100.60it/s]Loading weights:  42%|████▏     | 225/531 [00:02<00:03, 100.59it/s]Loading weights:  44%|████▍     | 236/531 [00:02<00:02, 100.99it/s]Loading weights:  47%|████▋     | 247/531 [00:03<00:02, 100.41it/s]Loading weights:  49%|████▊     | 258/531 [00:03<00:02, 100.63it/s]Loading weights:  51%|█████     | 269/531 [00:03<00:02, 100.97it/s]Loading weights:  53%|█████▎    | 280/531 [00:03<00:02, 101.29it/s]Loading weights:  55%|█████▍    | 291/531 [00:03<00:02, 101.45it/s]Loading weights:  57%|█████▋    | 302/531 [00:03<00:02, 101.60it/s]Loading weights:  59%|█████▉    | 313/531 [00:03<00:02, 101.67it/s]Loading weights:  61%|██████    | 324/531 [00:03<00:02, 101.75it/s]Loading weights:  63%|██████▎   | 335/531 [00:03<00:01, 101.72it/s]Loading weights:  65%|██████▌   | 346/531 [00:03<00:01, 101.78it/s]Loading weights:  67%|██████▋   | 357/531 [00:04<00:01, 101.89it/s]Loading weights:  69%|██████▉   | 368/531 [00:04<00:01, 101.76it/s]Loading weights:  71%|███████▏  | 379/531 [00:04<00:01, 101.98it/s]Loading weights:  73%|███████▎  | 390/531 [00:04<00:01, 101.81it/s]Loading weights:  76%|███████▌  | 401/531 [00:04<00:01, 101.71it/s]Loading weights:  78%|███████▊  | 412/531 [00:04<00:01, 101.92it/s]Loading weights:  80%|███████▉  | 423/531 [00:04<00:01, 101.80it/s]Loading weights:  82%|████████▏ | 434/531 [00:04<00:00, 101.31it/s]Loading weights:  84%|████████▍ | 445/531 [00:04<00:00, 101.39it/s]Loading weights:  86%|████████▌ | 456/531 [00:05<00:00, 101.67it/s]Loading weights:  88%|████████▊ | 467/531 [00:05<00:00, 101.69it/s]Loading weights:  90%|█████████ | 478/531 [00:05<00:00, 101.75it/s]Loading weights:  92%|█████████▏| 489/531 [00:05<00:00, 101.81it/s]Loading weights:  94%|█████████▍| 500/531 [00:05<00:00, 101.80it/s]Loading weights:  96%|█████████▌| 511/531 [00:05<00:00, 101.67it/s]Loading weights:  98%|█████████▊| 522/531 [00:05<00:00, 101.24it/s]Loading weights: 100%|██████████| 531/531 [00:05<00:00, 92.69it/s] 
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+{
+  "backend": "hf-bf16",
+  "decode": "greedy",
+  "host": {
+    "platform": "Linux-5.15.0-191-generic-x86_64-with-glibc2.35",
+    "processor": "x86_64",
+    "total_ram_bytes": 135059517440
+  },
+  "logits_path": "artifacts/m1/raw/m1c-logits-prose-b.pt",
+  "logits_sha256": "761a890b5f0362d9c981b96d353218b377299ab811410d868c78e9b4228c29f3",
+  "model": "Qwen/Qwen3-30B-A3B",
+  "n_expert": 128,
+  "n_expert_used": 8,
+  "n_generated": 500,
+  "n_layer": 48,
+  "n_prompt": 17,
+  "n_steps": 500,
+  "path": "Qwen/Qwen3-30B-A3B@ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+  "precision": "BF16",
+  "prompt_sha": "aa160c89263d763b0d2c520e0f4e690922677e117f1befd7e900320da9d5ff52",
+  "quant": "torch.bfloat16",
+  "seed": 0,
+  "stop_at_eos": false,
+  "threads": 6,
+  "tokenizer_sha": "c6f138899bd8b2ea32574a3d2ec40c8c516d455eaa49860993f0d2357f6eb1cc",
+  "trace_path": "artifacts/m1/raw/m1c-trace-prose-b.jsonl",
+  "trace_sha256": "5ef2a77be6a09acee898c5603f9537249d2b3fe871ed7157259a3148ed359953"
+}
+Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Loading weights:   1%|          | 5/531 [00:00<00:21, 24.95it/s]Loading weights:   3%|▎         | 16/531 [00:00<00:11, 44.88it/s]Loading weights:   5%|▌         | 27/531 [00:00<00:09, 52.67it/s]Loading weights:   7%|▋         | 38/531 [00:00<00:08, 56.83it/s]Loading weights:   9%|▉         | 49/531 [00:00<00:08, 59.11it/s]Loading weights:  11%|█▏        | 60/531 [00:01<00:07, 60.61it/s]Loading weights:  13%|█▎        | 71/531 [00:01<00:07, 62.02it/s]Loading weights:  15%|█▌        | 82/531 [00:01<00:06, 68.18it/s]Loading weights:  18%|█▊        | 93/531 [00:01<00:05, 75.95it/s]Loading weights:  20%|█▉        | 104/531 [00:01<00:05, 82.39it/s]Loading weights:  22%|██▏       | 115/531 [00:01<00:04, 87.39it/s]Loading weights:  24%|██▎       | 126/531 [00:01<00:04, 91.10it/s]Loading weights:  26%|██▌       | 137/531 [00:01<00:04, 94.01it/s]Loading weights:  28%|██▊       | 148/531 [00:02<00:03, 96.11it/s]Loading weights:  30%|██▉       | 159/531 [00:02<00:03, 97.63it/s]Loading weights:  32%|███▏      | 170/531 [00:02<00:03, 98.64it/s]Loading weights:  34%|███▍      | 181/531 [00:02<00:03, 99.27it/s]Loading weights:  36%|███▌      | 192/531 [00:02<00:03, 99.60it/s]Loading weights:  38%|███▊      | 203/531 [00:02<00:03, 100.14it/s]Loading weights:  40%|████      | 214/531 [00:02<00:03, 100.20it/s]Loading weights:  42%|████▏     | 225/531 [00:02<00:03, 100.32it/s]Loading weights:  44%|████▍     | 236/531 [00:02<00:02, 100.74it/s]Loading weights:  47%|████▋     | 247/531 [00:03<00:02, 100.36it/s]Loading weights:  49%|████▊     | 258/531 [00:03<00:02, 100.65it/s]Loading weights:  51%|█████     | 269/531 [00:03<00:02, 100.83it/s]Loading weights:  53%|█████▎    | 280/531 [00:03<00:02, 100.96it/s]Loading weights:  55%|█████▍    | 291/531 [00:03<00:02, 101.04it/s]Loading weights:  57%|█████▋    | 302/531 [00:03<00:02, 101.18it/s]Loading weights:  59%|█████▉    | 313/531 [00:03<00:02, 98.22it/s] Loading weights:  61%|██████    | 324/531 [00:03<00:02, 99.24it/s]Loading weights:  63%|██████▎   | 335/531 [00:03<00:01, 99.91it/s]Loading weights:  65%|██████▌   | 346/531 [00:03<00:01, 100.34it/s]Loading weights:  67%|██████▋   | 357/531 [00:04<00:01, 100.72it/s]Loading weights:  69%|██████▉   | 368/531 [00:04<00:01, 100.97it/s]Loading weights:  71%|███████▏  | 379/531 [00:04<00:01, 101.17it/s]Loading weights:  73%|███████▎  | 390/531 [00:04<00:01, 101.01it/s]Loading weights:  76%|███████▌  | 401/531 [00:04<00:01, 101.00it/s]Loading weights:  78%|███████▊  | 412/531 [00:04<00:01, 101.42it/s]Loading weights:  80%|███████▉  | 423/531 [00:04<00:01, 101.43it/s]Loading weights:  82%|████████▏ | 434/531 [00:04<00:00, 100.92it/s]Loading weights:  84%|████████▍ | 445/531 [00:04<00:00, 100.98it/s]Loading weights:  86%|████████▌ | 456/531 [00:05<00:00, 101.13it/s]Loading weights:  88%|████████▊ | 467/531 [00:05<00:00, 101.26it/s]Loading weights:  90%|█████████ | 478/531 [00:05<00:00, 101.31it/s]Loading weights:  92%|█████████▏| 489/531 [00:05<00:00, 101.29it/s]Loading weights:  94%|█████████▍| 500/531 [00:05<00:00, 101.34it/s]Loading weights:  96%|█████████▌| 511/531 [00:05<00:00, 101.21it/s]Loading weights:  98%|█████████▊| 522/531 [00:05<00:00, 100.98it/s]Loading weights: 100%|██████████| 531/531 [00:05<00:00, 92.56it/s] 
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+{
+  "backend": "hf-bf16",
+  "decode": "greedy",
+  "host": {
+    "platform": "Linux-5.15.0-191-generic-x86_64-with-glibc2.35",
+    "processor": "x86_64",
+    "total_ram_bytes": 135059517440
+  },
+  "logits_path": "artifacts/m1/raw/m1c-logits-code.pt",
+  "logits_sha256": "973b1bed73a9f2ee94604b0e05f5bb830b688bd380149e1554f0a2d6bfd20422",
+  "model": "Qwen/Qwen3-30B-A3B",
+  "n_expert": 128,
+  "n_expert_used": 8,
+  "n_generated": 500,
+  "n_layer": 48,
+  "n_prompt": 17,
+  "n_steps": 500,
+  "path": "Qwen/Qwen3-30B-A3B@ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+  "precision": "BF16",
+  "prompt_sha": "dda0df7e12d15cfb6527c9802b1e9e8a49e01e065c50c31a91914030ddb89909",
+  "quant": "torch.bfloat16",
+  "seed": 0,
+  "stop_at_eos": false,
+  "threads": 6,
+  "tokenizer_sha": "c6f138899bd8b2ea32574a3d2ec40c8c516d455eaa49860993f0d2357f6eb1cc",
+  "trace_path": "artifacts/m1/raw/m1c-trace-code.jsonl",
+  "trace_sha256": "9c9aac81f25eb5209a8c647dfc5f6857a8b06952a1a1004d3d99072a9c1aa697"
+}
+Loading weights:   0%|          | 0/531 [00:00<?, ?it/s]Loading weights:   1%|          | 5/531 [00:00<00:21, 24.11it/s]Loading weights:   3%|▎         | 16/531 [00:00<00:11, 44.38it/s]Loading weights:   5%|▌         | 27/531 [00:00<00:09, 52.43it/s]Loading weights:   7%|▋         | 38/531 [00:00<00:08, 56.70it/s]Loading weights:   9%|▉         | 49/531 [00:00<00:08, 58.93it/s]Loading weights:  11%|█▏        | 60/531 [00:01<00:07, 60.78it/s]Loading weights:  13%|█▎        | 71/531 [00:01<00:07, 61.38it/s]Loading weights:  15%|█▌        | 82/531 [00:01<00:06, 68.36it/s]Loading weights:  18%|█▊        | 93/531 [00:01<00:05, 76.09it/s]Loading weights:  20%|█▉        | 104/531 [00:01<00:05, 82.48it/s]Loading weights:  22%|██▏       | 115/531 [00:01<00:04, 87.31it/s]Loading weights:  24%|██▎       | 126/531 [00:01<00:04, 91.04it/s]Loading weights:  26%|██▌       | 137/531 [00:01<00:04, 94.07it/s]Loading weights:  28%|██▊       | 148/531 [00:02<00:03, 96.02it/s]Loading weights:  30%|██▉       | 159/531 [00:02<00:03, 97.55it/s]Loading weights:  32%|███▏      | 170/531 [00:02<00:03, 98.73it/s]Loading weights:  34%|███▍      | 181/531 [00:02<00:03, 99.61it/s]Loading weights:  36%|███▌      | 192/531 [00:02<00:03, 100.05it/s]Loading weights:  38%|███▊      | 203/531 [00:02<00:03, 100.67it/s]Loading weights:  40%|████      | 214/531 [00:02<00:03, 100.79it/s]Loading weights:  42%|████▏     | 225/531 [00:02<00:03, 100.83it/s]Loading weights:  44%|████▍     | 236/531 [00:02<00:02, 100.71it/s]Loading weights:  47%|████▋     | 247/531 [00:03<00:02, 100.45it/s]Loading weights:  49%|████▊     | 258/531 [00:03<00:02, 100.38it/s]Loading weights:  51%|█████     | 269/531 [00:03<00:02, 100.75it/s]Loading weights:  53%|█████▎    | 280/531 [00:03<00:02, 100.59it/s]Loading weights:  55%|█████▍    | 291/531 [00:03<00:02, 100.95it/s]Loading weights:  57%|█████▋    | 302/531 [00:03<00:02, 101.24it/s]Loading weights:  59%|█████▉    | 313/531 [00:03<00:02, 101.38it/s]Loading weights:  61%|██████    | 324/531 [00:03<00:02, 101.61it/s]Loading weights:  63%|██████▎   | 335/531 [00:03<00:01, 101.70it/s]Loading weights:  65%|██████▌   | 346/531 [00:03<00:01, 101.60it/s]Loading weights:  67%|██████▋   | 357/531 [00:04<00:01, 101.66it/s]Loading weights:  69%|██████▉   | 368/531 [00:04<00:01, 101.59it/s]Loading weights:  71%|███████▏  | 379/531 [00:04<00:01, 101.69it/s]Loading weights:  73%|███████▎  | 390/531 [00:04<00:01, 101.65it/s]Loading weights:  76%|███████▌  | 401/531 [00:04<00:01, 101.35it/s]Loading weights:  78%|███████▊  | 412/531 [00:04<00:01, 101.55it/s]Loading weights:  80%|███████▉  | 423/531 [00:04<00:01, 101.49it/s]Loading weights:  82%|████████▏ | 434/531 [00:04<00:00, 101.19it/s]Loading weights:  84%|████████▍ | 445/531 [00:04<00:00, 100.69it/s]Loading weights:  86%|████████▌ | 456/531 [00:05<00:00, 100.86it/s]Loading weights:  88%|████████▊ | 467/531 [00:05<00:00, 100.86it/s]Loading weights:  90%|█████████ | 478/531 [00:05<00:00, 100.90it/s]Loading weights:  92%|█████████▏| 489/531 [00:05<00:00, 101.08it/s]Loading weights:  94%|█████████▍| 500/531 [00:05<00:00, 101.05it/s]Loading weights:  96%|█████████▌| 511/531 [00:05<00:00, 101.04it/s]Loading weights:  98%|█████████▊| 522/531 [00:05<00:00, 101.01it/s]Loading weights: 100%|██████████| 531/531 [00:05<00:00, 92.69it/s] 
+[transformers] `torch_dtype` is deprecated! Use `dtype` instead!
+{
+  "backend": "hf-bf16",
+  "decode": "greedy",
+  "host": {
+    "platform": "Linux-5.15.0-191-generic-x86_64-with-glibc2.35",
+    "processor": "x86_64",
+    "total_ram_bytes": 135059517440
+  },
+  "logits_path": "artifacts/m1/raw/m1c-logits-factual.pt",
+  "logits_sha256": "64a73e7c32b4b0346aec08662dc4c07ae410834453434ff626c538deb1b7e6d4",
+  "model": "Qwen/Qwen3-30B-A3B",
+  "n_expert": 128,
+  "n_expert_used": 8,
+  "n_generated": 500,
+  "n_layer": 48,
+  "n_prompt": 6,
+  "n_steps": 500,
+  "path": "Qwen/Qwen3-30B-A3B@ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+  "precision": "BF16",
+  "prompt_sha": "360e0374953db4aea5e5a0b49f1316c0c584bafd0a20fe88e4f1c8a2de2ad45b",
+  "quant": "torch.bfloat16",
+  "seed": 0,
+  "stop_at_eos": false,
+  "threads": 6,
+  "tokenizer_sha": "c6f138899bd8b2ea32574a3d2ec40c8c516d455eaa49860993f0d2357f6eb1cc",
+  "trace_path": "artifacts/m1/raw/m1c-trace-factual.jsonl",
+  "trace_sha256": "37dab2d9d5b61a8187f9254827a762f724366d7ee8da2e4b665b77a2cc8b47c0"
+}
+{
+  "local_generation_real": true,
+  "q4_deterministic": true,
+  "positions_2000": true,
+  "three_domains": true,
+  "bf16_precision": true,
+  "measured_metadata": true,
+  "evidence_hashes_complete": true,
+  "total_trace_steps": 2000,
+  "domains": [
+    "code",
+    "factual",
+    "prose"
+  ],
+  "passed": true
+}
+M1c RENTED complete: 2000 BF16 positions across three domains, full gate passed.
+Copy back the compact evidence (summaries, m1c-files.sha256, m1c-gate.json) +
+  m1c-rented-output.txt to the main host. Controller commits (this host does not).

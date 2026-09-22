@@ -1,0 +1,8 @@
+b54457c90b9d58ec86e0c1f705e219264d37277b721addc22c295a7063190e2b  artifacts/m1/raw/m1c-trace-prose-a.jsonl
+ec2686ec11f85b71fe60d1d155a6691f963bbf4a0e070b8cac8554db555a5696  artifacts/m1/raw/m1c-logits-prose-a.pt
+5ef2a77be6a09acee898c5603f9537249d2b3fe871ed7157259a3148ed359953  artifacts/m1/raw/m1c-trace-prose-b.jsonl
+761a890b5f0362d9c981b96d353218b377299ab811410d868c78e9b4228c29f3  artifacts/m1/raw/m1c-logits-prose-b.pt
+9c9aac81f25eb5209a8c647dfc5f6857a8b06952a1a1004d3d99072a9c1aa697  artifacts/m1/raw/m1c-trace-code.jsonl
+973b1bed73a9f2ee94604b0e05f5bb830b688bd380149e1554f0a2d6bfd20422  artifacts/m1/raw/m1c-logits-code.pt
+37dab2d9d5b61a8187f9254827a762f724366d7ee8da2e4b665b77a2cc8b47c0  artifacts/m1/raw/m1c-trace-factual.jsonl
+64a73e7c32b4b0346aec08662dc4c07ae410834453434ff626c538deb1b7e6d4  artifacts/m1/raw/m1c-logits-factual.pt
