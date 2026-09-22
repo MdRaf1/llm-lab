@@ -147,8 +147,12 @@ def analyze_traces(traces, geometry, fractions, windows, tiers_gb,
     nonexpert_bytes = geometry["nonexpert_bytes"]
 
     per_trace, curves, tok_s_16gb = [], [], []
-    for name, steps, logits_sha in traces:
-        curve = hit_rate_curve(steps, fractions, n_expert_total, logits_sha)
+    # The source curve's capacity denominator is the SOURCE (trace's own) working set, so hit-rate
+    # is read as f = capacity / the model's OWN total experts. The tier projection below keeps the
+    # TARGET total (n_expert_total) for its own f -- both axes are normalized fractions of their
+    # respective working sets, and the invariance the scheme assumes is that they meet at equal f.
+    for name, steps, logits_sha, source_n_expert_total in traces:
+        curve = hit_rate_curve(steps, fractions, source_n_expert_total, logits_sha)
         curves.append(curve)
         t16 = project_tier(16e9, nonexpert_bytes, reserve_bytes, avg_expert_bytes,
                            n_expert_total, n_layer, n_expert_used, curve, b_cold_bytes_s)

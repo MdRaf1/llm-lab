@@ -204,8 +204,9 @@ def _run_moe(parser, args) -> None:
             _reject(parser, "analyze needs one --logits per --trace")
         traces = []
         for tpath, lpath in zip(args.trace, args.logits):
-            _, steps = read_trace(Path(tpath))
-            traces.append((Path(tpath).name, steps, sha256_file(Path(lpath))))
+            header, steps = read_trace(Path(tpath))
+            traces.append((Path(tpath).name, steps, sha256_file(Path(lpath)),
+                           header.n_layer * header.n_expert))
         geometry = _json.loads(Path(args.geometry).read_text(encoding="utf-8"))
         result = analyze_traces(
             traces, geometry,

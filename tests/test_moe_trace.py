@@ -1169,7 +1169,7 @@ def test_analyze_traces_emits_gate_object_and_cli_runs(tmp_path=None):
     geometry = {"n_layer": 1, "n_expert": 3, "n_expert_used": 1,
                 "total_expert_bytes": 3_000_000, "nonexpert_bytes": 1_000_000}
     obj = analyze_traces(
-        traces=[("t0", steps, "shaX")], geometry=geometry,
+        traces=[("t0", steps, "shaX", 1 * 3)], geometry=geometry,
         fractions=[0.0, 0.5, 1.0], windows=[1, 2, 4],
         tiers_gb=[4, 8, 16, 32], reserve_bytes=0, b_cold_bytes_s=2_620_000_000)
     assert obj["projection_scheme"] == "normalized-working-set-fraction"
@@ -1189,6 +1189,38 @@ def test_analyze_traces_emits_gate_object_and_cli_runs(tmp_path=None):
         main(["moe", "analyze", "--trace", str(tp), "--logits", str(lp),
               "--geometry", str(gp), "--output", str(op)])
         assert _json.loads(op.read_text())["branch"] in {"build_m3m4", "escalate_m5m6", "re_rent"}
+
+
+def test_analyze_curve_normalizes_to_source_not_target_working_set():
+    # The invariant the projection scheme rests on: the source hit-rate curve is read at
+    # f = capacity / the SOURCE model's own total experts, while the tier projection uses the
+    # TARGET total. Make the two differ so a leak of the target total into the curve is caught.
+    from llm_lab.moe.analysis import analyze_traces
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])   # 1 layer, top-1, SOURCE working set = 3 blobs
+    source_total = 1 * 3                            # the trace header's own n_layer * n_expert
+    # TARGET geometry is deliberately larger: 2 layers x 3 experts = 6 total experts.
+    geometry = {"n_layer": 2, "n_expert": 3, "n_expert_used": 1,
+                "total_expert_bytes": 6_000_000_000, "nonexpert_bytes": 0}
+    obj = analyze_traces(
+        traces=[("t0", steps, "shaX", source_total)], geometry=geometry,
+        fractions=[0.0, 0.5, 1.0], windows=[1],
+        tiers_gb=[4, 16], reserve_bytes=0, b_cold_bytes_s=2_620_000_000)
+
+    # Curve built against the SOURCE total: at f=1.0 capacity = round(1.0 * 3) = 3, NOT the target
+    # 6. (The pre-fix code passed the target total here and produced capacity_experts == 6.)
+    curve = obj["per_trace"][0]["hit_rate_curve"]
+    f1 = next(row for row in curve if row["fraction"] == 1.0)
+    assert f1["capacity_experts"] == source_total == 3, f1["capacity_experts"]
+    # A capacity of 3 fully covers the 3-blob working set: only the 3 cold misses remain.
+    assert (f1["hits"], f1["misses"]) == (1, 3)
+
+    # The tier projection still normalizes against the TARGET total (6): 4 GB / 1e9 avg = capacity
+    # 4 of 6 -> f = 4/6. Source-relative would be 4/3 (>1, clamped) -- a different curve read.
+    avg_expert_bytes = geometry["total_expert_bytes"] / (geometry["n_layer"] * geometry["n_expert"])
+    assert avg_expert_bytes == 1_000_000_000
+    tier4 = next(t for t in obj["tiers"] if t["ram_bytes"] == 4e9)
+    assert tier4["capacity_experts"] == 4
+    assert abs(tier4["fraction"] - 4 / 6) < 1e-12, tier4["fraction"]
 
 
 if __name__ == "__main__":
