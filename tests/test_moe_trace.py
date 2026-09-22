@@ -1066,7 +1066,7 @@ def test_moe_help_names_five_commands_and_no_marketing():
         raise AssertionError("moe --help did not exit")
 
     text = out.getvalue()
-    for command in ("meta", "run", "trace", "compare", "replay-cache"):
+    for command in ("meta", "run", "trace", "compare", "replay-cache", "analyze"):
         assert command in text, f"moe --help omits the {command!r} command"
     for forbidden in ("speedup", "PageCC", "GPU", "lossless to BF16"):
         assert forbidden not in text, f"moe --help leaked forbidden wording: {forbidden!r}"
@@ -1160,6 +1160,35 @@ def test_tok_s_arithmetic_and_gate_bands_are_exact():
     assert gate_branch(4.0, False) == "escalate_m5m6"
     assert gate_branch(7.0, False) == "re_rent"
     assert gate_branch(12.0, True) == "re_rent"   # spread straddles a line -> re-rent regardless
+
+
+def test_analyze_traces_emits_gate_object_and_cli_runs(tmp_path=None):
+    import tempfile, json as _json
+    from llm_lab.moe.analysis import analyze_traces
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])
+    geometry = {"n_layer": 1, "n_expert": 3, "n_expert_used": 1,
+                "total_expert_bytes": 3_000_000, "nonexpert_bytes": 1_000_000}
+    obj = analyze_traces(
+        traces=[("t0", steps, "shaX")], geometry=geometry,
+        fractions=[0.0, 0.5, 1.0], windows=[1, 2, 4],
+        tiers_gb=[4, 8, 16, 32], reserve_bytes=0, b_cold_bytes_s=2_620_000_000)
+    assert obj["projection_scheme"] == "normalized-working-set-fraction"
+    assert obj["branch"] in {"build_m3m4", "escalate_m5m6", "re_rent"}
+    assert {t["ram_bytes"] for t in obj["tiers"]} == {4e9, 8e9, 16e9, 32e9}
+    assert "projected" in obj["threat_to_validity"].lower() or "§11" in obj["threat_to_validity"]
+    assert len(obj["per_trace"]) == 1 and obj["per_trace"][0]["name"] == "t0"
+
+    with tempfile.TemporaryDirectory() as d:
+        from pathlib import Path as _P
+        tp, lp = _P(d) / "t.jsonl", _P(d) / "l.pt"
+        from llm_lab.moe.trace import write_trace
+        write_trace(tp, sample_header(n_layer=1, n_expert=3, n_expert_used=1), steps)
+        lp.write_bytes(b"logits")
+        gp = _P(d) / "geo.json"; gp.write_text(_json.dumps(geometry))
+        op = _P(d) / "out.json"
+        main(["moe", "analyze", "--trace", str(tp), "--logits", str(lp),
+              "--geometry", str(gp), "--output", str(op)])
+        assert _json.loads(op.read_text())["branch"] in {"build_m3m4", "escalate_m5m6", "re_rent"}
 
 
 if __name__ == "__main__":

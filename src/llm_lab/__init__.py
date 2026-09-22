@@ -82,6 +82,18 @@ def _add_moe_subparsers(subparsers) -> None:
     replay_p.add_argument("--output", required=True)
     replay_p.add_argument("--force", action="store_true")
 
+    analyze_p = moe_sub.add_parser("analyze", help="Derive cache/reuse/co-activation curves and the tier gate")
+    analyze_p.add_argument("--trace", action="append", required=True)
+    analyze_p.add_argument("--logits", action="append", required=True)
+    analyze_p.add_argument("--geometry", required=True)
+    analyze_p.add_argument("--output", required=True)
+    analyze_p.add_argument("--fractions", default="0.02,0.05,0.1,0.15,0.2,0.3,0.5,0.75,1.0")
+    analyze_p.add_argument("--windows", default="1,2,4,8,16,32,64,128,256,512")
+    analyze_p.add_argument("--tiers-gb", default="4,8,16,32")
+    analyze_p.add_argument("--reserve-bytes", type=int, default=2_500_000_000)
+    analyze_p.add_argument("--b-cold-bytes", type=int, default=2_620_000_000)
+    analyze_p.add_argument("--force", action="store_true")
+
 
 def _reject(parser, message: str) -> None:
     """Argparse-style rejection: usage + message on stderr, SystemExit(2)."""
@@ -180,6 +192,27 @@ def _run_moe(parser, args) -> None:
         from llm_lab.moe.trace import read_trace, replay_cache
         _, steps = read_trace(Path(args.trace))
         result = replay_cache(steps, args.capacity_experts, sha256_file(Path(args.logits)))
+        _emit(result, args.output)
+        return
+
+    if args.moe_command == "analyze":
+        import json as _json
+        from llm_lab.moe.analysis import analyze_traces
+        from llm_lab.moe.baseline import sha256_file
+        from llm_lab.moe.trace import read_trace
+        if len(args.trace) != len(args.logits):
+            _reject(parser, "analyze needs one --logits per --trace")
+        traces = []
+        for tpath, lpath in zip(args.trace, args.logits):
+            _, steps = read_trace(Path(tpath))
+            traces.append((Path(tpath).name, steps, sha256_file(Path(lpath))))
+        geometry = _json.loads(Path(args.geometry).read_text(encoding="utf-8"))
+        result = analyze_traces(
+            traces, geometry,
+            fractions=[float(x) for x in args.fractions.split(",")],
+            windows=[int(x) for x in args.windows.split(",")],
+            tiers_gb=[int(x) for x in args.tiers_gb.split(",")],
+            reserve_bytes=args.reserve_bytes, b_cold_bytes_s=args.b_cold_bytes)
         _emit(result, args.output)
         return
 
