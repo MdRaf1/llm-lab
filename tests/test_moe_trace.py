@@ -272,6 +272,23 @@ def test_gguf_meta_measures_expert_bytes_from_real_tensor_sizes():
         assert json.loads(json.dumps(meta.to_dict())) == meta.to_dict()
 
 
+def test_gguf_meta_measures_nonexpert_core_exactly():
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / "m.gguf"
+        # 2 layers, 4 experts, hidden 8, ffn 8; expert_tensors() emits the ffn_*_exps.weight set.
+        tensors = expert_tensors(n_layer=2, n_expert=4, hidden=8, ffn=8)
+        # Two non-expert tensors of known size: token_embd + one attn matrix.
+        tensors["token_embd.weight"] = np.zeros((8, 8), dtype=np.float32)      # 256 B
+        tensors["blk.0.attn_q.weight"] = np.zeros((8, 8), dtype=np.float32)    # 256 B
+        write_gguf(path, {"olmoe.block_count": 2, "olmoe.expert_count": 4,
+                          "olmoe.expert_used_count": 2}, tensors, arch="olmoe")
+        meta = read_gguf_meta(path)
+        assert meta.nonexpert_bytes == 512, meta.nonexpert_bytes
+        # The expert tensors must NOT be counted in the core.
+        assert meta.total_expert_bytes > 0
+        assert meta.to_dict()["nonexpert_bytes"] == 512
+
+
 def test_gguf_meta_reads_without_expert_feed_forward_length():
     # The real OLMoE Q4_K_M GGUF omits expert_feed_forward_length; expert bytes come from tensors.
     kv = {k: v for k, v in GGUF_KV.items() if k != "expert_feed_forward_length"}
@@ -363,12 +380,13 @@ def test_read_meta_dispatches_on_backend():
 
 
 def test_model_meta_rejects_impossible_counts():
-    meta = ModelMeta("olmoe", "x.gguf", None, 2, 8, 2, 96, 1536)
+    meta = ModelMeta("olmoe", "x.gguf", None, 2, 8, 2, 96, 1536, 1024)
     assert_rejects(lambda: replace(meta, n_layer=0), "n_layer")
     assert_rejects(lambda: replace(meta, n_expert=0), "n_expert")
     assert_rejects(lambda: replace(meta, n_expert_used=-1), "n_expert_used")
     assert_rejects(lambda: replace(meta, expert_bytes=-1), "expert_bytes")
     assert_rejects(lambda: replace(meta, total_expert_bytes=-1), "total_expert_bytes")
+    assert_rejects(lambda: replace(meta, nonexpert_bytes=-1), "nonexpert_bytes")
 
 
 from llm_lab.moe.trace import (
@@ -1048,10 +1066,207 @@ def test_moe_help_names_five_commands_and_no_marketing():
         raise AssertionError("moe --help did not exit")
 
     text = out.getvalue()
-    for command in ("meta", "run", "trace", "compare", "replay-cache"):
+    for command in ("meta", "run", "trace", "compare", "replay-cache", "analyze"):
         assert command in text, f"moe --help omits the {command!r} command"
     for forbidden in ("speedup", "PageCC", "GPU", "lossless to BF16"):
         assert forbidden not in text, f"moe --help leaked forbidden wording: {forbidden!r}"
+
+
+from llm_lab.moe.analysis import stack_distances, reuse_distance_histogram
+
+
+def _steps(layer_experts_per_pos):
+    from llm_lab.moe.trace import TraceStep
+    return [TraceStep(kind="step", pos=i, tok_id=i, layer_experts=le)
+            for i, le in enumerate(layer_experts_per_pos)]
+
+
+def test_stack_distance_counts_distinct_between_reuses():
+    # One layer, requests in order: A A B A
+    #   A(cold) A(dist 0: nothing distinct since last A)
+    #   B(cold) A(dist 1: only B seen since last A)
+    steps = _steps([[[0]], [[0]], [[1]], [[0]]])
+    assert stack_distances(steps) == [None, 0, None, 1]
+    hist = reuse_distance_histogram(steps)
+    assert hist == {"histogram": {"0": 1, "1": 1}, "cold": 2, "total_requests": 4}
+
+
+from llm_lab.moe.analysis import coactivation_pairs, coactivation_to_json
+
+
+def test_coactivation_counts_within_layer_unordered_pairs():
+    # Layer 0 selects {0,1,2} at pos0 and {0,1} at pos1; layer 1 selects {3,4} once.
+    steps = _steps([[[0, 1, 2], [3, 4]], [[0, 1], [5, 6]]])
+    pairs = coactivation_pairs(steps)
+    # Layer 0: (0,1) co-occurs twice; (0,2),(1,2) once each.
+    assert pairs[0][(0, 1)] == 2
+    assert pairs[0][(0, 2)] == 1 and pairs[0][(1, 2)] == 1
+    # Layer 1: (3,4) once, (5,6) once; no cross-layer or cross-position mixing.
+    assert pairs[1][(3, 4)] == 1 and pairs[1][(5, 6)] == 1
+    assert (3, 5) not in pairs[1]
+    assert coactivation_to_json(pairs)["0"]["0,1"] == 2
+
+
+from llm_lab.moe.analysis import hit_rate_curve
+
+
+def test_hit_rate_curve_invariants_f0_f1_and_monotonic():
+    # 3 positions, 1 layer, top-1, experts 0,1,2,0 -> working set of 3 distinct blobs.
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])
+    curve = hit_rate_curve(steps, [0.0, 1/3, 2/3, 1.0], n_expert_total=3, logits_sha256="x")
+    by_f = {round(row["fraction"], 4): row for row in curve}
+    # f=0 -> capacity 0 -> every request misses.
+    assert by_f[0.0]["hit_rate"] == 0.0 and by_f[0.0]["misses"] == 4
+    # f=1 -> capacity 3 >= working set -> only the 3 cold misses, the final 0 is a hit.
+    assert by_f[1.0]["misses"] == 3 and by_f[1.0]["hits"] == 1
+    # Monotonic non-decreasing hit_rate in f.
+    rates = [row["hit_rate"] for row in curve]
+    assert rates == sorted(rates)
+
+
+from llm_lab.moe.analysis import interp_miss_rate, project_tier, gate_branch
+
+
+def test_tok_s_arithmetic_and_gate_bands_are_exact():
+    # Curve: at f=0 miss_rate 1.0, at f=1 miss_rate 0.5, linear between.
+    curve = [{"fraction": 0.0, "miss_rate": 1.0}, {"fraction": 1.0, "miss_rate": 0.5}]
+    assert interp_miss_rate(curve, 0.5) == 0.75
+    assert interp_miss_rate(curve, 2.0) == 0.5   # clamped to the last point
+
+    # Geometry chosen so the arithmetic is checkable by hand:
+    # avg_expert = 1e6 B, requests/token = 4, ram leaves capacity for the whole set (f=1, miss 0.5).
+    tier = project_tier(
+        ram_bytes=10_000_000, nonexpert_bytes=1_000_000, reserve_bytes=0,
+        avg_expert_bytes=1_000_000, n_expert_total=9, n_layer=2, n_expert_used=2,
+        curve=[{"fraction": 0.0, "miss_rate": 1.0}, {"fraction": 1.0, "miss_rate": 0.5}],
+        b_cold_bytes_s=2_620_000_000,
+    )
+    # cache bytes = 9e6 -> capacity 9 -> f=1.0 -> miss_rate 0.5
+    # miss/token = 4 * 0.5 = 2 -> cold bytes/token = 2 * 1e6 = 2e6
+    # tok/s = 2.62e9 / 2e6 = 1310.0
+    assert tier["core_fits"] is True and tier["capacity_experts"] == 9
+    assert tier["miss_bytes_per_token"] == 2_000_000
+    assert tier["tok_s"] == 1310.0
+
+    # Core larger than RAM -> dropped.
+    dropped = project_tier(
+        ram_bytes=500_000, nonexpert_bytes=1_000_000, reserve_bytes=0,
+        avg_expert_bytes=1_000_000, n_expert_total=9, n_layer=2, n_expert_used=2,
+        curve=curve, b_cold_bytes_s=2_620_000_000,
+    )
+    assert dropped["core_fits"] is False and dropped["tok_s"] is None
+
+    assert gate_branch(12.0, False) == "build_m3m4"
+    assert gate_branch(4.0, False) == "escalate_m5m6"
+    assert gate_branch(7.0, False) == "re_rent"
+    assert gate_branch(12.0, True) == "re_rent"   # spread straddles a line -> re-rent regardless
+
+
+def test_analyze_traces_emits_gate_object_and_cli_runs(tmp_path=None):
+    import tempfile, json as _json
+    from llm_lab.moe.analysis import analyze_traces
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])
+    geometry = {"n_layer": 1, "n_expert": 3, "n_expert_used": 1,
+                "total_expert_bytes": 3_000_000, "nonexpert_bytes": 1_000_000}
+    obj = analyze_traces(
+        traces=[("t0", steps, "shaX", 1 * 3)], geometry=geometry,
+        fractions=[0.0, 0.5, 1.0], windows=[1, 2, 4],
+        tiers_gb=[4, 8, 16, 32], reserve_bytes=0, b_cold_bytes_s=2_620_000_000)
+    assert obj["projection_scheme"] == "normalized-working-set-fraction"
+    assert obj["branch"] in {"build_m3m4", "escalate_m5m6", "re_rent"}
+    assert {t["ram_bytes"] for t in obj["tiers"]} == {4e9, 8e9, 16e9, 32e9}
+    assert "projected" in obj["threat_to_validity"].lower() or "§11" in obj["threat_to_validity"]
+    assert len(obj["per_trace"]) == 1 and obj["per_trace"][0]["name"] == "t0"
+
+    with tempfile.TemporaryDirectory() as d:
+        from pathlib import Path as _P
+        tp, lp = _P(d) / "t.jsonl", _P(d) / "l.pt"
+        from llm_lab.moe.trace import write_trace
+        write_trace(tp, sample_header(n_layer=1, n_expert=3, n_expert_used=1), steps)
+        lp.write_bytes(b"logits")
+        gp = _P(d) / "geo.json"; gp.write_text(_json.dumps(geometry))
+        op = _P(d) / "out.json"
+        main(["moe", "analyze", "--trace", str(tp), "--logits", str(lp),
+              "--geometry", str(gp), "--output", str(op)])
+        assert _json.loads(op.read_text())["branch"] in {"build_m3m4", "escalate_m5m6", "re_rent"}
+
+
+def test_analyze_curve_normalizes_to_source_not_target_working_set():
+    # The invariant the projection scheme rests on: the source hit-rate curve is read at
+    # f = capacity / the SOURCE model's own total experts, while the tier projection uses the
+    # TARGET total. Make the two differ so a leak of the target total into the curve is caught.
+    from llm_lab.moe.analysis import analyze_traces
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])   # 1 layer, top-1, SOURCE working set = 3 blobs
+    source_total = 1 * 3                            # the trace header's own n_layer * n_expert
+    # TARGET geometry is deliberately larger: 2 layers x 3 experts = 6 total experts.
+    geometry = {"n_layer": 2, "n_expert": 3, "n_expert_used": 1,
+                "total_expert_bytes": 6_000_000_000, "nonexpert_bytes": 0}
+    obj = analyze_traces(
+        traces=[("t0", steps, "shaX", source_total)], geometry=geometry,
+        fractions=[0.0, 0.5, 1.0], windows=[1],
+        tiers_gb=[4, 16], reserve_bytes=0, b_cold_bytes_s=2_620_000_000)
+
+    # Curve built against the SOURCE total: at f=1.0 capacity = round(1.0 * 3) = 3, NOT the target
+    # 6. (The pre-fix code passed the target total here and produced capacity_experts == 6.)
+    curve = obj["per_trace"][0]["hit_rate_curve"]
+    f1 = next(row for row in curve if row["fraction"] == 1.0)
+    assert f1["capacity_experts"] == source_total == 3, f1["capacity_experts"]
+    # A capacity of 3 fully covers the 3-blob working set: only the 3 cold misses remain.
+    assert (f1["hits"], f1["misses"]) == (1, 3)
+
+    # The tier projection still normalizes against the TARGET total (6): 4 GB / 1e9 avg = capacity
+    # 4 of 6 -> f = 4/6. Source-relative would be 4/3 (>1, clamped) -- a different curve read.
+    avg_expert_bytes = geometry["total_expert_bytes"] / (geometry["n_layer"] * geometry["n_expert"])
+    assert avg_expert_bytes == 1_000_000_000
+    tier4 = next(t for t in obj["tiers"] if t["ram_bytes"] == 4e9)
+    assert tier4["capacity_experts"] == 4
+    assert abs(tier4["fraction"] - 4 / 6) < 1e-12, tier4["fraction"]
+
+
+def test_analyze_straddle_guard_when_no_tier_core_fits():
+    # Non-expert core larger than every tier's RAM -> no tier fits -> point_16/lo/hi are None.
+    # The straddle computation must not raise; the gate resolves to escalate_m5m6.
+    from llm_lab.moe.analysis import analyze_traces
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])
+    geometry = {"n_layer": 1, "n_expert": 3, "n_expert_used": 1,
+                "total_expert_bytes": 3_000_000, "nonexpert_bytes": 40_000_000_000}
+    obj = analyze_traces(
+        traces=[("t0", steps, "shaX", 1 * 3)], geometry=geometry,
+        fractions=[0.0, 0.5, 1.0], windows=[1],
+        tiers_gb=[4, 8, 16, 32], reserve_bytes=0, b_cold_bytes_s=2_620_000_000)
+    assert all(t["core_fits"] is False for t in obj["tiers"])
+    assert obj["projected_ceiling_tok_s"] is None
+    assert obj["spreads_straddle_gate_line"] is False
+    assert obj["branch"] == "escalate_m5m6"
+
+
+def test_cli_analyze_missing_geometry_key_is_graceful_error():
+    # A geometry JSON missing a required key must surface as the CLI's `error: ...` line
+    # (ValueError caught in main), never an uncaught KeyError traceback.
+    import io as _io, contextlib as _c, json as _json
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])
+    with tempfile.TemporaryDirectory() as d:
+        from pathlib import Path as _P
+        tp, lp = _P(d) / "t.jsonl", _P(d) / "l.pt"
+        from llm_lab.moe.trace import write_trace
+        write_trace(tp, sample_header(n_layer=1, n_expert=3, n_expert_used=1), steps)
+        lp.write_bytes(b"logits")
+        # Missing "nonexpert_bytes".
+        geometry = {"n_layer": 1, "n_expert": 3, "n_expert_used": 1,
+                    "total_expert_bytes": 3_000_000}
+        gp = _P(d) / "geo.json"; gp.write_text(_json.dumps(geometry))
+        op = _P(d) / "out.json"
+        err = _io.StringIO()
+        try:
+            with _c.redirect_stderr(err):
+                main(["moe", "analyze", "--trace", str(tp), "--logits", str(lp),
+                      "--geometry", str(gp), "--output", str(op)])
+        except SystemExit as exc:
+            assert exc.code != 0
+        else:
+            raise AssertionError("accepted geometry missing a required key")
+        assert "nonexpert_bytes" in err.getvalue(), err.getvalue()
+        assert not op.exists(), "wrote output for malformed geometry"
 
 
 if __name__ == "__main__":
