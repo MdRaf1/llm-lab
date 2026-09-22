@@ -1072,6 +1072,25 @@ def test_moe_help_names_five_commands_and_no_marketing():
         assert forbidden not in text, f"moe --help leaked forbidden wording: {forbidden!r}"
 
 
+from llm_lab.moe.analysis import stack_distances, reuse_distance_histogram
+
+
+def _steps(layer_experts_per_pos):
+    from llm_lab.moe.trace import TraceStep
+    return [TraceStep(kind="step", pos=i, tok_id=i, layer_experts=le)
+            for i, le in enumerate(layer_experts_per_pos)]
+
+
+def test_stack_distance_counts_distinct_between_reuses():
+    # One layer, requests in order: A A B A
+    #   A(cold) A(dist 0: nothing distinct since last A)
+    #   B(cold) A(dist 1: only B seen since last A)
+    steps = _steps([[[0]], [[0]], [[1]], [[0]]])
+    assert stack_distances(steps) == [None, 0, None, 1]
+    hist = reuse_distance_histogram(steps)
+    assert hist == {"histogram": {"0": 1, "1": 1}, "cold": 2, "total_requests": 4}
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 
