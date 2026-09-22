@@ -208,6 +208,10 @@ def _run_moe(parser, args) -> None:
             traces.append((Path(tpath).name, steps, sha256_file(Path(lpath)),
                            header.n_layer * header.n_expert))
         geometry = _json.loads(Path(args.geometry).read_text(encoding="utf-8"))
+        missing = [k for k in ("n_layer", "n_expert", "n_expert_used",
+                               "total_expert_bytes", "nonexpert_bytes") if k not in geometry]
+        if missing:
+            raise ValueError(f"geometry missing required key(s): {', '.join(missing)}")
         result = analyze_traces(
             traces, geometry,
             fractions=[float(x) for x in args.fractions.split(",")],

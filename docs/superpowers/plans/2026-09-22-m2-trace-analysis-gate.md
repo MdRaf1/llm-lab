@@ -23,7 +23,7 @@
 - **Cold bandwidth (measured, §3):** `B_cold = 2.62 GB/s` NVMe sequential. Decimal GB (÷10⁹) throughout the gate arithmetic; byte fields stay raw bytes.
 - **Gate arithmetic:** `tok/s = B_cold ÷ cold_bytes_per_token`; `cold_bytes_per_token = miss_requests_per_token × avg_expert_bytes`.
 - **Gate thresholds (§7):** ceiling **≥ 10 tok/s** → build M3/M4 on projection; **≤ 5 tok/s** (miss > 524 MB/token) → escalate M5/M6 on projection; **∈ (5,10) tok/s**, OR inter-domain spread across the 4 traces straddles a gate line → **re-rent** the 30B BF16 trace. No point estimate without its band.
-- **Tier ladder:** RAM ∈ {4, 8, 16, 32} GB; 16 GB is *the* gate tier. Reserve ~2.5 GB on the 16 GB box for OS+KV+activations (scaled proportionally per tier). Expert cache = RAM − resident weight core − reserve. GPU/VRAM tier is **out of M2 scope** (deferred to M4).
+- **Tier ladder:** RAM ∈ {4, 8, 16, 32} GB; 16 GB is *the* gate tier. Reserve a **flat ~2.5 GB on every tier** for OS+KV+activations — OS/runtime/KV overhead is roughly constant, not proportional to total RAM, so the same reserve applies to each tier (the 16 GB gate tier is invariant to this choice). Expert cache = RAM − resident weight core − reserve. GPU/VRAM tier is **out of M2 scope** (deferred to M4).
 - **Out of scope:** open-Q1 (Q4-vs-BF16 routing identity), any loader/streaming/repack code, any llama.cpp C++ patch, any speedup claim.
 
 ---

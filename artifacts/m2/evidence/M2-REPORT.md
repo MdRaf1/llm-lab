@@ -72,7 +72,7 @@ miss_bytes_per_token = requests_per_token * avg_expert_bytes * miss_rate(f_tier)
 Inputs (stored fields cited to `m2-gate.json`; PROJECTED where marked):
 - `avg_expert_bytes = 2856960.0` (2.857 MB; = `total_expert_bytes 17553162240` / (48×128)) — stored.
 - `b_cold_bytes_s = 2620000000` (2.62 GB/s cold SSD stream) — stored.
-- `reserve_bytes = 2500000000` (2.5 GB non-expert headroom) — stored.
+- `reserve_bytes = 2500000000` (2.5 GB non-expert headroom) — stored. This reserve is a **flat ~2.5 GB across all four tiers** because OS/runtime/KV overhead is roughly constant rather than proportional to total RAM, and it leaves the 16 GB gate verdict unchanged.
 - exact non-expert core `nonexpert_bytes = 997554176` (0.93 GiB, Task 1) — stored (`geometry`).
 - `requests_per_token = 384` (48 layers × 8 experts used) — **derived** geometry product, not
   a stored field; that this is the multiplier used is confirmed by reconstructing the 16 GB

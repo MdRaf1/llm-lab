@@ -1223,6 +1223,52 @@ def test_analyze_curve_normalizes_to_source_not_target_working_set():
     assert abs(tier4["fraction"] - 4 / 6) < 1e-12, tier4["fraction"]
 
 
+def test_analyze_straddle_guard_when_no_tier_core_fits():
+    # Non-expert core larger than every tier's RAM -> no tier fits -> point_16/lo/hi are None.
+    # The straddle computation must not raise; the gate resolves to escalate_m5m6.
+    from llm_lab.moe.analysis import analyze_traces
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])
+    geometry = {"n_layer": 1, "n_expert": 3, "n_expert_used": 1,
+                "total_expert_bytes": 3_000_000, "nonexpert_bytes": 40_000_000_000}
+    obj = analyze_traces(
+        traces=[("t0", steps, "shaX", 1 * 3)], geometry=geometry,
+        fractions=[0.0, 0.5, 1.0], windows=[1],
+        tiers_gb=[4, 8, 16, 32], reserve_bytes=0, b_cold_bytes_s=2_620_000_000)
+    assert all(t["core_fits"] is False for t in obj["tiers"])
+    assert obj["projected_ceiling_tok_s"] is None
+    assert obj["spreads_straddle_gate_line"] is False
+    assert obj["branch"] == "escalate_m5m6"
+
+
+def test_cli_analyze_missing_geometry_key_is_graceful_error():
+    # A geometry JSON missing a required key must surface as the CLI's `error: ...` line
+    # (ValueError caught in main), never an uncaught KeyError traceback.
+    import io as _io, contextlib as _c, json as _json
+    steps = _steps([[[0]], [[1]], [[2]], [[0]]])
+    with tempfile.TemporaryDirectory() as d:
+        from pathlib import Path as _P
+        tp, lp = _P(d) / "t.jsonl", _P(d) / "l.pt"
+        from llm_lab.moe.trace import write_trace
+        write_trace(tp, sample_header(n_layer=1, n_expert=3, n_expert_used=1), steps)
+        lp.write_bytes(b"logits")
+        # Missing "nonexpert_bytes".
+        geometry = {"n_layer": 1, "n_expert": 3, "n_expert_used": 1,
+                    "total_expert_bytes": 3_000_000}
+        gp = _P(d) / "geo.json"; gp.write_text(_json.dumps(geometry))
+        op = _P(d) / "out.json"
+        err = _io.StringIO()
+        try:
+            with _c.redirect_stderr(err):
+                main(["moe", "analyze", "--trace", str(tp), "--logits", str(lp),
+                      "--geometry", str(gp), "--output", str(op)])
+        except SystemExit as exc:
+            assert exc.code != 0
+        else:
+            raise AssertionError("accepted geometry missing a required key")
+        assert "nonexpert_bytes" in err.getvalue(), err.getvalue()
+        assert not op.exists(), "wrote output for malformed geometry"
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 

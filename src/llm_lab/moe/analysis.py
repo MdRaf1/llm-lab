@@ -180,7 +180,10 @@ def analyze_traces(traces, geometry, fractions, windows, tiers_gb,
 
     # Spread straddles a gate line if the per-trace 16 GB tok/s cross 5 or 10.
     lo, hi = (min(tok_s_16gb), max(tok_s_16gb)) if tok_s_16gb else (point_16, point_16)
-    straddle = any(lo < line < hi for line in (5.0, 10.0))
+    # Guard the None case: if no tier's core fits, point_16 (hence lo/hi) is None and the
+    # comparison would raise TypeError. A None/0 ceiling then routes to escalate_m5m6.
+    straddle = (lo is not None and hi is not None
+                and any(lo < line < hi for line in (5.0, 10.0)))
     branch = gate_branch(point_16 if point_16 is not None else 0.0, straddle)
 
     return {
