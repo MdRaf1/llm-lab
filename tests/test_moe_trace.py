@@ -1091,6 +1091,22 @@ def test_stack_distance_counts_distinct_between_reuses():
     assert hist == {"histogram": {"0": 1, "1": 1}, "cold": 2, "total_requests": 4}
 
 
+from llm_lab.moe.analysis import coactivation_pairs, coactivation_to_json
+
+
+def test_coactivation_counts_within_layer_unordered_pairs():
+    # Layer 0 selects {0,1,2} at pos0 and {0,1} at pos1; layer 1 selects {3,4} once.
+    steps = _steps([[[0, 1, 2], [3, 4]], [[0, 1], [5, 6]]])
+    pairs = coactivation_pairs(steps)
+    # Layer 0: (0,1) co-occurs twice; (0,2),(1,2) once each.
+    assert pairs[0][(0, 1)] == 2
+    assert pairs[0][(0, 2)] == 1 and pairs[0][(1, 2)] == 1
+    # Layer 1: (3,4) once, (5,6) once; no cross-layer or cross-position mixing.
+    assert pairs[1][(3, 4)] == 1 and pairs[1][(5, 6)] == 1
+    assert (3, 5) not in pairs[1]
+    assert coactivation_to_json(pairs)["0"]["0,1"] == 2
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from itertools import combinations
 from typing import Sequence
 
 from llm_lab.moe.trace import TraceStep
@@ -43,3 +44,21 @@ def reuse_distance_histogram(steps: Sequence[TraceStep]) -> dict[str, object]:
         else:
             histogram[str(d)] = histogram.get(str(d), 0) + 1
     return {"histogram": histogram, "cold": cold, "total_requests": len(distances)}
+
+
+def coactivation_pairs(steps: Sequence[TraceStep]) -> dict[int, dict[tuple[int, int], int]]:
+    """Per-layer count of unordered expert pairs co-selected at the same position."""
+    out: dict[int, dict[tuple[int, int], int]] = {}
+    for step in steps:
+        for layer, experts in enumerate(step.layer_experts):
+            layer_counts = out.setdefault(layer, {})
+            for lo, hi in combinations(sorted(set(experts)), 2):
+                layer_counts[(lo, hi)] = layer_counts.get((lo, hi), 0) + 1
+    return out
+
+
+def coactivation_to_json(pairs: dict[int, dict[tuple[int, int], int]]) -> dict:
+    return {
+        str(layer): {f"{lo},{hi}": c for (lo, hi), c in counts.items()}
+        for layer, counts in pairs.items()
+    }
