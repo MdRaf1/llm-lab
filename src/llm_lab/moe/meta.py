@@ -48,6 +48,7 @@ class ModelMeta:
     n_expert_used: int
     expert_bytes: int | None
     total_expert_bytes: int | None
+    nonexpert_bytes: int | None
 
     def __post_init__(self) -> None:
         _check_positive("n_layer", self.n_layer)
@@ -55,6 +56,7 @@ class ModelMeta:
         _check_positive("n_expert_used", self.n_expert_used)
         _check_non_negative("expert_bytes", self.expert_bytes, optional=True)
         _check_non_negative("total_expert_bytes", self.total_expert_bytes, optional=True)
+        _check_non_negative("nonexpert_bytes", self.nonexpert_bytes, optional=True)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -66,6 +68,7 @@ class ModelMeta:
             "n_expert_used": self.n_expert_used,
             "expert_bytes": self.expert_bytes,
             "total_expert_bytes": self.total_expert_bytes,
+            "nonexpert_bytes": self.nonexpert_bytes,
         }
 
 
@@ -122,6 +125,7 @@ def read_hf_meta(config_path: Path) -> ModelMeta:
         n_expert_used=n_expert_used,
         expert_bytes=expert_bytes,
         total_expert_bytes=None if expert_bytes is None else n_layer * n_expert * expert_bytes,
+        nonexpert_bytes=None,
     )
 
 
@@ -189,6 +193,12 @@ def read_gguf_meta(model_path: Path) -> ModelMeta:
     # it is not one measured integer and stays None. total_expert_bytes is always the measured sum.
     expert_bytes = int(per_layer_bytes[0]) if len(set(per_layer_bytes)) == 1 else None
 
+    # Exact resident weight core: every tensor that is not a per-expert FFN blob.
+    # Excludes GGUF metadata/padding by construction, so it is exact, not the file-size upper bound.
+    nonexpert_bytes = sum(
+        t.n_bytes for name, t in tensors.items() if not name.endswith("_exps.weight")
+    )
+
     return ModelMeta(
         model=str(arch),
         path=str(model_path),
@@ -198,6 +208,7 @@ def read_gguf_meta(model_path: Path) -> ModelMeta:
         n_expert_used=n_expert_used,
         expert_bytes=expert_bytes,
         total_expert_bytes=total_expert_bytes,
+        nonexpert_bytes=nonexpert_bytes,
     )
 
 

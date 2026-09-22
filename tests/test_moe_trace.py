@@ -272,6 +272,23 @@ def test_gguf_meta_measures_expert_bytes_from_real_tensor_sizes():
         assert json.loads(json.dumps(meta.to_dict())) == meta.to_dict()
 
 
+def test_gguf_meta_measures_nonexpert_core_exactly():
+    with tempfile.TemporaryDirectory() as d:
+        path = Path(d) / "m.gguf"
+        # 2 layers, 4 experts, hidden 8, ffn 8; expert_tensors() emits the ffn_*_exps.weight set.
+        tensors = expert_tensors(n_layer=2, n_expert=4, hidden=8, ffn=8)
+        # Two non-expert tensors of known size: token_embd + one attn matrix.
+        tensors["token_embd.weight"] = np.zeros((8, 8), dtype=np.float32)      # 256 B
+        tensors["blk.0.attn_q.weight"] = np.zeros((8, 8), dtype=np.float32)    # 256 B
+        write_gguf(path, {"olmoe.block_count": 2, "olmoe.expert_count": 4,
+                          "olmoe.expert_used_count": 2}, tensors, arch="olmoe")
+        meta = read_gguf_meta(path)
+        assert meta.nonexpert_bytes == 512, meta.nonexpert_bytes
+        # The expert tensors must NOT be counted in the core.
+        assert meta.total_expert_bytes > 0
+        assert meta.to_dict()["nonexpert_bytes"] == 512
+
+
 def test_gguf_meta_reads_without_expert_feed_forward_length():
     # The real OLMoE Q4_K_M GGUF omits expert_feed_forward_length; expert bytes come from tensors.
     kv = {k: v for k, v in GGUF_KV.items() if k != "expert_feed_forward_length"}
@@ -363,12 +380,13 @@ def test_read_meta_dispatches_on_backend():
 
 
 def test_model_meta_rejects_impossible_counts():
-    meta = ModelMeta("olmoe", "x.gguf", None, 2, 8, 2, 96, 1536)
+    meta = ModelMeta("olmoe", "x.gguf", None, 2, 8, 2, 96, 1536, 1024)
     assert_rejects(lambda: replace(meta, n_layer=0), "n_layer")
     assert_rejects(lambda: replace(meta, n_expert=0), "n_expert")
     assert_rejects(lambda: replace(meta, n_expert_used=-1), "n_expert_used")
     assert_rejects(lambda: replace(meta, expert_bytes=-1), "expert_bytes")
     assert_rejects(lambda: replace(meta, total_expert_bytes=-1), "total_expert_bytes")
+    assert_rejects(lambda: replace(meta, nonexpert_bytes=-1), "nonexpert_bytes")
 
 
 from llm_lab.moe.trace import (
