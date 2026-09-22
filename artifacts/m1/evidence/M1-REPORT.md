@@ -49,8 +49,8 @@ runs of the same measured configuration.
 ## Host split (disclosed)
 
 - **M1a, M1b, and M1c-local** ran on Windows (AMD Ryzen 5 5600G, `AMD64 Family 25 Model 80`,
-  ~16 GB RAM — `Windows-10-10.0.26200-SP0`, per host blocks in `m1a-trace-summary.json`,
-  `m1b-gguf-run-a.json`, `m1c-run-a.json`).
+  ~16 GB RAM — `Windows-10-10.0.26200-SP0`; `total_ram_bytes` 16886743040 ≈ 15.7 GiB per host
+  blocks in `m1b-gguf-run-a.json`, `m1c-run-a.json`).
 - **M1c rented BF16** ran on Linux (`Linux-5.15.0-191-generic-x86_64-with-glibc2.35`,
   `total_ram_bytes` 135059517440 ≈ 135 GB, per host block in
   `m1c-trace-code-summary.json`). This is a Vultr Ubuntu 22.04 rental.
