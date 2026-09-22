@@ -84,3 +84,45 @@ def hit_rate_curve(steps, fractions, n_expert_total, logits_sha256) -> list[dict
             "miss_rate": 1.0 - hit_rate if requests else 0.0,
         })
     return rows
+
+
+import bisect
+
+
+def interp_miss_rate(curve, f: float) -> float:
+    """Linear interpolation of miss_rate at fraction f, clamped to the curve endpoints."""
+    pts = sorted((row["fraction"], row["miss_rate"]) for row in curve)
+    xs = [x for x, _ in pts]
+    if f <= xs[0]:
+        return pts[0][1]
+    if f >= xs[-1]:
+        return pts[-1][1]
+    i = bisect.bisect_right(xs, f)
+    x0, y0 = pts[i - 1]
+    x1, y1 = pts[i]
+    return y0 + (y1 - y0) * (f - x0) / (x1 - x0)
+
+
+def project_tier(ram_bytes, nonexpert_bytes, reserve_bytes, avg_expert_bytes,
+                 n_expert_total, n_layer, n_expert_used, curve, b_cold_bytes_s) -> dict:
+    expert_cache_bytes = ram_bytes - nonexpert_bytes - reserve_bytes
+    if expert_cache_bytes <= 0:
+        return {"ram_bytes": ram_bytes, "core_fits": False, "capacity_experts": None,
+                "fraction": None, "miss_rate": None, "miss_bytes_per_token": None, "tok_s": None}
+    capacity = min(n_expert_total, expert_cache_bytes // avg_expert_bytes)
+    f = capacity / n_expert_total
+    miss_rate = interp_miss_rate(curve, f)
+    miss_per_token = n_layer * n_expert_used * miss_rate
+    cold_bytes_per_token = miss_per_token * avg_expert_bytes
+    tok_s = b_cold_bytes_s / cold_bytes_per_token if cold_bytes_per_token else float("inf")
+    return {"ram_bytes": ram_bytes, "core_fits": True, "capacity_experts": int(capacity),
+            "fraction": f, "miss_rate": miss_rate,
+            "miss_bytes_per_token": cold_bytes_per_token, "tok_s": tok_s}
+
+
+def gate_branch(tok_s_16gb: float, spreads_straddle: bool) -> str:
+    if spreads_straddle or 5.0 < tok_s_16gb < 10.0:
+        return "re_rent"
+    if tok_s_16gb >= 10.0:
+        return "build_m3m4"
+    return "escalate_m5m6"

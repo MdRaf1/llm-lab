@@ -1124,6 +1124,44 @@ def test_hit_rate_curve_invariants_f0_f1_and_monotonic():
     assert rates == sorted(rates)
 
 
+from llm_lab.moe.analysis import interp_miss_rate, project_tier, gate_branch
+
+
+def test_tok_s_arithmetic_and_gate_bands_are_exact():
+    # Curve: at f=0 miss_rate 1.0, at f=1 miss_rate 0.5, linear between.
+    curve = [{"fraction": 0.0, "miss_rate": 1.0}, {"fraction": 1.0, "miss_rate": 0.5}]
+    assert interp_miss_rate(curve, 0.5) == 0.75
+    assert interp_miss_rate(curve, 2.0) == 0.5   # clamped to the last point
+
+    # Geometry chosen so the arithmetic is checkable by hand:
+    # avg_expert = 1e6 B, requests/token = 4, ram leaves capacity for the whole set (f=1, miss 0.5).
+    tier = project_tier(
+        ram_bytes=10_000_000, nonexpert_bytes=1_000_000, reserve_bytes=0,
+        avg_expert_bytes=1_000_000, n_expert_total=9, n_layer=2, n_expert_used=2,
+        curve=[{"fraction": 0.0, "miss_rate": 1.0}, {"fraction": 1.0, "miss_rate": 0.5}],
+        b_cold_bytes_s=2_620_000_000,
+    )
+    # cache bytes = 9e6 -> capacity 9 -> f=1.0 -> miss_rate 0.5
+    # miss/token = 4 * 0.5 = 2 -> cold bytes/token = 2 * 1e6 = 2e6
+    # tok/s = 2.62e9 / 2e6 = 1310.0
+    assert tier["core_fits"] is True and tier["capacity_experts"] == 9
+    assert tier["miss_bytes_per_token"] == 2_000_000
+    assert tier["tok_s"] == 1310.0
+
+    # Core larger than RAM -> dropped.
+    dropped = project_tier(
+        ram_bytes=500_000, nonexpert_bytes=1_000_000, reserve_bytes=0,
+        avg_expert_bytes=1_000_000, n_expert_total=9, n_layer=2, n_expert_used=2,
+        curve=curve, b_cold_bytes_s=2_620_000_000,
+    )
+    assert dropped["core_fits"] is False and dropped["tok_s"] is None
+
+    assert gate_branch(12.0, False) == "build_m3m4"
+    assert gate_branch(4.0, False) == "escalate_m5m6"
+    assert gate_branch(7.0, False) == "re_rent"
+    assert gate_branch(12.0, True) == "re_rent"   # spread straddles a line -> re-rent regardless
+
+
 if __name__ == "__main__":
     # Auto-discovery, so a test appended by a later task can never be silently skipped.
 
