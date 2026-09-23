@@ -26,6 +26,7 @@
   "streaming_regime": false,
   "headroom": true,
   "reason": "model_fits_cache_moot",
+  "reason_detail": "warm miss/token below the streaming anchor: decode is not per-token expert-scatter-I/O-bound on this host (the working set faults in ~once per process and is reused across tokens even when the model exceeds RAM); not a streaming regime the M4 loader would improve",
   "passed": false,
   "cold_verified_all": true,
   "cold_verified_runs": [

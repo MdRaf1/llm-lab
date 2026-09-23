@@ -7,6 +7,13 @@ PER_TOKEN_EXPERT_BYTES = 8 * 48 * 2_654_208  # top-8 × 48 layers × 2.65 MB/exp
 # near-boundary result reads as a visible judgment call, never a hidden flip.
 
 
+REASON_DETAIL = {
+    "go": "warm miss/token above the streaming anchor and warm tok/s below the conservative ceiling: decode is per-token expert-scatter-I/O-bound with headroom for a tiered loader",
+    "model_fits_cache_moot": "warm miss/token below the streaming anchor: decode is not per-token expert-scatter-I/O-bound on this host (the working set faults in ~once per process and is reused across tokens even when the model exceeds RAM); not a streaming regime the M4 loader would improve",
+    "stock_saturates_no_headroom": "streaming regime but warm tok/s already at/above the conservative I/O ceiling: the drive is saturated, leaving no headroom for a tiered loader to beat",
+}
+
+
 def compute_ceiling(scatter_bps, miss_bytes_per_token):
     return scatter_bps / miss_bytes_per_token if miss_bytes_per_token > 0 else float("inf")
 
@@ -48,7 +55,8 @@ def build_gate(runs, scatter_bps, scatter_provenance, per_token_expert_bytes, mi
             "cold_miss_bytes_per_token_median": c_mbpt["median"], "cold_ceiling_tok_s": compute_ceiling(scatter_bps, c_mbpt["median"]),
             "per_token_expert_bytes": per_token_expert_bytes, "scatter_bps": scatter_bps, "scatter_provenance": scatter_provenance,
             "spike_verdict": v["verdict"], "branch": v["branch"],
-            "streaming_regime": v["streaming_regime"], "headroom": v["headroom"], "reason": v["reason"]}
+            "streaming_regime": v["streaming_regime"], "headroom": v["headroom"], "reason": v["reason"],
+            "reason_detail": REASON_DETAIL[v["reason"]]}
     if v["verdict"] == "no_go":
         gate["passed"] = False
     return gate
@@ -69,11 +77,13 @@ def _selfcheck():
                     "warm_tok_s": [0.80, 0.82, 0.78], "warm_miss_bytes_per_token": [7.9e8, 8.0e8, 8.1e8]},
                    1.021e9, "M3 microbench (same host)", 1.0e9)
     assert g["spike_verdict"] == "go" and g["branch"] == "proceed_patch"
+    assert g["reason_detail"].startswith("warm miss/token above")
     assert g["warm_tok_s_max"] == 0.82 and g["warm_miss_bytes_per_token_max"] == 8.1e8  # spreads committed
     g2 = build_gate({"cold_tok_s": [0.5], "cold_miss_bytes_per_token": [9.8e8],
                      "warm_tok_s": [6.0], "warm_miss_bytes_per_token": [1.0e8]},
                     1.021e9, "M3 microbench (same host)", 1.0e9)
     assert g2["passed"] is False and g2["reason"] == "model_fits_cache_moot"
+    assert "not per-token expert-scatter" in g2["reason_detail"]
     print("aggregate self-check OK")
 
 
