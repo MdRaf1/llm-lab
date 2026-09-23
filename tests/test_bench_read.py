@@ -135,6 +135,8 @@ def test_bench_read_model_end_to_end():
 
 
 if __name__ == "__main__":
+    import shutil
+    shutil.rmtree("_m3b_tmp", ignore_errors=True)  # idempotent: reset scratch between runs
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
             fn()

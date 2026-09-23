@@ -159,6 +159,8 @@ def test_repack_model_and_cli():
 
 
 if __name__ == "__main__":
+    import shutil
+    shutil.rmtree("_m3_tmp", ignore_errors=True)  # idempotent: reset scratch so re-runs don't trip the no-clobber guard
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
             fn()
