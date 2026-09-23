@@ -1,0 +1,54 @@
+{
+  "phase": "compute_headroom_probe",
+  "date": "2026-09-24",
+  "box": "AMD Ryzen 5 5600G (Zen3) 6C/12T, 15.7 GB RAM, PCIe3 NVMe, Windows 11",
+  "binary": "llama.cpp @1a064ab CPU/AVX2 (-march=native, clang/llvm-mingw), REUSED from M4 build",
+  "model": "models/m1/qwen3-gguf/Qwen3-30B-A3B-Q4_K_M.gguf (18.55 GB > 15.7 GB RAM)",
+  "protocol": "warm-steady, greedy, single-process warm reps (model loaded once). llama-bench samples_ts per-rep, rep0 = cold first-touch discarded.",
+
+  "m4_baseline_warm_tok_s": 4.278,
+  "disk_io_ceiling_tok_s": 9.18,
+  "ram_bandwidth_ceiling_tok_s_est": 29,
+
+  "thread_sweep_warm_median_tok_s": { "t4": 10.76, "t6": 11.96, "t8": 11.64, "t12": 10.09,
+    "note": "degenerate llama-bench single-repeated-token routing (minimal active expert set); reps confounded by cache-warming ramp; scaling ~FLAT past 4 cores and t12(SMT) no better -> not core-count-limited" },
+  "t6_r12_warm_median_tok_s": 14.09,
+  "t6_r12_warm_last5_median_tok_s": 15.75,
+  "t6_r12_cold_rep0_tok_s": 3.94,
+
+  "diverse_generation_tok_s": 9.2,
+  "diverse_prompt_tok_s": 2.2,
+  "diverse_source": "llama-cli varied multi-topic prompt, real diverse expert routing, Generation t/s (load-excluded); artifacts/m4/evidence/probe-diverse.out footer",
+
+  "constraint_signals_during_generation": {
+    "disk_read_Bps_range": "1.0e8 .. 6.6e8 (peak ~657 MB/s), declining; scatter_bps=1.02e9 NOT saturated",
+    "cpu_total_pct_range": "~40..52 (= ~6 logical of 12 busy = 6 physical cores saturated at -t 6)",
+    "thread_scaling": "flat past 4 physical cores; SMT(t12) not better",
+    "source": "artifacts/m4/evidence/probe-counters-diverse.txt, probe-counters-t6r12.txt"
+  },
+
+  "best_realistic_warm_tok_s": 9.2,
+  "binding_ceiling": "compute + RAM-bandwidth (NOT disk I/O)",
+  "binding_evidence": "warm generation ~9.2-14 tok/s physically excludes 111 MB/token disk traffic (9.2*111MB=1.02GB/s == full drive, but measured disk during gen is <=0.66 GB/s and mostly lower -> cache-served); CPU worker threads pegged; disk has headroom.",
+
+  "gate_adr0002": {
+    "threshold_rule_a": ">= ~8 tok/s met (diverse 9.2; degenerate warm ~14) -> literal 'revive' band",
+    "ceiling_rule_b": "binder = compute/RAM-bandwidth, NOT disk I/O",
+    "resolution": "rule (b) decides: a non-disk binder 'closes the streaming line here just as a compute wall does' (ADR-0002 Consequences b). The >=8 threshold's PREMISE (that reaching 8 means disk became the binder) is contradicted by the direct disk measurement -> streaming does NOT revive on this box.",
+    "verdict": "streaming_not_revived_binder_is_compute_ram_not_io"
+  },
+
+  "overturns_m4": {
+    "m4_direction_confirmed": "decode is NOT disk-I/O-bound on this box -- CONFIRMED and strengthened (disk idle even under diverse routing).",
+    "m4_number_overturned": "M4's headline 4.3 tok/s was NOT the compute ceiling; it was a per-invocation cold-load artifact (each fresh llama-bench process re-faults ~14 GB). Warm-steady decode (model loaded once, server regime) is ~9.2 tok/s diverse / ~14 tok/s degenerate = 2.15x-3.3x higher.",
+    "true_ceiling": "compute/RAM-bandwidth at ~9-14 tok/s (workload-dependent), disk I/O has large headroom."
+  },
+
+  "caveats": [
+    "Single box/session, greedy. clang/mingw AVX2 build (per M4 build-env.json).",
+    "9.2 = llama-cli aggregate gen rate incl. thinking-phase warming; steady tail >= that. Rep-to-rep variance is high (10-19 degenerate) because model>RAM -> intermittent eviction/re-fault.",
+    "Warm-steady = single-process resident regime (a server loads once, then decodes many tokens). M4's 4.3 = cold/per-invocation regime, pathological for a server but real if the process reloads per request.",
+    "Streaming-thesis nuance: streaming (per-token expert paging) only binds if the ACTIVE expert working set exceeds RAM even warm. Diverse routing (9.2) did NOT trigger disk saturation, so the active set still fits here. A larger MoE, or a workload with a much wider hot-expert set, could still tip into the streaming regime -- untested here."
+  ],
+  "did_not_autopick_direction": true
+}

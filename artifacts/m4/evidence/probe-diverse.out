@@ -1,0 +1,44 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b10099-1a064ab09
+model      : models/m1/qwen3-gguf/Qwen3-30B-A3B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> Explain how a jet engine produces thrust, then describe the water cycle, list three causes of the French Revolution, summarize the plot of Hamlet, give the recipe for a simple omelette, explain compound interest, describe photosynthesis at the molecular level, and outline how TCP establishes a connection.
+
+[Start thinking]
+
+Okay, I need to answer all these questions. Let me start with the jet engine. I remember that jet engines work by taking in air, compressing it, mixing it with fuel, burning it, and then expelling the hot gases to create thrust. But I should make sure I get the steps right: intake, compression, combustion, exhaust. Maybe mention Newton's third law here.
+
+Next, the water cycle. That's evaporation, condensation, precipitation, and collection. I should explain each step, maybe mention how water moves between the Earth's surface and atmosphere.
+
+Three causes of the French Revolution. I think the main ones are social inequality (Estates), financial crisis, and Enlightenment ideas. Maybe also the influence of the American Revolution. But need to pick three solid ones.
+
+Hamlet's plot. The main points: Hamlet's father is murdered, he pretends to be mad, seeks revenge, but gets caught up in a series of events leading to his death. The play within a play, Ophelia's madness, the duel with Laertes. The ending where everyone dies.
+
+Omelette recipe. Basic ingredients: eggs, salt, pepper, oil or butter. Whisk the eggs, cook in a pan, add
+
+[ Prompt: 2.2 t/s | Generation: 9.2 t/s ]
+
+
+Exiting...
