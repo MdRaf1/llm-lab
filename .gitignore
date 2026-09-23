@@ -17,3 +17,6 @@ models/**/*.bin
 # M1 local checkpoints and large raw evidence
 /models/m1/
 /artifacts/m1/raw/
+
+# All local model weights and repacked binaries (packed file + manifest stay local)
+models/
