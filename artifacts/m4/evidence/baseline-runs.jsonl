@@ -1,0 +1,13 @@
+{"state":"cold","tok_s":4.739768,"disk_bytes":14131517342.584055,"tokens":128,"cold_verified":true}
+{"state":"cold","tok_s":5.399484,"disk_bytes":12648987287.53299,"tokens":128,"cold_verified":true}
+{"state":"cold","tok_s":5.161847,"disk_bytes":13049877889.42496,"tokens":128,"cold_verified":true}
+{"state":"cold","tok_s":3.361961,"disk_bytes":12651028318.083231,"tokens":128,"cold_verified":true}
+{"state":"cold","tok_s":4.829454,"disk_bytes":16935980405.18956,"tokens":128,"cold_verified":true}
+{"state":"warmup","tok_s":4.096119,"disk_bytes":13879516851.698387,"tokens":128}
+{"state":"warmup","tok_s":4.080582,"disk_bytes":14083143950.398285,"tokens":128}
+{"state":"warmup","tok_s":3.553584,"disk_bytes":14209067308.126373,"tokens":128}
+{"state":"warm","tok_s":4.583475,"disk_bytes":14236503767.426178,"tokens":128}
+{"state":"warm","tok_s":4.563786,"disk_bytes":13699408589.795261,"tokens":128}
+{"state":"warm","tok_s":4.278041,"disk_bytes":15149461378.988144,"tokens":128}
+{"state":"warm","tok_s":4.220485,"disk_bytes":13859499192.409042,"tokens":128}
+{"state":"warm","tok_s":4.238163,"disk_bytes":20623723506.533943,"tokens":128}

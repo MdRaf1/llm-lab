@@ -22,7 +22,14 @@ $bench = Join-Path $Bin "llama-bench.exe"
 if (-not (Test-Path $bench)) { throw "llama-bench.exe not found at $bench" }
 
 function Get-StandbyBytes {
-    try { (Get-Counter "\Memory\Standby Cache Standby List Bytes" -ErrorAction Stop).CounterSamples[0].CookedValue }
+    # This box (and modern Windows) exposes the standby list as three priority counters,
+    # not the single "Standby Cache Standby List Bytes" path. Sum them for the real total.
+    try {
+        $n = (Get-Counter "\Memory\Standby Cache Normal Priority Bytes" -ErrorAction Stop).CounterSamples[0].CookedValue
+        $c = (Get-Counter "\Memory\Standby Cache Core Bytes" -ErrorAction Stop).CounterSamples[0].CookedValue
+        $r = (Get-Counter "\Memory\Standby Cache Reserve Bytes" -ErrorAction Stop).CounterSamples[0].CookedValue
+        [double]($n + $c + $r)
+    }
     catch { $null }
 }
 
@@ -33,24 +40,28 @@ function Invoke-StandbyEviction {
     $esl = Get-Command EmptyStandbyList.exe -ErrorAction SilentlyContinue
     if ($esl) { & $esl.Source standbylist | Out-Null; Start-Sleep -Seconds 1; return }
 
-    # Fallback (no elevation): read a >RAM scratch file so the cache fills with junk
-    # and the model's cached pages are pushed out of the standby list.
-    $ramBytes = [int64](Get-CimInstance Win32_ComputerSystem).TotalPhysicalMemory
-    $need = $ramBytes + 2GB
-    $scratch = Join-Path $env:TEMP "m4-spike-cacheflush.bin"
-    # ponytail: reuse a big scratch file across runs (recreating a >RAM file each cold run is slow);
-    #           delete it manually when the spike is done. Recreate a per-run temp if isolation matters.
-    if ((-not (Test-Path $scratch)) -or ((Get-Item $scratch).Length -lt $need)) {
-        $buf = New-Object byte[] (64MB)
-        (New-Object Random).NextBytes($buf)   # random so it can't be dedup/compressed away
-        $fs = [System.IO.File]::Create($scratch)
-        try { $written = [int64]0; while ($written -lt $need) { $fs.Write($buf, 0, $buf.Length); $written += $buf.Length } }
-        finally { $fs.Dispose() }
-    }
-    $buf = New-Object byte[] (64MB)
-    $fs = [System.IO.File]::OpenRead($scratch)
-    try { while ($fs.Read($buf, 0, $buf.Length) -gt 0) {} } finally { $fs.Dispose() }
-    Start-Sleep -Seconds 1
+    # Fallback (no elevation, disk-free): commit + touch private memory to force the OS to
+    # drop clean file-cache (standby) pages — including the mmap'd model — to satisfy the
+    # allocation, then release it. Preferred over a >RAM disk scratch: needs no free disk
+    # (this box has < model+scratch headroom) and evicts directly via memory pressure.
+    # ponytail: RAM-pressure eviction, single-shot per cold run; measured to crush standby
+    #           ~8GB -> ~1GB here. Swap in RAMMap -Et if you get an elevated box.
+    $chunkBytes = [int64](512MB)
+    $chunks = New-Object System.Collections.Generic.List[byte[]]
+    $cap = [int64](13GB)                 # hard ceiling so we never over-commit
+    $touched = [int64]0
+    try {
+        while ($touched -lt $cap) {
+            $avail = (Get-Counter "\Memory\Available Bytes" -ErrorAction Stop).CounterSamples[0].CookedValue
+            if ($avail -lt 900MB) { break }          # leave the OS ~900MB headroom
+            $b = New-Object byte[] $chunkBytes
+            for ($i = 0; $i -lt $b.Length; $i += 4096) { $b[$i] = 1 }   # touch every page -> real commit
+            $chunks.Add($b); $touched += $chunkBytes
+        }
+    } catch { }                                       # OutOfMemory just means we've applied enough pressure
+    $chunks.Clear(); $chunks = $null
+    [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+    Start-Sleep -Seconds 2
 }
 
 $coldVerified = $null
