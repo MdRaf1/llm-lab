@@ -116,3 +116,34 @@ def verify_repack(packed_path, blobs) -> dict:
             pairs.append(f"{r['src_sha256']}:{read_sha}")
     rollup = hashlib.sha256("\n".join(sorted(pairs)).encode("utf-8")).hexdigest()
     return {"n_slices": len(pairs), "all_equal": all_equal, "rollup_sha256": rollup}
+
+
+def repack_model(input_path: str, out_dir: str) -> dict:
+    """Orchestrate slice->plan->write->verify for one GGUF, emitting the packed file + manifest.
+
+    source_sha256 is left None: hashing the 18 GB source is optional/slow; the per-slice
+    src/read hashes in output_exact are the byte-identity witness.
+    """
+    import json
+    import shutil
+    from pathlib import Path
+    import gguf
+    from llm_lab.moe.meta import read_gguf_meta
+    meta = read_gguf_meta(Path(input_path))
+    reader = gguf.GGUFReader(str(input_path))
+    blobs, expected = plan_layout(reader, meta.n_layer, meta.n_expert)
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    blobs = write_packed(reader, blobs, meta.n_expert, out, expected,
+                         free_bytes=shutil.disk_usage(out).free)
+    witness = verify_repack(out / PACKED_NAME, blobs)
+    manifest = {
+        "source_file": Path(input_path).name, "source_sha256": None,
+        "architecture": meta.model, "num_layers": meta.n_layer,
+        "num_experts": meta.n_expert, "top_k": meta.n_expert_used,
+        "packed_file": PACKED_NAME, "alignment": ALIGN,
+        "output_exact": witness, "blobs": blobs,
+    }
+    (out / MANIFEST_NAME).write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return manifest

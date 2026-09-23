@@ -137,6 +137,27 @@ def test_verify_repack_detects_corruption():
     assert verify_repack(packed, blobs)["all_equal"] is False
 
 
+def test_repack_model_and_cli():
+    from llm_lab.frontier.expert_repack import repack_model, PACKED_NAME, MANIFEST_NAME
+    import llm_lab
+    tmp = Path("_m3_tmp"); tmp.mkdir(exist_ok=True)
+    path = _tiny_gguf(tmp)
+    out = tmp / "repack_cli"
+    manifest = repack_model(str(path), str(out))
+    assert (out / PACKED_NAME).exists() and (out / MANIFEST_NAME).exists()
+    assert manifest["output_exact"]["all_equal"] is True
+    assert manifest["num_experts"] == 4 and len(manifest["blobs"]) == 8
+    # CLI path + no-clobber guard: second run without --force must exit non-zero
+    out2 = tmp / "repack_cli2"
+    assert llm_lab.main(["moe", "repack", "--input", str(path), "--output", str(out2)]) in (0, None)
+    try:
+        llm_lab.main(["moe", "repack", "--input", str(path), "--output", str(out2)])
+    except SystemExit as exc:
+        assert exc.code != 0  # guard is argparse parser.error -> SystemExit(2); repo convention is != 0
+    else:
+        raise AssertionError("re-run over existing output was not refused")
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

@@ -94,6 +94,11 @@ def _add_moe_subparsers(subparsers) -> None:
     analyze_p.add_argument("--b-cold-bytes", type=int, default=2_620_000_000)
     analyze_p.add_argument("--force", action="store_true")
 
+    repack_p = moe_sub.add_parser("repack", help="Repack experts into aligned contiguous blobs + manifest")
+    repack_p.add_argument("--input", required=True)
+    repack_p.add_argument("--output", required=True)   # target directory
+    repack_p.add_argument("--force", action="store_true")
+
 
 def _reject(parser, message: str) -> None:
     """Argparse-style rejection: usage + message on stderr, SystemExit(2)."""
@@ -104,6 +109,9 @@ def _moe_output_paths(args) -> list[str]:
     """Every path a validated `moe` subcommand will write. trace writes four; the rest one."""
     if args.moe_command == "trace":
         return [args.trace, args.logits, args.run_record, args.summary]
+    if args.moe_command == "repack":
+        from llm_lab.frontier.expert_repack import PACKED_NAME, MANIFEST_NAME
+        return [str(Path(args.output) / PACKED_NAME), str(Path(args.output) / MANIFEST_NAME)]
     return [args.output]
 
 
@@ -219,6 +227,14 @@ def _run_moe(parser, args) -> None:
             tiers_gb=[int(x) for x in args.tiers_gb.split(",")],
             reserve_bytes=args.reserve_bytes, b_cold_bytes_s=args.b_cold_bytes)
         _emit(result, args.output)
+        return
+
+    if args.moe_command == "repack":
+        from llm_lab.frontier.expert_repack import repack_model
+        manifest = repack_model(args.input, args.output)
+        oe = manifest["output_exact"]
+        print(f"repacked {len(manifest['blobs'])} blobs; "
+              f"output_exact.all_equal={oe['all_equal']} n_slices={oe['n_slices']}")
         return
 
     if args.moe_command == "run":
