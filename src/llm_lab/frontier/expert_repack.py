@@ -56,3 +56,17 @@ def plan_layout(reader, n_layer: int, n_expert: int) -> tuple[list[dict], int]:
             offset += sub
     expected = align_up(blobs[-1]["offset"] + blobs[-1]["length"]) if blobs else 0
     return blobs, expected
+
+
+def check_disk(expected_output_bytes: int, free_bytes: int,
+               headroom_bytes: int = HEADROOM_BYTES) -> dict:
+    required = expected_output_bytes + headroom_bytes
+    report = {
+        "expected_output_bytes": expected_output_bytes,
+        "headroom_bytes": headroom_bytes,
+        "required_bytes": required,
+        "available_free_bytes": free_bytes,
+    }
+    if required > free_bytes:
+        raise RuntimeError(f"PREFLIGHT_FAIL required={required} available={free_bytes}")
+    return report

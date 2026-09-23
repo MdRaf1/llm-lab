@@ -75,6 +75,19 @@ def test_plan_layout_aligned_and_contiguous():
     assert expected == align_up(last["offset"] + last["length"])
 
 
+def test_check_disk_passes_and_fails():
+    from llm_lab.frontier.expert_repack import check_disk
+    rep = check_disk(1000, free_bytes=10_000, headroom_bytes=2000)
+    assert rep["required_bytes"] == 3000 and rep["available_free_bytes"] == 10_000
+    try:
+        check_disk(1000, free_bytes=2500, headroom_bytes=2000)  # required 3000 > 2500
+    except RuntimeError as exc:
+        assert "PREFLIGHT_FAIL" in str(exc)
+        assert "required=3000" in str(exc) and "available=2500" in str(exc)
+    else:
+        raise AssertionError("check_disk accepted insufficient free space")
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
