@@ -88,6 +88,35 @@ def test_check_disk_passes_and_fails():
         raise AssertionError("check_disk accepted insufficient free space")
 
 
+def test_write_packed_size_hashes_and_preflight():
+    import hashlib
+    from llm_lab.frontier.expert_repack import plan_layout, write_packed, PACKED_NAME
+    tmp = Path("_m3_tmp"); tmp.mkdir(exist_ok=True)
+    path = _tiny_gguf(tmp)
+    reader = gguf.GGUFReader(str(path))
+    blobs, expected = plan_layout(reader, 2, 4)
+    out = tmp / "repack"
+    blobs = write_packed(reader, blobs, 4, out, expected, free_bytes=10 ** 12)
+    packed = out / PACKED_NAME
+    last = blobs[-1]
+    assert packed.stat().st_size == last["offset"] + last["length"]
+    raw = packed.read_bytes()
+    for b in blobs:
+        for part, r in b["roles"].items():
+            start = b["offset"] + r["sub_offset"]
+            got = raw[start:start + r["length"]]
+            assert hashlib.sha256(got).hexdigest() == r["src_sha256"]
+    # preflight refuses when free < required, and leaves no packed file behind
+    out2 = tmp / "repack_fail"
+    try:
+        write_packed(reader, blobs, 4, out2, expected, free_bytes=1)
+    except RuntimeError as exc:
+        assert "PREFLIGHT_FAIL" in str(exc)
+    else:
+        raise AssertionError("write_packed ignored the disk gate")
+    assert not (out2 / PACKED_NAME).exists()
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

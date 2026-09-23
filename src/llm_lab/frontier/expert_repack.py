@@ -70,3 +70,31 @@ def check_disk(expected_output_bytes: int, free_bytes: int,
     if required > free_bytes:
         raise RuntimeError(f"PREFLIGHT_FAIL required={required} available={free_bytes}")
     return report
+
+
+def write_packed(reader, blobs, n_expert, out_dir, expected_bytes, *, free_bytes) -> list[dict]:
+    import hashlib
+    import os
+    from pathlib import Path
+    check_disk(expected_bytes, free_bytes)
+    out = Path(out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+    tmp = out / (PACKED_NAME + ".tmp")
+    tmap = {t.name: t for t in reader.tensors}
+    try:
+        with open(tmp, "wb") as f:
+            for b in blobs:
+                pad = b["offset"] - f.tell()
+                if pad > 0:
+                    f.write(b"\x00" * pad)
+                for part in EXPERT_PARTS:
+                    t = tmap[expert_tensor_name(b["layer"], part)]
+                    data = expert_slice(t, b["expert"], n_expert)
+                    b["roles"][part]["src_sha256"] = hashlib.sha256(data).hexdigest()
+                    f.write(data)
+        os.replace(tmp, out / PACKED_NAME)
+    except OSError:
+        if tmp.exists():
+            tmp.unlink()
+        raise
+    return blobs
