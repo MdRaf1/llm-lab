@@ -221,6 +221,8 @@ from-scratch pretrain.
 
 ## 7. Milestone decomposition
 
+> **Status 2026-09-23:** M4 measured no_go (decode compute-bound, not I/O-bound on the showcase box); M5 moot on-box; streaming line paused pending the compute-headroom probe; PageCC gated on a novelty check. Superseding decisions: ADR-0001, ADR-0002 — the ADRs are the current source of truth for direction.
+
 Each milestone has a gate. We stop or escalate on the measured result, not on enthusiasm.
 
 | # | Milestone | Output | Gate to proceed |
