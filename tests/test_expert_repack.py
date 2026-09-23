@@ -117,6 +117,26 @@ def test_write_packed_size_hashes_and_preflight():
     assert not (out2 / PACKED_NAME).exists()
 
 
+def test_verify_repack_detects_corruption():
+    from llm_lab.frontier.expert_repack import plan_layout, write_packed, verify_repack, PACKED_NAME
+    tmp = Path("_m3_tmp"); tmp.mkdir(exist_ok=True)
+    path = _tiny_gguf(tmp)
+    reader = gguf.GGUFReader(str(path))
+    blobs, expected = plan_layout(reader, 2, 4)
+    out = tmp / "repack_verify"
+    blobs = write_packed(reader, blobs, 4, out, expected, free_bytes=10 ** 12)
+    packed = out / PACKED_NAME
+    witness = verify_repack(packed, blobs)
+    assert witness["all_equal"] is True
+    assert witness["n_slices"] == 2 * 4 * 3
+    assert len(witness["rollup_sha256"]) == 64
+    # flip one byte inside the first blob -> round-trip through the file must catch it
+    data = bytearray(packed.read_bytes())
+    data[blobs[0]["offset"]] ^= 0xFF
+    packed.write_bytes(bytes(data))
+    assert verify_repack(packed, blobs)["all_equal"] is False
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

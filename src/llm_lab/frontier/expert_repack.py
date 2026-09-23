@@ -98,3 +98,21 @@ def write_packed(reader, blobs, n_expert, out_dir, expected_bytes, *, free_bytes
             tmp.unlink()
         raise
     return blobs
+
+
+def verify_repack(packed_path, blobs) -> dict:
+    import hashlib
+    from pathlib import Path
+    raw = Path(packed_path).read_bytes()
+    pairs = []
+    all_equal = True
+    for b in blobs:
+        for part, r in b["roles"].items():
+            start = b["offset"] + r["sub_offset"]
+            read_sha = hashlib.sha256(raw[start:start + r["length"]]).hexdigest()
+            r["read_sha256"] = read_sha
+            if read_sha != r["src_sha256"]:
+                all_equal = False
+            pairs.append(f"{r['src_sha256']}:{read_sha}")
+    rollup = hashlib.sha256("\n".join(sorted(pairs)).encode("utf-8")).hexdigest()
+    return {"n_slices": len(pairs), "all_equal": all_equal, "rollup_sha256": rollup}
