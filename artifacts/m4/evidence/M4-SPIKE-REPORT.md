@@ -2,7 +2,7 @@
 
 **Box:** AMD Ryzen 5 5600G (Zen 3), 6 physical cores / 12 logical, 15.7 GB RAM,
 Windows 11 Pro. Non-elevated shell.
-**Date:** 2026-09-24
+**Date:** 2026-09-23
 **Branch:** `m4-baseline-spike`
 
 ## Verdict (one line)
