@@ -27,3 +27,32 @@ def per_expert_bytes(tensor, n_expert: int) -> int:
 def expert_slice(tensor, e: int, n_expert: int) -> bytes:
     per_expert_bytes(tensor, n_expert)  # guards
     return tensor.data[e].tobytes()
+
+
+def align_up(n: int, a: int = ALIGN) -> int:
+    return -(-n // a) * a
+
+
+def plan_layout(reader, n_layer: int, n_expert: int) -> tuple[list[dict], int]:
+    tmap = {t.name: t for t in reader.tensors}
+    blobs: list[dict] = []
+    offset = 0
+    for layer in range(n_layer):
+        pers = {}
+        for part in EXPERT_PARTS:
+            t = tmap.get(expert_tensor_name(layer, part))
+            if t is None:
+                raise ValueError(f"missing expert tensor {expert_tensor_name(layer, part)}")
+            pers[part] = (per_expert_bytes(t, n_expert), t.tensor_type.name)
+        for e in range(n_expert):
+            sub = 0
+            roles = {}
+            for part in EXPERT_PARTS:
+                length, dtype = pers[part]
+                roles[part] = {"sub_offset": sub, "length": length, "dtype": dtype}
+                sub += length
+            offset = align_up(offset)
+            blobs.append({"layer": layer, "expert": e, "offset": offset, "length": sub, "roles": roles})
+            offset += sub
+    expected = align_up(blobs[-1]["offset"] + blobs[-1]["length"]) if blobs else 0
+    return blobs, expected

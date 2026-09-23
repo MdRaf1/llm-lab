@@ -56,6 +56,25 @@ def test_per_expert_bytes_guards():
         raise AssertionError("accepted n_expert that mismatches shape[-1]")
 
 
+def test_plan_layout_aligned_and_contiguous():
+    from llm_lab.frontier.expert_repack import plan_layout, align_up, ALIGN
+    tmp = Path("_m3_tmp"); tmp.mkdir(exist_ok=True)
+    path = _tiny_gguf(tmp)
+    reader = gguf.GGUFReader(str(path))
+    blobs, expected = plan_layout(reader, 2, 4)
+    assert len(blobs) == 2 * 4
+    assert [(b["layer"], b["expert"]) for b in blobs[:5]] == [(0,0),(0,1),(0,2),(0,3),(1,0)]
+    for b in blobs:
+        assert b["offset"] % ALIGN == 0, "blob not 4K-aligned"
+        r = b["roles"]
+        assert r["gate"]["sub_offset"] == 0
+        assert r["up"]["sub_offset"] == r["gate"]["length"]
+        assert r["down"]["sub_offset"] == r["gate"]["length"] + r["up"]["length"]
+        assert b["length"] == sum(r[p]["length"] for p in ("gate", "up", "down"))
+    last = blobs[-1]
+    assert expected == align_up(last["offset"] + last["length"])
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
