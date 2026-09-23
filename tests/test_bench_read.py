@@ -38,6 +38,72 @@ def test_buffer_base_is_sector_aligned():
     assert buf.nbytes == 3 * SECTOR
 
 
+def test_choose_experts_deterministic_and_identical():
+    from llm_lab.frontier.bench_read import choose_experts
+    a = choose_experts(1234, 48, 128, 8)
+    b = choose_experts(1234, 48, 128, 8)
+    assert a == b, "same seed must give identical expert sets for both arms"
+    assert set(a.keys()) == set(range(48))
+    assert all(len(v) == 8 and len(set(v)) == 8 for v in a.values())
+
+
+def test_stock_offset_matches_library_slice():
+    # Closes the ne[2]=experts caveat NON-circularly: a raw file read at the computed
+    # absolute offset must equal gguf's own axis-0 per-expert slice.
+    import gguf
+    from test_expert_repack import _tiny_gguf
+    from llm_lab.frontier.bench_read import stock_ranges, choose_experts
+    from llm_lab.frontier.expert_repack import per_expert_bytes, expert_tensor_name
+    tmp = Path("_m3b_tmp"); tmp.mkdir(exist_ok=True)
+    path = _tiny_gguf(tmp, n_layer=2, n_expert=4)
+    reader = gguf.GGUFReader(str(path))
+    tmap = {t.name: t for t in reader.tensors}
+    chosen = choose_experts(7, 2, 4, 2)
+    ranges = stock_ranges(reader, chosen, 4)
+    L0, es0 = sorted(chosen.items())[0]
+    e0 = es0[0]
+    t = tmap[expert_tensor_name(L0, "gate")]
+    per = per_expert_bytes(t, 4)
+    off = t.data_offset + e0 * per
+    with open(path, "rb") as fh:
+        fh.seek(off)
+        raw = fh.read(per)
+    assert raw == t.data[e0].tobytes()
+    assert (off, per) in ranges
+
+
+def test_run_arm_stats_shape():
+    from llm_lab.frontier.bench_read import run_arm
+    tmp = Path("_m3b_tmp"); tmp.mkdir(exist_ok=True)
+    p = tmp / "arm.bin"; p.write_bytes(b"\xAB" * (16 * SECTOR))
+    size = p.stat().st_size
+    ranges = [(i * SECTOR, SECTOR) for i in range(16)]
+    stats = run_arm(str(p), ranges, working_set_bytes=16 * SECTOR, file_size=size, threads=8, runs=5)
+    assert set(stats) >= {"min", "median", "max", "seconds"}
+    assert stats["min"] <= stats["median"] <= stats["max"]
+    assert len(stats["seconds"]) == 5
+
+
+def test_repacked_arm_is_scattered_not_a_run():
+    # Scatter guard: the repacked arm must read the routed experts at their true, non-adjacent
+    # packed-file offsets — NOT an 8-adjacent contiguous run that would fake a sequential win.
+    import json
+    from test_expert_repack import _tiny_gguf
+    from llm_lab.frontier.expert_repack import repack_model, MANIFEST_NAME
+    from llm_lab.frontier.bench_read import repacked_ranges, choose_experts
+    tmp = Path("_m3b_tmp"); tmp.mkdir(exist_ok=True)
+    path = _tiny_gguf(tmp, n_layer=2, n_expert=8)
+    out = tmp / "scatter_repack"
+    repack_model(str(path), str(out))
+    manifest = json.loads((out / MANIFEST_NAME).read_text(encoding="utf-8"))
+    chosen = choose_experts(3, 2, 8, 4)             # 4 of 8 per layer -> guaranteed gaps
+    chosen_offs = sorted(o for o, _ in repacked_ranges(manifest, chosen))
+    all_offs = sorted(b["offset"] for b in manifest["blobs"])
+    chosen_set = set(chosen_offs)
+    between = [o for o in all_offs if chosen_offs[0] < o < chosen_offs[-1] and o not in chosen_set]
+    assert between, "repacked arm reads a contiguous run; scatter guard violated"
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):

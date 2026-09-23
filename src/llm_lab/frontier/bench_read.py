@@ -3,9 +3,15 @@
 from __future__ import annotations
 
 import ctypes
+import random
+import statistics
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
+
+from llm_lab.frontier.expert_repack import EXPERT_PARTS, expert_tensor_name, per_expert_bytes
 
 SECTOR = 4096
 
@@ -55,3 +61,52 @@ def read_range_cold(path: str, offset: int, length: int, file_size: int) -> byte
         _k.CloseHandle(h)
     end = min(delta + length, int(nread.value))
     return buf[delta:end].tobytes() if end > delta else b""
+
+
+def choose_experts(seed: int, n_layer: int, n_expert: int, k: int) -> dict[int, list[int]]:
+    rng = random.Random(seed)
+    return {L: sorted(rng.sample(range(n_expert), k)) for L in range(n_layer)}
+
+
+def repacked_ranges(manifest: dict, chosen: dict[int, list[int]]) -> list[tuple[int, int]]:
+    by_le = {(b["layer"], b["expert"]): b for b in manifest["blobs"]}
+    out = []
+    for L, es in chosen.items():
+        for e in es:
+            b = by_le[(L, e)]
+            out.append((b["offset"], b["length"]))
+    return out
+
+
+def stock_ranges(reader, chosen: dict[int, list[int]], n_expert: int) -> list[tuple[int, int]]:
+    tmap = {t.name: t for t in reader.tensors}
+    out = []
+    for L, es in chosen.items():
+        for part in EXPERT_PARTS:
+            t = tmap[expert_tensor_name(L, part)]
+            per = per_expert_bytes(t, n_expert)
+            for e in es:
+                out.append((t.data_offset + e * per, per))
+    return out
+
+
+def working_set_bytes(reader, chosen: dict[int, list[int]], n_expert: int) -> int:
+    tmap = {t.name: t for t in reader.tensors}
+    total = 0
+    for L, es in chosen.items():
+        per_expert = sum(per_expert_bytes(tmap[expert_tensor_name(L, p)], n_expert) for p in EXPERT_PARTS)
+        total += per_expert * len(es)
+    return total
+
+
+def run_arm(path, ranges, working_set_bytes, file_size, threads, runs) -> dict:
+    seconds = []
+    for _ in range(runs):
+        t0 = time.perf_counter()
+        with ThreadPoolExecutor(max_workers=threads) as pool:
+            list(pool.map(lambda r: read_range_cold(path, r[0], r[1], file_size), ranges))
+        seconds.append(time.perf_counter() - t0)
+    kept = seconds[1:] if len(seconds) > 1 else seconds   # drop warm-up run 0
+    bps = [working_set_bytes / s for s in kept]
+    return {"min": min(bps), "median": statistics.median(bps), "max": max(bps),
+            "seconds": seconds}
