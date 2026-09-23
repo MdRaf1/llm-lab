@@ -93,7 +93,7 @@ either gate (`passed=true`, `separated_win`, byte-identity `all_equal=true`), bu
 what the throughput number does and does not prove.
 
 - **Physical file placement.** The throughput comparison is file-vs-file, exactly as spec §7's
-  gate is worded: the repacked arm reads a freshly-written ~16 GB packed file, the stock arm
+  gate is worded: the repacked arm reads a freshly-written ~17.5 GB packed file, the stock arm
   reads the older ~18.5 GB source GGUF. Beyond the intended within-file layout effect, the two
   files may differ in on-disk fragmentation, which could bias the ratio. The modest, consistent
   margin (qd16 1.11× / qd1 1.20×, with full band separation) is more consistent with a layout

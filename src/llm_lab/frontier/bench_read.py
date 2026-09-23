@@ -56,7 +56,8 @@ def read_range_cold(path: str, offset: int, length: int, file_size: int) -> byte
     if h == _INVALID:
         raise ctypes.WinError(ctypes.get_last_error())
     try:
-        _k.SetFilePointerEx(h, wintypes.LARGE_INTEGER(aligned_off), None, 0)  # 0 = FILE_BEGIN
+        if not _k.SetFilePointerEx(h, wintypes.LARGE_INTEGER(aligned_off), None, 0):  # 0 = FILE_BEGIN
+            raise ctypes.WinError(ctypes.get_last_error())
         nread = wintypes.DWORD(0)
         ok = _k.ReadFile(h, buf.ctypes.data, extent, ctypes.byref(nread), None)
         if not ok:
