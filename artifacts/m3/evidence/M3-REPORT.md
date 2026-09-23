@@ -86,6 +86,26 @@ Carrying the M2 honesty line: **nothing here was hand-tuned toward a verdict.** 
 fields; the report only reads them back. `separated_win` is a mechanical band-comparison, not
 a chosen threshold.
 
+## 5. Threats to validity
+
+Two measurement caveats are disclosed here rather than swept under the PASS. Neither weakens
+either gate (`passed=true`, `separated_win`, byte-identity `all_equal=true`), but both bound
+what the throughput number does and does not prove.
+
+- **Physical file placement.** The throughput comparison is file-vs-file, exactly as spec §7's
+  gate is worded: the repacked arm reads a freshly-written ~16 GB packed file, the stock arm
+  reads the older ~18.5 GB source GGUF. Beyond the intended within-file layout effect, the two
+  files may differ in on-disk fragmentation, which could bias the ratio. The modest, consistent
+  margin (qd16 1.11× / qd1 1.20×, with full band separation) is more consistent with a layout
+  effect than with a gross placement artifact — but the confound is inherent to the M3 premise
+  (repack *produces* a new file) and is disclosed rather than controlled.
+- **Stock-offset validation is fixture-proven.** The `t.data_offset + e*per == t.data[e]`
+  equivalence used by the stock arm is unit-proven on the small Q8_0 fixture (n_expert=4), not
+  on the real Q4_K/Q6_K 128-expert file. This weakens neither gate: byte-identity never uses
+  the stock offsets (it sources via `expert_slice`/`t.data[e]`), and the stock arm exists only
+  for timing — a hypothetical offset error would still read the same byte volume at scattered
+  positions, leaving the layout verdict intact.
+
 ---
 
 ## Reproducibility
