@@ -1,0 +1,58 @@
+# llama.cpp CPU/AVX2 build log (tail) — M4 gate-#2 baseline
+# Repo (outside llm-lab): C:\Rafi\Projects\llama.cpp @ 1a064ab0921238c1daa397d6f4a900ef33884de2
+# Toolchain: llvm-mingw clang 23.1.2 (ucrt x86_64), cmake 4.4.3, ninja 1.13.2
+# Configure flags (brief line + mingw-required adaptations):
+#   cmake -S ... -B ...\build -G Ninja -DGGML_CUDA=OFF -DGGML_NATIVE=ON -DLLAMA_CURL=OFF \
+#         -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ \
+#         -DCMAKE_C_FLAGS=-D_WIN32_WINNT=0x0A00 -DCMAKE_CXX_FLAGS=-D_WIN32_WINNT=0x0A00
+# ( -DCMAKE_*_COMPILER selects the llvm-mingw clang; -D_WIN32_WINNT=0x0A00 is required because
+#   mingw defaults _WIN32_WINNT to Windows 7, below the Windows-10 minimum that the vendored
+#   cpp-httplib enforces. The box is Windows 11, so raising it is correct and stock-preserving. )
+
+=== CONFIGURE (tail) ===
+-- Including CPU backend
+-- x86 detected
+-- Adding CPU backend variant ggml-cpu: -march=native
+-- ggml version: 0.17.0
+-- ggml commit:  1a064ab09
+-- Found OpenMP: TRUE (found version "5.1")
+-- Configuring done (0.7s)
+-- Generating done (0.4s)
+-- Build files have been written to: C:/Rafi/Projects/llama.cpp/build
+
+=== BUILD — cpp-httplib now compiles after _WIN32_WINNT fix (0 errors) ===
+[217/300] Building CXX object common/CMakeFiles/llama-common.dir/hf-cache.cpp.obj
+[221/300] Building CXX object common/CMakeFiles/llama-common.dir/download.cpp.obj
+[229/300] Building CXX object vendor/cpp-httplib/CMakeFiles/cpp-httplib.dir/httplib.cpp.obj
+[230/300] Linking CXX static library vendor\cpp-httplib\libcpp-httplib.a
+...
+[282/300] Linking CXX static library tools\llama-bench\libllama-bench-impl.a
+[283/300] Linking CXX executable bin\llama-bench.exe          <-- llama-bench.exe OK
+
+=== First pass stopped at UI-asset provisioning (transient HuggingFace fetch) ===
+[288/300] Provisioning UI assets
+FAILED: [code=1] tools/ui/CMakeFiles/llama-ui-assets ... ui.cpp ui.h
+# tools/ui downloads the web UI bundle (dist.tar.gz) from huggingface.co at build time.
+# llama-cli transitively links llama-ui via llama-server-impl in this commit, so it needs this.
+# First HTTP/2 attempt failed ("Stream error in the HTTP/2 framing layer").
+
+=== Resume: ninja llama-cli -j 4 (UI download retried and succeeded) ===
+-- UI: downloading from latest: https://huggingface.co/buckets/ggml-org/llama-ui/resolve/latest/dist.tar.gz
+-- UI: archive verified and extracted
+-- UI: HF download succeeded, stamp updated (latest)
+[ 1/13] Provisioning UI assets
+[ 2/13] Building CXX object tools/ui/CMakeFiles/llama-ui.dir/ui.cpp.obj
+[ 4/13] Building CXX object tools/cli/CMakeFiles/llama-cli-impl.dir/cli.cpp.obj
+[ 5/13] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server-http.cpp.obj
+[ 6/13] Building CXX object tools/server/CMakeFiles/llama-server-impl.dir/server.cpp.obj
+[ 7/13] Building CXX object tools/cli/CMakeFiles/llama-cli.dir/main.cpp.obj
+[10/13] Linking CXX static library tools\server\libllama-server-impl.a
+[12/13] Linking CXX static library tools\cli\libllama-cli-impl.a
+[13/13] Linking CXX executable bin\llama-cli.exe             <-- llama-cli.exe OK
+CLI_BUILD_EXIT=0
+
+=== ARTIFACTS ===
+bin\llama-bench.exe   10,636,800 bytes
+bin\llama-cli.exe     17,985,536 bytes
+# Runtime DLLs copied next to the exes so they run standalone (no PATH needed by Task 3):
+#   libc++.dll  libunwind.dll  libomp.dll  libwinpthread-1.dll

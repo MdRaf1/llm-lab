@@ -1,0 +1,21 @@
+M4 spike — scatter (random-read) bandwidth used for the ceiling
+================================================================
+
+value_bytes_per_sec = 1021317250.7
+source             = M3 committed same-host microbenchmark (REUSED, not re-run)
+provenance_string  = "M3 microbench, same host (artifacts/m3/evidence/m3-gate.json:throughput.stock_bps.median)"
+
+Which path (resolution 1): PRIMARY (reuse committed M3 figure).
+Reason the same-session re-run path was NOT taken: no M3 throughput-probe
+script is locatable under scripts/ or benchmarks/ (only scripts/m4-spike/
+run-baseline.ps1 matches disk/throughput; benchmarks/ holds unrelated
+speculative-decode benchmarks). So the committed M3 number is used verbatim.
+
+Exact figure lineage: artifacts/m3/evidence/m3-gate.json ->
+  throughput.stock_bps.median = 1021317250.6826692  (rounded to 1021317250.7
+  per the task resolution). Same physical host as this spike.
+
+This is the STOCK (unrepacked) random-scatter read throughput — the physical
+delivery rate of expert bytes to the CPU. It is INDEPENDENT of this spike's
+decode tok/s; the ceiling is scatter_bps / miss_bytes_per_token, never derived
+from the decode run's own throughput (that would be circular).

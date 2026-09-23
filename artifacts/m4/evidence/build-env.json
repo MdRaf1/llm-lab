@@ -1,0 +1,58 @@
+{
+  "task": "M4 Task 1 - build stock llama.cpp (CPU/AVX2) for gate-#2 baseline",
+  "build_host": {
+    "os": "Windows 11 Pro 10.0.26200",
+    "arch": "x86_64 / AMD64",
+    "gpu_backend": "none (CPU-only build, -DGGML_CUDA=OFF)",
+    "cpu_variant": "-march=native (AVX2 box; ggml x86 CPU backend)"
+  },
+  "toolchain": {
+    "compiler": "clang 23.1.2 (llvm-mingw 20260922, target x86_64-w64-windows-gnu, ucrt)",
+    "compiler_source": "portable zip from github.com/mstorsjo/llvm-mingw release 20260922 (no admin, no MSVC/Visual Studio installed)",
+    "cmake": "4.4.3 (winget Kitware.CMake, user scope)",
+    "ninja": "1.13.2 (winget Ninja-build.Ninja, user scope)",
+    "why_not_msvc": "no MSVC/Windows SDK present and shell is non-elevated; MSVC Build Tools install needs UAC (would block). Chose the lighter clang/LLVM path per brief resolution #1; llvm-mingw is self-contained (bundles clang, libc++, libunwind, libomp, mingw headers/CRT) so no Windows SDK needed."
+  },
+  "commit": {
+    "requested": "1a064ab",
+    "resolved": "1a064ab0921238c1daa397d6f4a900ef33884de2",
+    "substituted": false,
+    "note": "exact pinned commit was directly checkout-able from a full clone; no tag substitution needed",
+    "ggml_commit_embedded": "1a064ab09",
+    "cli_version_string": "version: 10099 (1a064ab09) / built with Clang 23.1.2 for Windows AMD64"
+  },
+  "configure_command": "cmake -S C:/Rafi/Projects/llama.cpp -B C:/Rafi/Projects/llama.cpp/build -G Ninja -DGGML_CUDA=OFF -DGGML_NATIVE=ON -DLLAMA_CURL=OFF -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_FLAGS=-D_WIN32_WINNT=0x0A00 -DCMAKE_CXX_FLAGS=-D_WIN32_WINNT=0x0A00",
+  "configure_adaptations": {
+    "compiler_selection": "-DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ (use the llvm-mingw toolchain deterministically)",
+    "win32_winnt_define": "-D_WIN32_WINNT=0x0A00 : REQUIRED. mingw defaults _WIN32_WINNT to Windows 7; vendored cpp-httplib (pulled into common via download.cpp/hf-cache.cpp) #errors below Windows 10 and CreateFile2 (Win8+) is hidden. Host is Windows 11, so raising it is correct and does not change llama.cpp behavior. Applied globally at the shared root so both target binaries are fixed at once."
+  },
+  "build_command": "cmake --build C:/Rafi/Projects/llama.cpp/build --target llama-bench llama-cli -j",
+  "binaries": {
+    "llama_bench": { "path": "C:/Rafi/Projects/llama.cpp/build/bin/llama-bench.exe", "bytes": 10636800 },
+    "llama_cli": { "path": "C:/Rafi/Projects/llama.cpp/build/bin/llama-cli.exe", "bytes": 17985536 },
+    "runtime_dlls_copied_into_bin": ["libc++.dll", "libunwind.dll", "libomp.dll", "libwinpthread-1.dll"],
+    "standalone_verified": "yes - both exes run with NO llvm-mingw on PATH (via copied DLLs); Task 3 can consume them directly"
+  },
+  "verification": {
+    "n_cpu_moe_flag": "PASS - `llama-bench --help` lists `-ncmoe, --n-cpu-moe <n>  (default: 0)`",
+    "build_identity": "PASS - `llama-cli --version` => version: 10099 (1a064ab09), matches pinned commit",
+    "smoke_1_token": "PASS - llama-cli -m models/m1/qwen3-gguf/Qwen3-30B-A3B-Q4_K_M.gguf -p \"hi\" -n 1 -st -no-cnv => model loaded (build b10099-1a064ab09), prompt processed, 1 token generated, clean exit 0",
+    "smoke_flag_note": "brief's bare `-no-cnv` alone dropped into the refactored interactive chat-client and looped on EOF stdin (exit 253). Added `-st/--single-turn` (predefined -p prompt => non-interactive, exits when done) to get the intended 1-token decode + exit 0. Same binary, same model, decode confirmed."
+  },
+  "free_disk_bytes": {
+    "session_start_before_toolchain": 20053700608,
+    "after_toolchain_install_step2_remeasure": 18578579456,
+    "final_after_clone_build_dlls": 12675948544,
+    "unit_note": "bytes; start 18.68 GiB, final 11.80 GiB"
+  },
+  "tripwire": {
+    "threshold_gib": 5,
+    "triggered": false,
+    "m3_repack_deleted": false,
+    "note": "free disk never fell below 5 GiB (min observed 11.80 GiB), so models/m3/qwen3-repack was NOT removed"
+  },
+  "concerns": [
+    "Build has a NETWORK dependency: tools/ui 'Provisioning UI assets' downloads the web UI bundle from huggingface.co at build time (llama-cli links llama-ui via llama-server-impl in this commit). First HTTP/2 attempt failed transiently; succeeded on retry. A clean rebuild offline would fail at this step.",
+    "Binary is a clang/llvm-mingw build, not MSVC. Functionally equivalent stock CPU/AVX2 llama.cpp at commit 1a064ab; compiler brand does not change the inference algorithm or the --n-cpu-moe behavior the gate measures."
+  ]
+}
