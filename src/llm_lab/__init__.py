@@ -99,6 +99,16 @@ def _add_moe_subparsers(subparsers) -> None:
     repack_p.add_argument("--output", required=True)   # target directory
     repack_p.add_argument("--force", action="store_true")
 
+    bench_p = moe_sub.add_parser("bench-read", help="Cold-read throughput: repacked vs stock GGUF")
+    bench_p.add_argument("--input", required=True)
+    bench_p.add_argument("--repack", required=True)   # the repack output directory
+    bench_p.add_argument("--output", required=True)   # m3-gate.json
+    bench_p.add_argument("--seed", type=int, default=1234)
+    bench_p.add_argument("--experts-per-layer", type=int, default=8)
+    bench_p.add_argument("--runs", type=int, default=5)
+    bench_p.add_argument("--threads", type=int, default=16)
+    bench_p.add_argument("--force", action="store_true")
+
 
 def _reject(parser, message: str) -> None:
     """Argparse-style rejection: usage + message on stderr, SystemExit(2)."""
@@ -235,6 +245,14 @@ def _run_moe(parser, args) -> None:
         oe = manifest["output_exact"]
         print(f"repacked {len(manifest['blobs'])} blobs; "
               f"output_exact.all_equal={oe['all_equal']} n_slices={oe['n_slices']}")
+        return
+
+    if args.moe_command == "bench-read":
+        from llm_lab.frontier.bench_read import bench_read_model
+        gate = bench_read_model(args.input, args.repack, seed=args.seed,
+                                experts_per_layer=args.experts_per_layer,
+                                runs=args.runs, threads=args.threads)
+        _emit(gate, args.output)
         return
 
     if args.moe_command == "run":

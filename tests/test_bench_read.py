@@ -104,6 +104,36 @@ def test_repacked_arm_is_scattered_not_a_run():
     assert between, "repacked arm reads a contiguous run; scatter guard violated"
 
 
+def test_derive_verdict_and_gate_logic():
+    from llm_lab.frontier.bench_read import derive_verdict, derive_m3_gate
+    assert derive_verdict({"median": 10, "min": 9, "max": 11},
+                          {"median": 5, "min": 3, "max": 8}) == "separated_win"
+    assert derive_verdict({"median": 10, "min": 6, "max": 12},
+                          {"median": 5, "min": 3, "max": 8}) == "overlap_inconclusive"
+    oe = {"all_equal": True, "n_slices": 24, "rollup_sha256": "x" * 64}
+    g = derive_m3_gate(oe, {"throughput_verdict": "separated_win"})
+    assert g["passed"] is True and g["branch"] == "proceed_m4"
+    g2 = derive_m3_gate({**oe, "all_equal": False}, {"throughput_verdict": "separated_win"})
+    assert g2["passed"] is False and g2["branch"] == "fix_output_exact"
+    g3 = derive_m3_gate(oe, {"throughput_verdict": "overlap_inconclusive"})
+    assert g3["passed"] is False and g3["branch"] == "remeasure"
+
+
+def test_bench_read_model_end_to_end():
+    from test_expert_repack import _tiny_gguf
+    from llm_lab.frontier.expert_repack import repack_model
+    from llm_lab.frontier.bench_read import bench_read_model
+    tmp = Path("_m3b_tmp"); tmp.mkdir(exist_ok=True)
+    path = _tiny_gguf(tmp, n_layer=2, n_expert=4)
+    out = tmp / "bench_repack"
+    repack_model(str(path), str(out))
+    gate = bench_read_model(str(path), str(out), seed=7, experts_per_layer=2, runs=3, threads=4)
+    assert gate["passed"] in (True, False)
+    assert gate["throughput_verdict"] in ("separated_win", "overlap_inconclusive")
+    assert "qd16_ratio" in gate["throughput"] and "nvme_seq_bps" in gate["throughput"]
+    assert gate["output_exact"]["all_equal"] is True
+
+
 if __name__ == "__main__":
     for name, fn in sorted(globals().items()):
         if name.startswith("test_"):
