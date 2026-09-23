@@ -1,0 +1,32 @@
+{
+  "branch": "proceed_m4",
+  "output_exact": {
+    "all_equal": true,
+    "n_slices": 18432,
+    "rollup_sha256": "2007138502a7631ba4876b3bdf7a3f71bdde0d19881f2efcf4517c3be081e4cb"
+  },
+  "passed": true,
+  "throughput": {
+    "experts_per_layer": 8,
+    "note": "QD is a thread-count proxy applied identically to both arms, not a measured device queue depth.",
+    "nvme_seq_bps": 1238057388.7064288,
+    "qd16_ratio": 1.1111116517873185,
+    "qd1_ratio": 1.2044449164912423,
+    "qd_proxy_threads": 16,
+    "repacked_bps": {
+      "max": 1157442161.000775,
+      "median": 1134797497.4049034,
+      "min": 1121039912.8160121
+    },
+    "runs": 5,
+    "seed": 1234,
+    "stock_bps": {
+      "max": 1027839046.3787625,
+      "median": 1021317250.6826692,
+      "min": 1018215136.0048952
+    },
+    "throughput_verdict": "separated_win",
+    "working_set_bytes": 1097072640
+  },
+  "throughput_verdict": "separated_win"
+}
