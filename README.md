@@ -83,8 +83,11 @@ under `artifacts/m*/evidence/`.
 
 Draft-guided expert prefetch is published in SP-MoE (arXiv 2510.10302), MoE-SpeQ
 (arXiv 2511.14102), and Apple's SpecMD (arXiv 2602.03921). The PageCC components are
-published in Memory Layers at Scale (2412.09764), Pre-gated MoE (2308.12066),
-Engram (2601.07372), StickyMoE (2607.08780), and "Cacheable by Design?" (2608.18261).
+published in *Memory Layers at Scale* (2412.09764), *Pre-gated MoE* (2308.12066),
+*Conditional Memory via Scalable Lookup* — the Engram module (2601.07372), *Sticky
+Routing: Training MoE Models for Memory-Efficient Inference* — StickyMoE (2607.08780),
+and *"Cacheable by Design?"* (2608.18261). The general lever is pre-empted by
+*Post-Trained MoE Can Skip Half Experts via Self-Distillation* — ZEDA (2605.18643).
 This project claims **engineering rigour and measurement**, not novel research.
 
 ---

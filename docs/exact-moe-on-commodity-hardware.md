@@ -76,10 +76,12 @@ I ran a structured prior-art check **before writing any training code** — six 
 
 | Claim | Verdict | Closest prior art |
 |---|---|---|
-| Cross-layer shared atoms + resident core | **published** | Memory Layers at Scale (2412.09764); Relaxed Recursive Transformers (2410.20672) |
-| Deterministic early router | **published** | Pre-gated MoE (2308.12066); Engram (2601.07372) |
-| Page-locality training loss | **published** | StickyMoE (2607.08780); **"Cacheable by Design?" (2608.18261)** |
-| The general lever itself | **pre-empted** | ZEDA (2605.18643), among others |
+| Cross-layer shared atoms + resident core | **published** | *Memory Layers at Scale* (2412.09764); *Relaxed Recursive Transformers* (2410.20672) |
+| Deterministic early router | **published** | *Pre-gated MoE* (2308.12066); *Conditional Memory via Scalable Lookup* — the **Engram** module (2601.07372) |
+| Page-locality training loss | **published** | *Sticky Routing: Training MoE Models for Memory-Efficient Inference* — **StickyMoE** (2607.08780); *"Cacheable by Design?"* (2608.18261) |
+| The general lever itself | **pre-empted** | *Post-Trained MoE Can Skip Half Experts via Self-Distillation* — **ZEDA** (2605.18643), among others |
+
+(Where a short name appears above, it is the paper's own name for its method, not my shorthand.)
 
 The decisive find was *"Cacheable by Design?"*: it trains essentially my proposed loss, on **my exact target model** (Qwen3-30B-A3B), and reports it as a **pre-registered negative** — locality training cuts cache misses substantially but fails a 1% perplexity gate.
 
@@ -89,7 +91,7 @@ Only the precise *conjunction* of all four elements was unclaimed — and that c
 
 **What died:** the streaming thesis (scoped), and the PageCC architecture bet (closed on prior art).
 
-**What survives and is worth something:** a bit-exact MoE oracle, a byte-identity layout proof, routing traces, and a measurement discipline that overturned its own headline number. Every published compute-cutting method in this space (expert-skipping, adaptive routing, recursion) is evaluated on A100/H100-class GPUs. How their quality-versus-compute tradeoff actually behaves on a commodity CPU, a consumer GPU, or a non-NVIDIA card — measured exactly, against a bit-identical reference — is an open question, and the tooling here is built to answer it.
+**What survives and is worth something:** a bit-exact MoE oracle, a byte-identity layout proof, routing traces, and a measurement discipline that overturned its own headline number. Across the compute-cutting methods I surveyed for this assessment (expert-skipping, adaptive routing, recursion), evaluation is reported on datacenter-class GPUs; the closest published benchmark of MoE compression adds an Apple M1 Max. I did not find results for a commodity CPU, a consumer GPU, or a non-NVIDIA card — and that survey was one session of literature search, not an exhaustive one. How those methods' quality-versus-compute tradeoff actually behaves on such hardware, measured exactly against a bit-identical reference, is an open question, and the tooling here is built to answer it.
 
 That is where the work points next.
 
@@ -105,7 +107,7 @@ This project is not a one-off. It is the third of three where the deliverable is
 
 - **[retrieval-eval](https://github.com/MdRaf1/the-data-guardian/tree/main/retrieval-eval)** — an offline retrieval evaluation harness: a 300-document corpus built from the public-domain NIST SP 800-53 Rev 5 OSCAL catalog, 36 graded queries **frozen before any retriever ran**, seven retrievers scored on nDCG@10 / Recall@10 / MRR@10. Its headline output is **three negative results**: title boosting came out *bit-identical* to baseline on the paraphrase subset; RRF hybrid fusion landed strictly between its two legs on every subset (0.571, between 0.476 and 0.623); cross-encoder re-ranking was net flat over dense retrieval (0.622 vs 0.623 nDCG@10) and *cost* recall (0.782 → 0.734). Nothing was deployed. The negatives are the point.
 
-- **[guardian-analytics](https://github.com/MdRaf1/guardian-analytics)** — a dimensional model over an audit index, where three candidate indexes were built, measured, and **dropped, recorded with the numbers that disqualified them**, alongside an explicit list of the questions the original flat index could not answer at all.
+- **[guardian-analytics](https://github.com/MdRaf1/guardian-analytics)** — a normalised five-table PostgreSQL model of a compliance-audit domain (`data_source`, `document_ref`, `policy`, `scan_run`, `violation`), deployed and operated as a small production-style service. Three candidate indexes were built, measured, and **dropped, recorded with the numbers that disqualified them**. Two measurements there changed my mind: repeating a benchmark five times instead of once moved the honest comparison from 251.6 ms vs 178.6 ms to medians of 246 ms vs 178 ms — and the *faster* configuration produced the slowest single run in the set. And in a **deliberately induced** incident on the live database (synthetic data, no real users), dropping one composite index regressed a query 424 → 592 ms: the window sort lost its pre-sorted input and fell back to an external merge spilling **5,144 kB** to disk, diagnosed from `EXPLAIN (ANALYZE, BUFFERS)`. The trustworthy signal was the plan shape and temp-buffer counts, not the wall-clock figure — the post-restore run measured 252 ms on the same plan, just warmer.
 
 - **llm-lab** (this project) — the core hypothesis measured and disproved, my own headline number corrected when a better measurement contradicted it, and a prior-art search that closed the follow-on idea on evidence.
 
