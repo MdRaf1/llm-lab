@@ -9,6 +9,9 @@
 
 $ErrorActionPreference = 'Continue'
 $ProgressPreference    = 'SilentlyContinue'
+# PS 5.1 does not always negotiate TLS 1.2, which GitHub and Hugging Face now require.
+# Forcing it is a no-op on PS 7 (already default) and prevents a silent download failure on 5.1.
+try { [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12 } catch {}
 $root = 'C:\arc-spike'
 $log  = "$root\day1-report.txt"
 New-Item -ItemType Directory -Force -Path $root | Out-Null
