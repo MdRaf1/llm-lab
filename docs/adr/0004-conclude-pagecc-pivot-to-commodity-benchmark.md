@@ -31,9 +31,35 @@ Findings:
 - The benchmark's viability hinges on the Arc-integration spike; treating it as the first gate keeps the effort low-regret.
 - Success is now measured as a **career-leverage artifact** (visible, citable, reproducible), not field novelty. A paid FTO/patent search remains a prerequisite before any formal disclosure/filing (per #8).
 
+## Addendum (2026-09-24): publishing the retained simulation code
+
+Reviewing this ADR's step (a) raised a question worth recording: should the retained
+fabricated-output code (`sim_*`) be removed before the repository is made public, since a
+reader who skims and finds it before reading the explanation could conclude "this person
+fabricates numbers"?
+
+**Decision: keep it, and do not rewrite history.** The reasoning:
+
+- Removing the files from `HEAD` is **cosmetic**. The repository has 66 commits, and
+  `a248a03` ("feat: Breakthrough LLM-LAB Ultra-Low-Memory Inference Engine") still carries
+  the original fabricated README and demo script. Publishing the repository publishes that
+  history regardless, so deletion loses the framing benefit while leaving the artifact
+  findable.
+- That history is also the **proof the cleanup happened**: `690cdf7` ("M0: truth-in-labeling
+  — stop the repo claiming unmeasured results") is independently verifiable evidence that
+  the fabrication was caught and corrected from the inside. Rewriting history or starting a
+  fresh repository would destroy the provenance that makes the integrity claim credible.
+- The risk is instead mitigated by **framing before artifact**: the README leads with the
+  cleanup story above the fold, every `sim_*` file carries a `SIMULATION — NOT REAL
+  INFERENCE. DO NOT QUOTE ITS NUMBERS.` header naming exactly what it fakes, and the public
+  write-up narrates the episode.
+
+The provenance is the credential. Accepted with the user.
+
+
+
 ## Evidence
 
-- Wayfinder map [#3](https://github.com/MdRaf1/llm-lab/issues/3); closed tickets #4–#13; assessment `docs/research/pagecc-novelty-assessment.md` (`3671063`).
+- Wayfinder map [#3](https://github.com/MdRaf1/llm-lab/issues/3); closed tickets #4-#13; assessment `docs/research/pagecc-novelty-assessment.md` (`3671063`).
 - Key citations: 2412.09764, 2308.12066, 2601.07372, 2607.08780, **2608.18261**, 2605.18643, 2609.18176, **2608.21693**.
 - Prior decisions: `docs/adr/0001-*.md`, `0002-*.md`, `0003-*.md`.
-

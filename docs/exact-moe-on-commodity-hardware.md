@@ -99,6 +99,18 @@ That is where the work points next.
 - **Intellectual honesty under pressure** — I deleted fabricated claims I had inherited, overturned my own headline number when a better measurement contradicted it, and killed two of my own bets on evidence rather than defending them.
 - **Systems depth** — GGUF internals, quantization, memory-hierarchy and bandwidth analysis, exact tiered-loading design, grounded in arithmetic rather than enthusiasm.
 
+## This is the third time
+
+This project is not a one-off. It is the third of three where the deliverable is *"I measured it, and the measurement disagreed with my design."*
+
+- **[retrieval-eval](https://github.com/MdRaf1/the-data-guardian/tree/main/retrieval-eval)** — an offline retrieval evaluation harness: a 300-document corpus built from the public-domain NIST SP 800-53 Rev 5 OSCAL catalog, 36 graded queries **frozen before any retriever ran**, seven retrievers scored on nDCG@10 / Recall@10 / MRR@10. Its headline output is **three negative results**: title boosting came out *bit-identical* to baseline on the paraphrase subset; RRF hybrid fusion landed strictly between its two legs on every subset (0.571, between 0.476 and 0.623); cross-encoder re-ranking was net flat over dense retrieval (0.622 vs 0.623 nDCG@10) and *cost* recall (0.782 → 0.734). Nothing was deployed. The negatives are the point.
+
+- **[guardian-analytics](https://github.com/MdRaf1/guardian-analytics)** — a dimensional model over an audit index, where three candidate indexes were built, measured, and **dropped, recorded with the numbers that disqualified them**, alongside an explicit list of the questions the original flat index could not answer at all.
+
+- **llm-lab** (this project) — the core hypothesis measured and disproved, my own headline number corrected when a better measurement contradicted it, and a prior-art search that closed the follow-on idea on evidence.
+
+Pre-registering the gate, then publishing the result that fails it, is the habit these three share. I think it is worth more than a demo that only ever works.
+
 ## Evidence
 
 Every number above traces to a committed command and its output.
