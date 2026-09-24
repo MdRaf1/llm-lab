@@ -1,0 +1,21 @@
+{
+  "gate": "ADR-0005 day-1 kill-switch",
+  "date": "2026-09-25",
+  "verdict": "PASS",
+  "host": "WIN-B3UMGHIO2FT (user Igris)",
+  "os": "Windows 11 Pro build 10.0.26100",
+  "ps_version": "5.1.26100.3624",
+  "ram_gb": 7.93,
+  "free_disk_gb": 103.94,
+  "gpu": "Intel(R) Arc(TM) B580 Graphics",
+  "gpu_driver": "32.0.101.8991",
+  "gpu_status": "OK",
+  "vulkan_runtime_present": true,
+  "vulkan_enumerated_device": "Vulkan0: Intel(R) Arc(TM) B580 Graphics (12118 MiB, 11349 MiB free)",
+  "llama_cpp_build": "b11160 win-vulkan-x64",
+  "ngl99_generation_completed": true,
+  "ngl0_control_completed": true,
+  "decisive_signal": "Vulkan enumerates the B580 and a -ngl 99 generation completes; the toolchain is not the wall",
+  "note": "Tiny 15M model used only to answer the kill-switch question; its GPU-vs-CPU tok/s (116.7 vs 1355.7) is meaningless at that size and is NOT the spike measurement. Days 2-3 authorised.",
+  "raw_report_sha_note": "captured from the Arc PC as day1-report.txt (UTF-16)"
+}
