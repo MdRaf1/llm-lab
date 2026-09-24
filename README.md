@@ -4,12 +4,17 @@ Research toward running **Mixture-of-Experts models that do not fit in your fast
 (RAM or VRAM), with output **bit-identical to the same quantized checkpoint run fully
 resident**, at the cost of some extra time.
 
-> **Status: M1 measured.** Milestone 1 — a real baseline, a determinism proof, and
-> expert-routing traces — is done and recorded from committed evidence. The plan is
-> [`docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md`](docs/superpowers/specs/2026-09-11-moe-exact-runtime-design.md);
-> the M1 results and every cited number live in
-> [`artifacts/m1/evidence/M1-REPORT.md`](artifacts/m1/evidence/M1-REPORT.md). The low-memory
-> loader (M3+) is still not implemented.
+> ## 📄 Start here: [**The bottleneck wasn't the disk**](docs/exact-moe-on-commodity-hardware.md)
+>
+> The full story in one readable document — what was built, what the measurements found,
+> and why the central hypothesis was abandoned on evidence.
+
+> **Status: concluded (2026-09-24).** Milestones M0–M4 are complete and measured. The
+> streaming hypothesis this project was built to test was **disproved for this hardware**:
+> decode here is bound by **compute and RAM bandwidth, not disk I/O**. The follow-on
+> architecture bet ("PageCC") was **closed on prior art**. What remains — and is the useful
+> output — is an exact, deterministic MoE reference pipeline and a rigorously scoped
+> negative result. See [`docs/adr/0004-conclude-pagecc-pivot-to-commodity-benchmark.md`](docs/adr/0004-conclude-pagecc-pivot-to-commodity-benchmark.md).
 
 ---
 
@@ -26,9 +31,10 @@ produced by running a language model.** They came from simulation code that:
 - and divided a measured numpy speed by a **hardcoded** `0.08 tok/s` "baseline" to get 108×.
 
 Those modules are still in the tree, renamed `sim_*` and carrying a
-`SIMULATION — NOT REAL INFERENCE` header. They are kept as architectural sketches and as
-a record of what went wrong. The old demo script, which existed to record a video of those
-numbers, has been removed (recoverable from git history at commit `a248a03`).
+`SIMULATION — NOT REAL INFERENCE. DO NOT QUOTE ITS NUMBERS.` header that names exactly what
+each one fakes. They are kept deliberately as architectural sketches and as a record of what
+went wrong. The old demo script, which existed to record a video of those numbers, has been
+removed (recoverable from git history at commit `a248a03`).
 
 **Why the original claim was impossible, not just unverified:** a 70B dense model at
 Q4_K_M is ~40 GB. With ~10 GB of usable RAM, ~30 GB must cross the NVMe bus *per token*.
@@ -36,61 +42,7 @@ At this machine's measured 2.62 GB/s that is 11.5 s/token ≈ **0.087 tok/s**. R
 15 tok/s would require ~450 GB/s of storage bandwidth — about 170× this drive. No amount
 of code changes that.
 
----
-
-## What is actually in here
-
-### Real and working
-
-| Path | What it does |
-|---|---|
-| `core/kernels.py` | INT4 pack/unpack + numba GEMV. Correct signed 4-bit with per-row scales. |
-| `core/layers.py` | `FusedInt4Linear`, a drop-in `nn.Linear` replacement over packed 4-bit weights. |
-| `frontier/gguf_partitioner.py` | Parses a real GGUF and splits tensors into hot/cold streams with an offset manifest. |
-| `models/quantizer.py`, `models/runner.py` | Converts a real HF model to fused INT4 and compares generations. |
-| `profiler.py` | Measures this machine's memory and NVMe bandwidth. |
-| `benchmarks/benchmark_speculative_real.py` | Real llama.cpp generation with a prompt-lookup drafter. |
-| `cli/chat.py --engine local-llama` | Real interactive generation via llama.cpp. |
-
-### Simulations (labelled, not deleted)
-
-`frontier/sim_stream_engine.py`, `frontier/sim_gguf_stream_engine.py`,
-`frontier/sim_converter.py`, `core/sim_engine.py`. Each has a header explaining exactly
-what it fakes. The `llm-lab simulate` and `llm-lab frontier` subcommands are marked
-`[SIMULATION]` in `--help`.
-
-### Real code with known defects
-
-| Path | Defect |
-|---|---|
-| `core/speculative_real.py` | Drafts by calling the **full target model** K times with no KV cache — slower than plain decoding, not faster. |
-| `core/speculative.py` | `verify_lossless_rejection()` subtracts a scalar draft probability from the whole target vector; the correct residual is elementwise `max(0, p(x) − q(x))`. Not currently lossless. |
-| `core/sparse_router.py` | Predictor weights are random and never trained; its "sparsity %" is a config constant. Thresholded sparsity on SwiGLU/SiLU is lossy regardless. |
-| `core/self_drafter.py` | `w_fuse` is random and never trained. |
-| `core/kv_cache.py` | 4-bit KV quantization and window eviction are **lossy** (0.9942 cosine ≠ 1.0; eviction discards tokens). |
-
----
-
-## The plan
-
-Target: **MoE**, not dense. Only a few experts fire per token, the router is
-deterministic, so fetching just the selected experts and demand-loading on a miss is
-**bit-identical** — the model computes the same thing, just later.
-
-| Milestone | Goal |
-|---|---|
-| M0 | Truth-in-labeling. **Done** — this README and the `sim_*` renames. |
-| M1 | Real baseline on Qwen3-30B-A3B Q4_K_M + determinism proof + expert-routing traces. **Done** — see the M1 section below. |
-| M2 | Trace analysis: cache-hit curves, union growth, reuse distance → go/no-go gate. |
-| M3 | Expert-contiguous repack (layout only, output-exact). |
-| M4 | Tiered async exact loader (VRAM/RAM/NVMe) with real queued I/O. |
-| M5–M7 | Page-level analysis, then page-sparse continued training (the "PageCC" research bet). |
-
-Prior art is **not** ours: draft-guided expert prefetch is published in
-SP-MoE (arXiv 2510.10302), MoE-SpeQ (arXiv 2511.14102), and Apple's SpecMD
-(arXiv 2602.03921). The gap we target is the GPU-free, SSD-backed, low-RAM **Windows**
-configuration, which those systems do not cover — see open llama.cpp discussion
-[#27149](https://github.com/ggml-org/llama.cpp/discussions/27149).
+Everything below obeys the [reporting rules](#reporting-rules) adopted in response.
 
 ---
 
@@ -109,60 +61,95 @@ Adopted because the first iteration violated all five:
 
 ---
 
-## Milestone 1 — measured
+## Results
 
-M1 is a deterministic MoE reference pipeline: a real baseline, a determinism proof, and
-expert-routing traces. Full results with every number cited to its committed artifact are in
-[`artifacts/m1/evidence/M1-REPORT.md`](artifacts/m1/evidence/M1-REPORT.md). Highlights:
+| Milestone | Goal | Outcome |
+|---|---|---|
+| **M0** | Truth-in-labeling | **Done** — fabricated claims removed, `sim_*` renames, demo deleted. |
+| **M1** | Exact baseline + determinism proof + routing traces | **Done, measured.** Deterministic over 256 tokens on Qwen3-30B-A3B Q4_K_M; 2000 BF16 routing positions across 3 domains. |
+| **M2** | Trace analysis → go/no-go gate | **Done, `PROJECTED`.** Locality is real and sublinear; the 30B raw trace was lost with the rented host, so every 30B figure is labelled a projection. Superseded by M3/M4 measurement. |
+| **M3** | Expert-contiguous repack (layout only, output-exact) | **Done, measured.** 18,432 slices byte-for-byte identical; 1.135 vs 1.021 GB/s, non-overlapping bands. |
+| **M4** | Tiered async exact loader | **`no_go` — premise disproved.** Decode is not per-token expert-scatter-I/O-bound here. The loader stayed **unbuilt** because its gate failed. |
+| **Probe** | Is 4.3 tok/s the compute ceiling? | **Correction.** 4.3 was a per-invocation cold-load artifact; warm sustained decode is **~9.2 tok/s**, drive idle, threads pegged → **compute/RAM-bound**. |
+| **M5–M7** | PageCC (page-sparse continued training) | **Closed on prior art.** Every component published independently; see the [novelty assessment](docs/research/pagecc-novelty-assessment.md). |
 
-- **M1a** (tiny OLMoE, FP32, no download): two builds identical over 32 tokens
-  (`artifacts/m1/evidence/m1a-oracle.json`).
-- **M1b** (`OLMoE-1B-7B-0924`, both paths): each path deterministic over 64 tokens; GGUF
-  Q4_K_M ≈36 tok/s vs HF int8 ≈2 tok/s — genuinely different executions
-  (`artifacts/m1/evidence/m1b-gguf-run-a.json`, `m1b-hf-run-a.json`).
-- **M1c** (`Qwen3-30B-A3B`): local Q4_K_M deterministic over 256 tokens at ≈6 tok/s
-  (`artifacts/m1/evidence/m1c-run-a.json`, `m1c-oracle.json`); 2000 BF16 routing positions
-  across three domains (`artifacts/m1/evidence/m1c-trace-summary.json`). Measured metadata:
-  48 layers, 128 experts, 8 used (`artifacts/m1/evidence/m1c-meta.json`).
+**The headline number for any forward statement is ~9.2 tok/s warm-sustained,
+compute/RAM-bound** — not 4.3, and not disk-I/O-bound.
 
-**Phases gate in order:** M1a → M1b → M1c; each phase runs only after the previous gate file
-reports `passed: true` (`m1b-gate.json`, `m1c-gate.json`).
+Full detail: [`docs/M1-M4-REPORT.md`](docs/M1-M4-REPORT.md) and the per-milestone reports
+under `artifacts/m*/evidence/`.
+
+### Prior art is not ours
+
+Draft-guided expert prefetch is published in SP-MoE (arXiv 2510.10302), MoE-SpeQ
+(arXiv 2511.14102), and Apple's SpecMD (arXiv 2602.03921). The PageCC components are
+published in Memory Layers at Scale (2412.09764), Pre-gated MoE (2308.12066),
+Engram (2601.07372), StickyMoE (2607.08780), and "Cacheable by Design?" (2608.18261).
+This project claims **engineering rigour and measurement**, not novel research.
+
+---
+
+## What is actually in here
+
+### Real and working
+
+| Path | What it does |
+|---|---|
+| `moe/meta.py`, `moe/baseline.py`, `moe/trace.py`, `moe/oracle.py` | The M1 exact pipeline: architecture facts, deterministic runs, routing traces, token-ID oracle. |
+| `core/kernels.py` | INT4 pack/unpack + numba GEMV. Correct signed 4-bit with per-row scales. |
+| `core/layers.py` | `FusedInt4Linear`, a drop-in `nn.Linear` replacement over packed 4-bit weights. |
+| `frontier/gguf_partitioner.py` | Parses a real GGUF and splits tensors into hot/cold streams with an offset manifest. |
+| `models/quantizer.py`, `models/runner.py` | Converts a real HF model to fused INT4 and compares generations. |
+| `profiler.py` | Measures this machine's memory and NVMe bandwidth. |
+| `cli/chat.py --engine local-llama` | Real interactive generation via llama.cpp. |
+
+### Simulations (labelled, not deleted)
+
+`frontier/sim_stream_engine.py`, `frontier/sim_gguf_stream_engine.py`,
+`frontier/sim_converter.py`, `core/sim_engine.py`. Each carries a header explaining exactly
+what it fakes. The `llm-lab simulate` and `llm-lab frontier` subcommands are marked
+`[SIMULATION]` in `--help`. **Do not quote any number these produce.**
+
+### Real code with known defects
+
+| Path | Defect |
+|---|---|
+| `core/speculative_real.py` | Drafts by calling the **full target model** K times with no KV cache — slower than plain decoding, not faster. |
+| `core/speculative.py` | `verify_lossless_rejection()` subtracts a scalar draft probability from the whole target vector; the correct residual is elementwise `max(0, p(x) − q(x))`. Not currently lossless. |
+| `core/sparse_router.py` | Predictor weights are random and never trained; its "sparsity %" is a config constant. Thresholded sparsity on SwiGLU/SiLU is lossy regardless. |
+| `core/self_drafter.py` | `w_fuse` is random and never trained. |
+| `core/kv_cache.py` | 4-bit KV quantization and window eviction are **lossy** (0.9942 cosine ≠ 1.0; eviction discards tokens). |
+
+---
+
+## Exactness, stated precisely
+
+For the local target, exactness means: *bit-identical to `Qwen3-30B-A3B-Q4_K_M` under
+llama.cpp greedy decoding, seed 0, 6 threads, on the recorded host*. It always names
+checkpoint + quant + decode + seed + host, and never claims identity to full precision
+or BF16.
 
 **Two numeric paths, never asserted equal.** The GGUF Q4_K_M path (via `llama-cpp-python`)
 gives speed/RSS/determinism/token IDs; the HF `transformers` path (with
-`output_router_logits=True`) gives exact per-layer expert IDs for the routing trace. These are
-different numeric paths — M1 does **not** claim Q4 decoding and BF16 routing select the same
-experts or emit the same tokens. Whether Q4 routing matches BF16 routing is an open M2
-question.
+`output_router_logits=True`) gives exact per-layer expert IDs for the routing trace. Whether
+Q4 routing matches BF16 routing remains an **open question**, not an assumption.
 
-**Exactness phrasing.** For the local target, exactness means precisely: *bit-identical to
-`Qwen3-30B-A3B-Q4_K_M` under llama.cpp greedy decoding, seed 0, 6 threads, on the recorded
-host*. It always names checkpoint + quant + decode + seed + host, and never claims identity to
-full precision or BF16.
+**Oracle refuses mismatched fingerprints.** `moe compare` raises rather than comparing two
+runs whose config fingerprints differ, so an "identical" verdict is only ever reported for
+runs of the same measured configuration.
 
-**Hosts (disclosed).** M1a, M1b, and M1c-local ran on Windows (Ryzen 5 5600G, ~16 GB); the
-M1c BF16 routing run ran on a rented Linux host (Ubuntu 22.04, ~135 GB RAM).
-
-**Trace semantics.** `tok_id` is the *processed* token — the one whose hidden state selected
-the recorded experts — at generated positions only. Cache replay is **observational**: it
-reads one immutable trace plus one content-addressed logits digest and computes hits/misses at
-a chosen capacity; it never re-runs the model.
-
-**Oracle refuses mismatched fingerprints.** `moe compare` reports identity as token-ID
-equality and raises rather than comparing two runs whose config fingerprints differ, so an
-"identical" verdict is only ever reported for runs of the same measured configuration.
-
-**Energy caveat.** Any public performance discussion of the eventual low-memory design must
-carry it: SSD expert offloading costs roughly 4.9× the per-token energy of HBM and 3.1× versus
-CPU DRAM (arXiv 2508.06978). The M1 tok/s figures are baselines to beat, not an energy
+**Energy caveat.** SSD expert offloading costs roughly 4.9× the per-token energy of HBM and
+3.1× versus CPU DRAM (arXiv 2508.06978). The tok/s figures are baselines, not an energy
 endorsement.
 
-**Artifact policy.** Raw traces, logits, and checkpoints are gitignored
-(`/artifacts/m1/raw/`, `/models/m1/`). Only compact evidence is committed under
-`artifacts/m1/evidence/`: JSON summaries, oracle/gate verdicts, command transcripts, and
-`*.sha256` manifests binding each summary to the raw file it describes.
+**Artifact policy.** Raw traces, logits, and checkpoints are gitignored. Only compact
+evidence is committed under `artifacts/*/evidence/`: JSON summaries, oracle/gate verdicts,
+command transcripts, and `*.sha256` manifests binding each summary to the raw file it
+describes.
 
-### The `moe` commands
+---
+
+## The `moe` commands
 
 ```bash
 # Architecture facts from a checkpoint (HF config or GGUF), to JSON
@@ -197,12 +184,6 @@ Measure your own hardware (this is real):
 
 ```bash
 python -m llm_lab.profiler
-```
-
-Run real generation (needs a GGUF file on disk; edit the path in `cli/chat.py`):
-
-```bash
-python src/llm_lab/cli/chat.py --engine local-llama
 ```
 
 Run the test suite:
