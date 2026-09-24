@@ -97,13 +97,13 @@ Log "model_present=$(Test-Path $model)"
 if (Test-Path $model) { Log "model_size_mb=$([math]::Round((Get-Item $model).Length/1MB,1))" }
 
 if ($cli -and (Test-Path $model)) {
-  Log "`n>>> generation with FULL GPU offload (-ngl 99) <<<"
+  Log "`n--- generation with FULL GPU offload (ngl 99) ---"
   try {
     $out = & $cli.FullName -m $model -p "The capital of France is" -n 24 -ngl 99 --seed 0 -no-cnv 2>&1 | Out-String
     Log $out
   } catch { Log "GENERATION_FAILED: $($_.Exception.Message)" }
 
-  Log "`n>>> control: same run forced to CPU (-ngl 0) <<<"
+  Log "`n--- control: same run forced to CPU (ngl 0) ---"
   try {
     $out0 = & $cli.FullName -m $model -p "The capital of France is" -n 24 -ngl 0 --seed 0 -no-cnv 2>&1 | Out-String
     Log $out0
