@@ -20,3 +20,13 @@ models/**/*.bin
 
 # All local model weights and repacked binaries (packed file + manifest stay local)
 models/
+
+# Local tool state (Claude Code + Serena) — regenerated per machine, not project source
+.claude/
+.serena/
+
+# Probe/benchmark stderr scratch — the committed evidence is the .json/.txt, not these
+*.err
+
+# Prior-session local helper, superseded by the committed download commands; kept local, not canonical
+/scripts/download_m1_models.ps1
