@@ -1,0 +1,34 @@
+{
+  "phase": "active_set_pivot_probe_option2",
+  "date": "2026-09-24",
+  "question": "Is streaming DORMANT (a wide hot-expert working set re-enters disk-I/O-bound decode here) or DEAD (compute/RAM binds even under wide routing)?",
+  "method": "same box+model, warm, greedy. Force wide expert coverage via a high-entropy ~2673-token multi-domain prompt (near-full 128-expert/layer coverage). CONTROL for the context-length confound: an equal-length (~2700-token) LOW-ENTROPY prompt (identical repeated token -> narrow routing, same attention/KV compute). Isolates routing-width I/O from context-length attention compute.",
+
+  "runs": {
+    "short_narrow_diverse": { "prompt_tokens": 60,  "gen_tok_s": 9.2, "note": "baseline realistic warm decode" },
+    "long_lowentropy_control": { "prompt_tokens": 2700, "gen_tok_s": 3.9, "gen_disk_median_MBps": 160, "gen_disk_per_token_MB": 41, "cpu_pct": 38 },
+    "long_wide_stressor": { "prompt_tokens": 2673, "gen_tok_s": 2.9, "gen_disk_median_MBps": 218, "gen_disk_per_token_MB": 75, "cpu_pct": 41 }
+  },
+
+  "attribution": {
+    "context_length_attention_compute": "9.2 -> 3.9 tok/s : DOMINANT drop, from long-context attention (same in both long runs, present with NARROW routing) -> not expert I/O.",
+    "routing_width_expert_io": "3.9 -> 2.9 tok/s : the isolated wide-routing penalty at equal context length = ~26% slower, ~1.8x per-token disk (75 vs 41 MB/token, +~34 MB/token attributable to expert faulting).",
+    "disk_saturation": "NEVER reached the 1.02 GB/s scatter ceiling in any regime; random-fault reads top ~400-490 MB/s. Decode is not cleanly disk-pegged even under max-entropy wide routing."
+  },
+
+  "verdict": "streaming_DORMANT_but_WEAK_here",
+  "verdict_detail": "Widening the active set DOES re-introduce real per-token expert-fault I/O (+~34 MB/token, ~1.8x), so streaming is NOT dead -- it is dormant. BUT the effect is SECONDARY: the dominant long-context binder is compute (attention) + RAM-bandwidth, the wide-routing I/O penalty is only ~26%, and the drive is never saturated. On this box+model, streaming's payoff would be marginal. Its real home is Fork-1 RELOCATION (a larger MoE whose active set >> RAM and where expert-fault I/O dominates attention, or a higher-bandwidth/compute tier), not this model here.",
+
+  "confirms_refines": {
+    "m4_direction": "CONFIRMED across narrow AND wide workloads -- disk never saturates; expert I/O is present but not the primary binder here.",
+    "m4_number": "overturned (per probe-verdict.json): warm narrow ~9.2, workload-dependent 2.9-14 range; 4.3 was a cold per-invocation artifact.",
+    "streaming_scope": "not 'dead', but 'dormant + weak on this box+model'; the streaming thesis targets a bigger-MoE / different-hardware regime (Fork 1)."
+  },
+
+  "caveats": [
+    "48-token gen windows are short -> tok/s noisy; the equal-length control is what makes the width attribution robust (not the absolute 2.9/3.9).",
+    "scatter ceiling 1.02 GB/s is M3's contiguous-read figure; random expert faults achieve less (~400-490 MB/s observed), so 'not saturated at 1.02' understates how close random-fault I/O is to ITS own ceiling -- the width penalty is real even though sub-1GB/s.",
+    "bigger-MoE test (active set >> RAM) needs a model download -> deliberately NOT run here; it is the natural Fork-1 relocation probe."
+  ],
+  "files": ["probe-wideset.out/.err", "probe-counters-wideset.txt", "probe-wideset-prompt.txt", "probe-lowent.out/.err", "probe-counters-lowent.txt", "probe-lowent-prompt.txt", "scripts/m4-spike/gen-wideset-prompt.py", "scripts/m4-spike/probe-wideset.ps1"]
+}

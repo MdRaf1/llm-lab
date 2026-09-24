@@ -108,10 +108,43 @@ and I/O is off the critical path."** Same strategic conclusion, overturned numbe
   still fits here. A larger MoE or a much wider hot-expert workload could still
   tip into the streaming regime — **untested** by this probe or M4.
 
+## Follow-up (option 2): active-set pivot — dormant or dead?
+
+Does a **wide** hot-expert working set re-enter the I/O-bound (streaming) regime
+here? Forced near-full expert coverage with a high-entropy ~2673-token prompt,
+**controlled** for the context-length confound with an equal-length (~2700-token)
+**low-entropy** prompt (identical repeated token → narrow routing, same
+attention/KV compute).
+
+| workload | prompt toks | gen tok/s | gen disk (median) | MB/token |
+|--|--:|--:|--:|--:|
+| short, narrow (diverse) | 60 | **9.2** | ~30–300, declining | ~30 |
+| long, **low-entropy** (control) | 2700 | **3.9** | ~160 MB/s | ~41 |
+| long, **wide** (stressor) | 2673 | **2.9** | ~218 MB/s | ~75 |
+
+**Attribution (the control isolates it):**
+- **9.2 → 3.9** = long-context **attention compute** (present even with narrow
+  routing) — the *dominant* drop, not expert I/O.
+- **3.9 → 2.9** = the isolated **routing-width expert I/O** at equal context
+  length: ~26% slower, ~1.8× per-token disk (+~34 MB/token of expert faulting).
+- Disk **never saturates** the 1.02 GB/s scatter ceiling in any regime (random
+  faults top ~400–490 MB/s).
+
+**Verdict: streaming is DORMANT but WEAK on this box+model.** Widening the active
+set does re-introduce real per-token expert-fault I/O (so streaming is *not*
+dead), but it is a *secondary* binder — long-context compute + RAM-bandwidth
+dominate, the width penalty is only ~26%, and the drive is never pegged. Its real
+home is **Fork-1 relocation** (a larger MoE whose active set ≫ RAM, or a
+higher-bandwidth/compute tier), not this model here. A bigger-MoE test needs a
+download and is deliberately deferred. Full: `probe-pivot-verdict.json`.
+
 ## Files
 
 - `probe-bench-t{4,6,8,12}.json` — thread sweep raw (`samples_ts`).
 - `probe-signals-t6r12.json` + `probe-counters-t6r12.txt` — warm depth + counters.
 - `probe-diverse.out/.err` + `probe-counters-diverse.txt` + `probe-diverse-prompt.txt` — diverse run.
 - `probe-verdict.json` — derived verdict.
-- `scripts/m4-spike/probe-counters.ps1`, `scripts/m4-spike/probe-diverse.ps1` — drivers.
+- `probe-wideset.*` + `probe-counters-wideset.txt` + `probe-wideset-prompt.txt` — wide-routing stressor (option 2).
+- `probe-lowent.*` + `probe-counters-lowent.txt` + `probe-lowent-prompt.txt` — equal-length low-entropy control.
+- `probe-pivot-verdict.json` — active-set pivot verdict.
+- `scripts/m4-spike/probe-counters.ps1`, `probe-diverse.ps1`, `probe-wideset.ps1`, `gen-wideset-prompt.py` — drivers.

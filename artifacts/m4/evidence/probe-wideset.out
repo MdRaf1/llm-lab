@@ -1,0 +1,36 @@
+
+
+Loading model... 
+
+▄▄ ▄▄
+██ ██
+██ ██  ▀▀█▄ ███▄███▄  ▀▀█▄    ▄████ ████▄ ████▄
+██ ██ ▄█▀██ ██ ██ ██ ▄█▀██    ██    ██ ██ ██ ██
+██ ██ ▀█▄██ ██ ██ ██ ▀█▄██ ██ ▀████ ████▀ ████▀
+                                    ██    ██
+                                    ▀▀    ▀▀
+
+build      : b10099-1a064ab09
+model      : models/m1/qwen3-gguf/Qwen3-30B-A3B-Q4_K_M.gguf
+ftype      : Q4_K - Medium
+modalities : text
+
+available commands:
+  /exit or Ctrl+C     stop or exit
+  /regen              regenerate the last response
+  /clear              clear the chat history
+  /read <file>        add a text file
+  /glob <pattern>     add text files using globbing pattern
+
+
+
+> The overflow governs the catalyst across 66 regimes. 977018 heap register throughput buffer kernel SELECT id FROM t WHERE x>3 6889692 दुनिया Welt بيت 世界 covalent refraction galaxy ribosome entropy voltage gossamer zephyr petrichor tempest azimuth ephemeral 3553100 latency daemon throughput syscall compiler protocol The thread supersedes the neutrino across 29 regimes. photosynthesis galaxy ribosome fusion enzyme protein async fn run() -> Result<()> The republic supersedes the  ... (truncated)
+
+[Start thinking]
+
+Okay, let's try to figure out what's going on here. The user provided a long string of text that seems to mix programming terms, some random words, and maybe some code snippets. There's a lot of mentions of
+
+[ Prompt: 16.8 t/s | Generation: 2.9 t/s ]
+
+
+Exiting...
