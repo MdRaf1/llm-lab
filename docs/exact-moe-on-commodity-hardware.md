@@ -95,6 +95,19 @@ Only the precise *conjunction* of all four elements was unclaimed — and that c
 
 That is where the work points next.
 
+## Update — the hard part works (2026-09-26)
+
+Before committing to a full benchmark, I tested its riskiest leg on real hardware: running a *dynamic* MoE compute-cutting method — reducing the active experts per token (top-8 → top-4, via a runtime override) — on a **non-CUDA Intel Arc B580** GPU, measured against the same exact-oracle discipline.
+
+It works, and I made the measurement prove itself rather than assert it:
+
+- **It genuinely ran on the Arc**, not silently on the CPU: llama.cpp placed all 34 layers on the GPU via Vulkan, and a same-box CPU control shows the exact mirror image (0 layers on the GPU). The contrast is the proof.
+- **The method took effect**: llama.cpp itself reported the reduced expert count (`n_expert_used = 4`), so it isn't inferred from timing.
+- **Effect measured**: top-4 ran ~3.9× faster than top-8 (88 → 340 tok/s), the model being fully resident in VRAM — so the binder is active-expert throughput, not I/O.
+- **Fidelity as divergence, not identity**: the same-config CPU and GPU runs share a common opening (*"…Paris is not only the political"*) and then diverge — the expected cross-backend, reduction-order divergence, quantified instead of hand-waved.
+
+**What this does not show:** that fewer experts preserves quality. That's 48 tokens of one prompt; the quality-vs-active-compute curve is the *next* measurement, not this one. This was only the feasibility gate — the hardest, historically-painful part (a dynamic method on non-NVIDIA consumer silicon, measured exactly) — for a cross-vendor commodity benchmark across a CPU, a consumer NVIDIA GPU, and an Intel Arc GPU. It's now proven runnable. Verdict + evidence: `artifacts/arc-spike/evidence/`.
+
 ## What this project demonstrates
 
 - **Correctness discipline** — determinism proofs, a byte-identity proof, an oracle that refuses unsound comparisons, pre-registered decision gates.
