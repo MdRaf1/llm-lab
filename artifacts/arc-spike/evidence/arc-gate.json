@@ -1,0 +1,26 @@
+{
+  "gate": "ADR-0005 Intel Arc B580 dynamic-method spike",
+  "date": "2026-09-26",
+  "verdict": "PASS",
+  "host": "WIN-B3UMGHIO2FT",
+  "gpu": "Intel(R) Arc(TM) B580 Graphics (12 GB)",
+  "backend": "llama.cpp b11160 Vulkan (win-x64)",
+  "model": "OLMoE-1B-7B-0924-Instruct Q4_K_M (4018.3 MB; base allenai URL timed out, instruct fallback used; same file across all cases)",
+  "prompt": "The capital of France is",
+  "n_tokens": 48,
+  "seed": 0,
+  "cases": {
+    "arc_topk8": { "backend": "vulkan", "n_expert_used": 8, "layers_on_vulkan": 34, "layers_on_cpu": 0, "gen_tok_s": 88.1 },
+    "arc_topk4": { "backend": "vulkan", "n_expert_used": 4, "layers_on_vulkan": 34, "layers_on_cpu": 0, "gen_tok_s": 340.4 },
+    "cpu_topk8": { "backend": "cpu", "n_expert_used": 8, "layers_on_vulkan": 0, "layers_on_cpu": 34, "gen_tok_s": 27.4 }
+  },
+  "criteria": {
+    "1_it_runs": "PASS - all three cases generated coherent text",
+    "2_ran_on_gpu": "PASS - arc cases 34/34 layers on Vulkan, 0 on CPU; CPU control is the mirror image (0 Vulkan / 34 CPU). No silent fallback.",
+    "3_method_applied": "PASS - arc_topk4 reports n_expert_used=4 from llama.cpp itself (override honoured)",
+    "4_named_ceiling": "PASS - active-expert throughput on the GPU. Model fully VRAM-resident (4 GB in 12 GB, 34/34 offloaded) so not disk- or host-RAM-bound; halving active experts (8->4) gave ~3.86x decode speedup (88.1->340.4 t/s), which only an active-expert-dominated binder produces.",
+    "5_reference_stated": "PASS - fidelity measured as backend divergence, not identity. arc_topk8 vs cpu_topk8 (same file, same box, top-8, seed 0) share 'The capital of France is Paris. Paris is not only the political' then diverge (arc: 'capital...'; cpu: ', but also the economic...'). Cross-backend divergence is expected (reduction order / kernels) and is the deliverable, not a failure."
+  },
+  "method_effect_note": "top-k 8->4 was ~3.86x faster AND stayed coherent/correct, but this is 48 tokens of ONE prompt - it is NOT a quality claim. Quality-vs-active-compute needs a real perplexity/benchmark eval, which is the benchmark v1's job, not this spike's.",
+  "consequence": "Arc leg viable. Authorises SCOPING a three-vendor benchmark v1 as a separate effort with its own gate, timeline-permitting (relocation Q4 2026). Does NOT authorise open-ended benchmark work."
+}
