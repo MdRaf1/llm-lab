@@ -1,49 +1,45 @@
-# ADR-0006: Pre-registered gate — cross-vendor commodity benchmark v1 (perishable-first)
+# ADR-0006: Pre-registered gate — cross-vendor commodity benchmark v1
 
 ## Status
 
-**Pre-registered 2026-09-26, before collection.** Follows ADR-0005 (Arc spike
-PASS, which authorised *scoping* this — not open-ended work) and ADR-0004 (the
-career-leverage success criterion). Same discipline as ADR-0002/0005: the file
-decides the outcome, not the person mid-run.
+**Pre-registered 2026-09-25, before collection. Revised the same day** to remove
+a time/relocation gate. The first draft assumed the owner would lose access to
+some of the three machines after the Q4 2026 move. **That assumption was wrong:
+the owner has permanent access to all three machines regardless of the move.**
+There is therefore **no time pressure** on this work — it proceeds at a
+sustainable pace, correctness over speed. Follows ADR-0005 (Arc spike PASS,
+which authorised *scoping* this) and ADR-0004.
 
-## Why this exists, and the one constraint that shapes it
+## What this measures
 
-The Arc spike proved the hard leg runnable. The distinctive contribution is the
-*quality-vs-active-compute tradeoff of a dynamic MoE method, measured exactly,
-across commodity multi-vendor hardware nobody benchmarks* — CPU (5600G),
-consumer NVIDIA (RTX 4060), Intel Arc (B580).
-
-**The perishable resource is hardware access, not time.** The owner relocates in
-Q4 2026; the three machines in one place cannot be recreated after the move. The
-write-up (ADR-0004 step a) is already banked and public and travels anywhere.
-Therefore: **collect raw data on all three machines BEFORE the move; defer all
-analysis and write-up to after.** Data collection is the only move-gated work.
+The quality-vs-active-compute tradeoff of a dynamic MoE method, measured exactly,
+across commodity multi-vendor hardware nobody benchmarks: CPU (5600G), consumer
+NVIDIA (RTX 4060), Intel Arc (B580).
 
 ## Scope — deliberately minimal (v1)
 
 - **One method:** active-expert reduction, `--override-kv <arch>.expert_used_count` at **{8 (baseline), 4, 2}**.
-- **One model:** OLMoE-1B-7B-0924 Q4_K_M (fits all three machines; already validated in the spike).
-- **Two numbers per cell:** (a) **quality** = perplexity via `llama-perplexity` on a **fixed, committed** corpus; (b) **speed** = decode tok/s, **median of ≥3 runs** (per the guardian-analytics lesson: never trust a single wall-clock).
+- **One model:** OLMoE-1B-7B-0924 Q4_K_M (fits all three machines; validated in the spike).
+- **Two numbers per cell:** (a) **quality** = perplexity via `llama-perplexity` on a **fixed, committed** corpus; (b) **speed** = decode tok/s, **median of ≥3 runs** (guardian-analytics lesson: never trust a single wall-clock).
 - **Three machines × 3 expert settings = 9 cells**, each carrying the spike's proofs: device-placement (layers on GPU vs CPU) and `n_expert_used` from llama.cpp itself.
 - **Backend fidelity** recorded as measured divergence vs the CPU reference, never as an identity claim.
 
 **Out of scope for v1:** the 30B model; multiple models; quantization sweeps;
 training; any method other than expert-count reduction. Those are v2 if v1 lands.
 
-## Pass / partial / fail
+## Pass / fail
 
-- **PASS:** comparable perplexity + median tok/s collected for the {8,4,2} sweep on **all three** vendors before the move, each with device-placement + expert-count proof, on the fixed committed corpus.
-- **ACCEPTABLE PARTIAL (not a failure):** the move cuts collection to **two** vendors. Write it up honestly as a two-vendor result — a clean partial is a portfolio piece (ADR-0004 reviewer).
-- **FAIL:** no comparable, proof-carrying data collected on ≥2 vendors, or a metric that cannot be reproduced from a committed corpus + command.
+- **PASS:** comparable perplexity + median tok/s for the {8,4,2} sweep on **all three** vendors, each with device-placement + expert-count proof, on the committed corpus.
+- **Acceptable reduced result:** if *one vendor's toolchain proves genuinely intractable* after a bounded effort (below), a two-vendor result is a legitimate outcome — a **technical** limit, not a time limit. Record the blocker.
+- **FAIL:** no comparable, proof-carrying data on ≥2 vendors, or a metric that cannot be reproduced from a committed corpus + command.
 
-## Per-machine time-box
+## Bounded effort per machine (engineering hygiene, not a deadline)
 
-Each machine gets **one day**. If a toolchain fights (RTX 4060 CUDA build, Arc
-IPEX/SYCL, whatever), fall back to the **Vulkan** llama.cpp build that already
-worked on the Arc — it runs on all three vendors and keeps the comparison
-apples-to-apples. Do not spend a second machine-day on driver archaeology; record
-the blocker and move to the next machine.
+If a machine's toolchain fights (RTX 4060 CUDA build, Arc IPEX/SYCL), fall back to
+the **Vulkan** llama.cpp build that already worked on the Arc — it runs on all
+three vendors and keeps the comparison apples-to-apples. Don't sink open-ended
+effort into driver archaeology; record the blocker and use the fallback. This is
+about not *wasting* effort, not about running out of time.
 
 ## Honesty rules (inherited)
 
@@ -54,11 +50,10 @@ host + backend + expert count.
 
 ## Consequences
 
-- **On PASS/PARTIAL:** the data is banked and safe from the move; analysis + a
-  results section (or short note) are written afterwards, from anywhere, and
-  folded into the public write-up.
+- **On PASS / reduced result:** analysis + a results section are written and
+  folded into the public write-up, at whatever pace suits.
 - **On FAIL:** the spike result already stands in the write-up as proven
-  feasibility; nothing is lost, and the effort concludes there.
+  feasibility; nothing is lost.
 
 ## Evidence (empty until collected)
 
