@@ -47,22 +47,39 @@ if (-not $cliItem) {
 $cli = if ($cliItem) { $cliItem.FullName } else { $null }
 Log ('llama_cli=' + $cli)
 
-# ---- get the OLMoE Q4_K_M model (verified URLs; skip if present) ----
+# ---- get the OLMoE Q4_K_M model (robust: curl.exe resume + size/magic guard) ----
+# The full file is ~4.21 GB. IWR on PS 5.1 silently truncates large HF downloads,
+# so use curl.exe (real curl, NOT the PS 5.1 'curl' alias for Invoke-WebRequest)
+# with -C - to resume, then validate size and the GGUF magic before trusting it.
 $model = Join-Path $root 'olmoe.gguf'
-if (-not (Test-Path $model)) {
-  $urls = @(
-    'https://huggingface.co/allenai/OLMoE-1B-7B-0924-GGUF/resolve/main/olmoe-1b-7b-0924-q4_k_m.gguf',
-    'https://huggingface.co/allenai/OLMoE-1B-7B-0924-Instruct-GGUF/resolve/main/olmoe-1b-7b-0924-instruct-q4_k_m.gguf',
-    'https://huggingface.co/bartowski/OLMoE-1B-7B-0924-Instruct-GGUF/resolve/main/OLMoE-1B-7B-0924-Instruct-Q4_K_M.gguf'
-  )
-  foreach ($u in $urls) {
-    try { Log ('downloading model: ' + $u); Invoke-WebRequest $u -OutFile $model -ErrorAction Stop; Log 'model_ok'; break }
-    catch { Log ('  failed: ' + $_.Exception.Message) }
+$minBytes = 4000000000   # ~4.0 GB floor; real file is 4213511776
+function Get-Size($p) { if (Test-Path $p) { (Get-Item $p).Length } else { 0 } }
+function Is-Gguf($p) {
+  try { $fs = [IO.File]::OpenRead($p); $b = New-Object byte[] 4; [void]$fs.Read($b, 0, 4); $fs.Close()
+        return ([Text.Encoding]::ASCII.GetString($b) -eq 'GGUF') } catch { return $false }
+}
+$urls = @(
+  'https://huggingface.co/allenai/OLMoE-1B-7B-0924-GGUF/resolve/main/olmoe-1b-7b-0924-q4_k_m.gguf',
+  'https://huggingface.co/allenai/OLMoE-1B-7B-0924-Instruct-GGUF/resolve/main/olmoe-1b-7b-0924-instruct-q4_k_m.gguf',
+  'https://huggingface.co/bartowski/OLMoE-1B-7B-0924-Instruct-GGUF/resolve/main/OLMoE-1B-7B-0924-Instruct-Q4_K_M.gguf'
+)
+$uIdx = 0
+while ((Get-Size $model) -lt $minBytes -and $uIdx -lt $urls.Count) {
+  $u = $urls[$uIdx]
+  Log ('downloading (curl.exe, resumable): ' + $u)
+  & curl.exe -L -C - --retry 5 --retry-delay 3 --fail -o $model $u 2>$null
+  $sz = Get-Size $model
+  Log ('  size_now_mb=' + [math]::Round($sz / 1MB, 1))
+  if ($sz -lt $minBytes) {
+    Log '  still short; discarding partial and trying next URL'
+    Remove-Item $model -ErrorAction SilentlyContinue
+    $uIdx++
   }
 }
-$modelPresent = Test-Path $model
-Log ('model_present=' + $modelPresent)
-if ($modelPresent) { Log ('model_size_mb=' + [math]::Round((Get-Item $model).Length / 1MB, 1)) }
+$sz = Get-Size $model
+$modelPresent = (($sz -ge $minBytes) -and (Is-Gguf $model))
+Log ('model_present=' + $modelPresent + '  size_mb=' + [math]::Round($sz / 1MB, 1) + '  gguf_magic=' + (Is-Gguf $model))
+if (-not $modelPresent) { Log 'MODEL INVALID OR TRUNCATED - cases will be skipped. Re-run to resume the download.' }
 
 # <<CASES>>
 
