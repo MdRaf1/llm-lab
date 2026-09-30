@@ -1,0 +1,31 @@
+=== ADR-0006 BENCH v1 | 2026-09-28T14:34:28.1588189+06:00 ===
+host=RAFI ps=5.1.26100.8457 backend=cpu (ngl=0)
+llama_cli=C:\arc-spike\llama\llama-cli.exe
+llama_perplexity=C:\arc-spike\llama\llama-perplexity.exe
+model_ok=True size_mb=4018.3
+corpus_ok=True sha=56cd65efc2341222ef8be930da8b36ae6079a04b699ed47a0702cd134dc0a34e
+
+=== expert_used = 8 ===
+  0.00.119.726 I print_info: n_expert_used         = 8
+  layers_on_vulkan=0  layers_on_cpu=34
+  perplexity=1.2702
+  gen_tok_s_runs=55.2, 55.6, 48.3
+  gen_tok_s_median=55.2
+
+=== expert_used = 4 ===
+  0.00.133.590 I print_info: n_expert_used         = 4
+  layers_on_vulkan=0  layers_on_cpu=34
+  perplexity=2.4076
+  gen_tok_s_runs=78.9, 81, 76.4
+  gen_tok_s_median=78.9
+
+=== expert_used = 2 ===
+  0.00.126.658 I print_info: n_expert_used         = 2
+  layers_on_vulkan=0  layers_on_cpu=34
+  perplexity=18.5989
+  gen_tok_s_runs=103.4, 102.3, 102.5
+  gen_tok_s_median=102.5
+
+=== DONE. Share bench-v1-report.txt. ===
+Each expert setting: perplexity (quality), median tok/s (speed), and the
+n_expert_used + layer-placement proof. Backend + host are in the header.
